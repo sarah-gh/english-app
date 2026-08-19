@@ -5,14 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "run-p type-check \"build-only {@}\" --",
+    "dev:network": "vite --host",
+    "build": "vite build",
+    "deploy": "gh-pages -d dist",
     "preview": "vite preview",
-    "build-only": "vite build",
-    "type-check": "vue-tsc --build",
-    "lint": "run-s \"lint:*\"",
-    "lint:oxlint": "oxlint . --fix",
-    "lint:eslint": "eslint . --fix --cache",
-    "format": "prettier --write --experimental-cli src/"
+    "test:unit": "vitest",
+    "test:e2e": "playwright test",
+    "lint": "eslint . --fix",
+    "format": "prettier --write .",
+    "prepare": "husky"
   },
   "dependencies": {
     "@vueuse/core": "^14.4.0",
@@ -35,6 +36,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-oxlint": "~1.79.0",
     "eslint-plugin-vue": "~10.9.2",
+    "gh-pages": "^6.3.0",
     "jiti": "^2.7.0",
     "npm-run-all2": "^9.0.2",
     "oxlint": "~1.79.0",
