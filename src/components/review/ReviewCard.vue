@@ -152,13 +152,13 @@ onBeforeUnmount(() => {
     @transitionend="onTransitionEnd"
   >
     <div
-      class="pointer-events-none absolute top-4 left-4 rounded border-2 border-black px-3 py-1 text-sm font-bold text-black uppercase"
+      class="pointer-events-none absolute top-4 left-4 rounded border-2 border-black bg-red-500 px-3 py-1 text-sm font-bold text-white uppercase shadow-md"
       :style="{ opacity: leftLabelOpacity }"
     >
       Not Known
     </div>
     <div
-      class="pointer-events-none absolute top-4 right-4 rounded border-2 border-black px-3 py-1 text-sm font-bold text-black uppercase"
+      class="pointer-events-none absolute top-4 right-4 rounded border-2 border-black bg-green-500 px-3 py-1 text-sm font-bold text-white uppercase shadow-md"
       :style="{ opacity: rightLabelOpacity }"
     >
       Known

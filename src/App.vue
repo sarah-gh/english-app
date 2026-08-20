@@ -4,8 +4,10 @@ import InstallPrompt from '@/components/pwa/InstallPrompt.vue';
 </script>
 
 <template>
-  <RouterView />
-  <InstallPrompt />
+  <div class="max-w-lg mx-auto">
+    <RouterView />
+    <InstallPrompt />
+  </div>
 </template>
 
 <style scoped></style>
