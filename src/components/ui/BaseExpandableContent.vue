@@ -13,8 +13,18 @@ const props = withDefaults(
   },
 );
 
+/** Only start clipping once content clears the threshold by more than this — guards against
+ *  `scrollHeight`'s integer rounding (and other sub-pixel measurement noise) flagging a card as
+ *  "overflowing" by a pixel or two, which would otherwise clip descenders off its last line. */
+const OVERFLOW_TOLERANCE = 20;
+
+/** Added on top of the measured height when expanded, so a rounded/stale measurement can't clip
+ *  the last line while `overflow: hidden` is still in effect for the expand/collapse animation. */
+const EXPANDED_HEIGHT_BUFFER = 8;
+
 const contentRef = ref<HTMLElement>();
-/** 0 until the first ResizeObserver callback fires (shortly after mount). */
+/** 0 until the first ResizeObserver callback fires (shortly after mount) — `scrollHeight`
+ *  already accounts for the content wrapper's own padding. */
 const contentHeight = ref(0);
 const isExpanded = ref(false);
 
@@ -22,23 +32,31 @@ useResizeObserver(contentRef, ([entry]) => {
   contentHeight.value = entry.target.scrollHeight;
 });
 
-const isOverflowing = computed(() => contentHeight.value > props.maxHeight);
+const isOverflowing = computed(() => contentHeight.value > props.maxHeight + OVERFLOW_TOLERANCE);
+/** The only state that actually clips anything — `overflow: hidden` stays scoped to whichever
+ *  card is overflowing at all (collapsed or mid-expand-animation); a never-overflowing card is
+ *  always `visible`, so a stale or rounded height measurement can never cut off its text. */
+const currentOverflow = computed(() => (isOverflowing.value ? 'hidden' : 'visible'));
 
 const currentMaxHeight = computed(() => {
-  // Not measured yet — render unclipped for one frame rather than flash a 0-height box.
-  if (contentHeight.value === 0) return 'none';
-  if (!isOverflowing.value || isExpanded.value) return `${contentHeight.value}px`;
-  return `${props.maxHeight}px`;
+  if (!isOverflowing.value) return 'none';
+  if (!isExpanded.value) return `${props.maxHeight}px`;
+  // Expanded: a concrete (buffered) px value, not 'none', so max-height can transition smoothly
+  // from the collapsed threshold instead of snapping straight to full height.
+  return `${contentHeight.value + EXPANDED_HEIGHT_BUFFER}px`;
 });
 </script>
 
 <template>
   <div>
     <div
-      class="relative overflow-hidden transition-[max-height] duration-300 ease-in-out"
-      :style="{ maxHeight: currentMaxHeight, overflow: isExpanded ? 'auto' : 'hidden' }"
+      class="relative transition-[max-height] duration-300 ease-in-out"
+      :style="{ maxHeight: currentMaxHeight, overflow: currentOverflow }"
     >
-      <div ref="contentRef">
+      <div
+        ref="contentRef"
+        class="pb-1"
+      >
         <slot />
       </div>
 

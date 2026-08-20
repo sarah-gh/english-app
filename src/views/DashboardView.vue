@@ -53,7 +53,7 @@ function deckCardCount(deckId: string): number {
     </p>
 
     <template v-else>
-      <section class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <section class="mb-6 grid gap-3 grid-cols-4">
         <BaseCard class="text-center">
           <p class="text-2xl font-semibold text-black">{{ statusCounts.new }}</p>
           <p class="text-xs text-gray-500">New</p>
