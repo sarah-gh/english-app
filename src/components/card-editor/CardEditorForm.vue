@@ -151,7 +151,7 @@ async function applyAutofillResult(result: GeneratedCardDetails): Promise<void> 
   draft.value.backAnswer = result.backAnswer;
   if (result.ipa) draft.value.ipa = result.ipa;
   if (result.hint) draft.value.hint = result.hint;
-  if (result.examples.length > 0) draft.value.examples = result.examples;
+  if (result.personalExamples.length > 0) draft.value.examples = result.personalExamples;
 
   if (result.partsOfSpeech && result.partsOfSpeech.length > 0) {
     draft.value.partsOfSpeech = result.partsOfSpeech.map(
@@ -165,6 +165,7 @@ async function applyAutofillResult(result: GeneratedCardDetails): Promise<void> 
     );
   }
 
+  await applySuggestedDeck(result.suggestedDeckCategory);
   await applySuggestedTags(result.suggestedTags);
 }
 
@@ -181,7 +182,23 @@ function applyWordFamilyResult(result: GeneratedWordFamily): void {
   if (result.usageNotes) draft.value.wordFamily.usageNotes = result.usageNotes;
   if (result.ipa) draft.value.ipa = result.ipa;
 
+  // The card is already known to be a Word Family card, so the category is deterministic —
+  // no need to ask the AI to (re-)classify it the way `applySuggestedDeck` does for standard cards.
+  void applySuggestedDeck('Word Families');
   void applySuggestedTags(result.suggestedTags);
+}
+
+/** Auto-selects a deck matching the AI-suggested category when the user hasn't already picked
+ *  one — reusing an existing deck of that name if one exists, otherwise creating it (mirroring
+ *  how `applySuggestedTags` resolves-or-creates tags below). */
+async function applySuggestedDeck(categoryName: string | undefined): Promise<void> {
+  if (draft.value.deckId || !categoryName) return;
+  const name = categoryName.trim();
+  if (!name) return;
+
+  const existing = deckStore.decks.find((deck) => deck.name.toLowerCase() === name.toLowerCase());
+  const deck = existing ?? (await deckStore.add({ name }));
+  draft.value.deckId = deck.id;
 }
 
 async function applySuggestedTags(suggestedTags: string[]): Promise<void> {

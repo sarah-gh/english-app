@@ -1,9 +1,14 @@
 import { db } from '@/db';
 import type { Card, CardUpdate, NewCard, ReviewStatus } from '@/types/card';
 
+/** Newest-first — matches the default sort shown across the app's card list/browsing views. */
+function byCreatedAtDesc(cards: Card[]): Card[] {
+  return cards.sort((a, b) => b.createdAt - a.createdAt);
+}
+
 export const cardRepository = {
   async getAll(): Promise<Card[]> {
-    return db.cards.toArray();
+    return byCreatedAtDesc(await db.cards.toArray());
   },
 
   async getById(id: string): Promise<Card | undefined> {
@@ -11,15 +16,15 @@ export const cardRepository = {
   },
 
   async getByDeck(deckId: string): Promise<Card[]> {
-    return db.cards.where('deckId').equals(deckId).toArray();
+    return byCreatedAtDesc(await db.cards.where('deckId').equals(deckId).toArray());
   },
 
   async getByTag(tagId: string): Promise<Card[]> {
-    return db.cards.where('tagIds').equals(tagId).toArray();
+    return byCreatedAtDesc(await db.cards.where('tagIds').equals(tagId).toArray());
   },
 
   async getByReviewStatus(status: ReviewStatus): Promise<Card[]> {
-    return db.cards.where('reviewStatus').equals(status).toArray();
+    return byCreatedAtDesc(await db.cards.where('reviewStatus').equals(status).toArray());
   },
 
   async create(card: NewCard): Promise<Card> {

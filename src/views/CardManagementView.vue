@@ -40,21 +40,23 @@ function toggleTagFilter(id: string) {
 
 const filteredCards = computed(() => {
   const query = searchQuery.value.trim().toLowerCase();
-  return cardStore.cards.filter((card) => {
-    if (selectedDeckId.value && card.deckId !== selectedDeckId.value) return false;
-    if (selectedStatus.value && card.reviewStatus !== selectedStatus.value) return false;
-    if (
-      selectedTagIds.value.length > 0 &&
-      !selectedTagIds.value.some((id) => card.tagIds.includes(id))
-    ) {
-      return false;
-    }
-    if (query) {
-      const haystack = `${card.frontTitle} ${card.backAnswer} ${card.hint ?? ''}`.toLowerCase();
-      if (!haystack.includes(query)) return false;
-    }
-    return true;
-  });
+  return cardStore.cards
+    .filter((card) => {
+      if (selectedDeckId.value && card.deckId !== selectedDeckId.value) return false;
+      if (selectedStatus.value && card.reviewStatus !== selectedStatus.value) return false;
+      if (
+        selectedTagIds.value.length > 0 &&
+        !selectedTagIds.value.some((id) => card.tagIds.includes(id))
+      ) {
+        return false;
+      }
+      if (query) {
+        const haystack = `${card.frontTitle} ${card.backAnswer} ${card.hint ?? ''}`.toLowerCase();
+        if (!haystack.includes(query)) return false;
+      }
+      return true;
+    })
+    .sort((a, b) => b.createdAt - a.createdAt);
 });
 </script>
 

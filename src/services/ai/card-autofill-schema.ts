@@ -11,12 +11,18 @@ export interface GeneratedCardDetails {
   backAnswer: string;
   ipa?: string;
   hint?: string;
-  examples: string[];
+  /** Relatable, real-life example sentences — shown in the editor's "Personal Examples" section.
+   *  At least 2 for vocabulary/idioms, at least 3 (covering distinct usage structures) for
+   *  grammar topics. */
+  personalExamples: string[];
   /** Present only when the title has more than one common part of speech worth distinguishing. */
   partsOfSpeech?: GeneratedPosEntry[];
   /** Plain tag names (no leading "#") — the caller resolves these to existing tags or creates
    *  new ones. */
   suggestedTags: string[];
+  /** Best-fit deck/category name (e.g. "Vocabulary", "Idioms & Expressions", "Grammar") — only
+   *  applied by the caller when the user hasn't already picked a deck. */
+  suggestedDeckCategory?: string;
 }
 
 const POS_TYPES: PosType[] = ['noun', 'verb', 'adjective', 'adverb', 'other'];
@@ -27,7 +33,7 @@ export const CARD_AUTOFILL_RESPONSE_SCHEMA = {
     backAnswer: { type: 'STRING' },
     ipa: { type: 'STRING' },
     hint: { type: 'STRING' },
-    examples: { type: 'ARRAY', items: { type: 'STRING' } },
+    personalExamples: { type: 'ARRAY', items: { type: 'STRING' } },
     partsOfSpeech: {
       type: 'ARRAY',
       items: {
@@ -42,8 +48,9 @@ export const CARD_AUTOFILL_RESPONSE_SCHEMA = {
       },
     },
     suggestedTags: { type: 'ARRAY', items: { type: 'STRING' } },
+    suggestedDeckCategory: { type: 'STRING' },
   },
-  required: ['backAnswer', 'examples', 'suggestedTags'],
+  required: ['backAnswer', 'personalExamples', 'suggestedTags'],
 };
 
 /** OpenAI-compatible chat APIs (Groq, OpenRouter) don't support Gemini-style JSON Schema
@@ -52,7 +59,7 @@ export const CARD_AUTOFILL_RESPONSE_SCHEMA = {
 export const CARD_AUTOFILL_JSON_SHAPE_HINT = `
 
 Respond with ONLY a JSON object of this exact shape, no other text:
-{"backAnswer": string, "ipa": string (optional), "hint": string (optional), "examples": string[], "partsOfSpeech": [{"pos": "noun" | "verb" | "adjective" | "adverb" | "other", "definition": string, "ipa": string (optional), "examples": string[] (optional)}] (optional), "suggestedTags": string[]}`;
+{"backAnswer": string, "ipa": string (optional), "hint": string (optional), "personalExamples": string[], "partsOfSpeech": [{"pos": "noun" | "verb" | "adjective" | "adverb" | "other", "definition": string, "ipa": string (optional), "examples": string[] (optional)}] (optional), "suggestedTags": string[], "suggestedDeckCategory": string (optional)}`;
 
 function isGeneratedPosEntry(value: unknown): value is GeneratedPosEntry {
   if (!value || typeof value !== 'object') return false;
@@ -100,8 +107,12 @@ export function parseCardAutofillResponseText(
     backAnswer: obj.backAnswer.trim(),
     ipa: typeof obj.ipa === 'string' && obj.ipa.trim() ? obj.ipa.trim() : undefined,
     hint: typeof obj.hint === 'string' && obj.hint.trim() ? obj.hint.trim() : undefined,
-    examples: stringArray(obj.examples),
+    personalExamples: stringArray(obj.personalExamples),
     partsOfSpeech: partsOfSpeech && partsOfSpeech.length > 0 ? partsOfSpeech : undefined,
     suggestedTags: stringArray(obj.suggestedTags),
+    suggestedDeckCategory:
+      typeof obj.suggestedDeckCategory === 'string' && obj.suggestedDeckCategory.trim()
+        ? obj.suggestedDeckCategory.trim()
+        : undefined,
   };
 }

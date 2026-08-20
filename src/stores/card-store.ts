@@ -34,7 +34,8 @@ export const useCardStore = defineStore('cards', () => {
 
   async function add(card: NewCard): Promise<Card> {
     const created = await cardRepository.create(card);
-    cards.value.push(created);
+    // Newest-first: a freshly created card is the newest by definition, so it belongs at the front.
+    cards.value.unshift(created);
     return created;
   }
 

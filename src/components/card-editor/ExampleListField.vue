@@ -10,6 +10,15 @@ function addExample() {
 function removeExample(index: number) {
   examples.value = examples.value.filter((_, i) => i !== index);
 }
+
+function moveExample(index: number, direction: -1 | 1) {
+  const targetIndex = index + direction;
+  if (targetIndex < 0 || targetIndex >= examples.value.length) return;
+
+  const reordered = [...examples.value];
+  [reordered[index], reordered[targetIndex]] = [reordered[targetIndex], reordered[index]];
+  examples.value = reordered;
+}
 </script>
 
 <template>
@@ -31,6 +40,26 @@ function removeExample(index: number) {
         :key="index"
         class="flex gap-2"
       >
+        <div class="flex shrink-0 flex-col gap-0.5">
+          <button
+            type="button"
+            aria-label="Move example up"
+            class="rounded border border-gray-300 px-1.5 text-xs leading-4 text-gray-500 hover:border-black hover:text-black disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-gray-300 disabled:hover:text-gray-500"
+            :disabled="index === 0"
+            @click="moveExample(index, -1)"
+          >
+            ↑
+          </button>
+          <button
+            type="button"
+            aria-label="Move example down"
+            class="rounded border border-gray-300 px-1.5 text-xs leading-4 text-gray-500 hover:border-black hover:text-black disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-gray-300 disabled:hover:text-gray-500"
+            :disabled="index === examples.length - 1"
+            @click="moveExample(index, 1)"
+          >
+            ↓
+          </button>
+        </div>
         <input
           v-model="examples[index]"
           type="text"

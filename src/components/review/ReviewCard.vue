@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import PartsOfSpeechDisplay from '@/components/card/PartsOfSpeechDisplay.vue';
 import WordFamilyDisplay from '@/components/card/WordFamilyDisplay.vue';
+import BaseExpandableContent from '@/components/ui/BaseExpandableContent.vue';
 import BaseTag from '@/components/ui/BaseTag.vue';
 import { useCardAudio } from '@/composables/useCardAudio';
 import type { SwipeDirection } from '@/services/review/state-machine';
@@ -219,63 +220,65 @@ onBeforeUnmount(() => {
       {{ card.ipa }}
     </p>
 
-    <template v-if="card.wordFamily">
-      <WordFamilyDisplay
-        v-if="showAnswer"
-        :data="card.wordFamily"
-        :highlight="wordFamilyChallengeForm ?? undefined"
-        class="mt-4"
-      />
-      <button
-        v-else
-        type="button"
-        class="mt-4 rounded border-2 border-dashed border-gray-300 py-3 text-sm font-medium text-gray-500 hover:border-black hover:text-black"
-        @pointerdown.stop
-        @click.stop="revealAnswer"
-      >
-        <template v-if="wordFamilyChallengeForm">
-          What is the {{ WORD_FAMILY_POS_LABELS[wordFamilyChallengeForm] }} form of
-          “{{ card.wordFamily.rootWord }}”?
-        </template>
-        <template v-else>Show Word Family</template>
-      </button>
-    </template>
-    <template v-else>
-      <template v-if="showAnswer">
-        <p class="mt-4 text-base text-black">{{ card.backAnswer }}</p>
-
-        <ul
-          v-if="card.examples.length > 0"
-          class="mt-4 space-y-1"
+    <BaseExpandableContent :max-height="280">
+      <template v-if="card.wordFamily">
+        <WordFamilyDisplay
+          v-if="showAnswer"
+          :data="card.wordFamily"
+          :highlight="wordFamilyChallengeForm ?? undefined"
+          class="mt-4"
+        />
+        <button
+          v-else
+          type="button"
+          class="mt-4 rounded border-2 border-dashed border-gray-300 py-3 text-sm font-medium text-gray-500 hover:border-black hover:text-black"
+          @pointerdown.stop
+          @click.stop="revealAnswer"
         >
-          <li
-            v-for="(example, index) in card.examples"
-            :key="index"
-            class="text-sm text-gray-600"
-          >
-            “{{ example }}”
-          </li>
-        </ul>
+          <template v-if="wordFamilyChallengeForm">
+            What is the {{ WORD_FAMILY_POS_LABELS[wordFamilyChallengeForm] }} form of
+            “{{ card.wordFamily.rootWord }}”?
+          </template>
+          <template v-else>Show Word Family</template>
+        </button>
       </template>
-      <button
-        v-else
-        type="button"
-        class="mt-4 rounded border-2 border-dashed border-gray-300 py-3 text-sm font-medium text-gray-500 hover:border-black hover:text-black"
-        @pointerdown.stop
-        @click.stop="revealAnswer"
-      >
-        Show Answer
-      </button>
+      <template v-else>
+        <template v-if="showAnswer">
+          <p class="mt-4 text-base text-black">{{ card.backAnswer }}</p>
 
-      <PartsOfSpeechDisplay
-        v-if="card.partsOfSpeech && card.partsOfSpeech.length > 0"
-        :entries="card.partsOfSpeech"
-        :view-mode="viewMode"
-        :front-title="card.frontTitle"
-        :interactive="interactive"
-        class="mt-4"
-      />
-    </template>
+          <ul
+            v-if="card.examples.length > 0"
+            class="mt-4 space-y-1"
+          >
+            <li
+              v-for="(example, index) in card.examples"
+              :key="index"
+              class="text-sm text-gray-600"
+            >
+              “{{ example }}”
+            </li>
+          </ul>
+        </template>
+        <button
+          v-else
+          type="button"
+          class="mt-4 rounded border-2 border-dashed border-gray-300 py-3 text-sm font-medium text-gray-500 hover:border-black hover:text-black"
+          @pointerdown.stop
+          @click.stop="revealAnswer"
+        >
+          Show Answer
+        </button>
+
+        <PartsOfSpeechDisplay
+          v-if="card.partsOfSpeech && card.partsOfSpeech.length > 0"
+          :entries="card.partsOfSpeech"
+          :view-mode="viewMode"
+          :front-title="card.frontTitle"
+          :interactive="interactive"
+          class="mt-4"
+        />
+      </template>
+    </BaseExpandableContent>
 
     <div
       v-if="cardTags.length > 0"

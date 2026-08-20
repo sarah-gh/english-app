@@ -4,18 +4,23 @@
  */
 export function buildCardAutofillPrompt(title: string, deckName?: string): string {
   const topicHint = deckName
-    ? ` The card is going into the "${deckName}" deck — use that as a hint for the topic (e.g. Vocabulary, Grammar, Idioms, Business).`
+    ? ` The card is going into the "${deckName}" deck — use that as a hint for the topic.`
     : '';
 
   return `You are helping an English-language learner build a flashcard. The flashcard's front title/topic is: "${title}".${topicHint}
+
+First, silently classify the topic into exactly one category: "Vocabulary" (a single word or short phrase), "Idioms & Expressions" (an idiom, phrasal verb, or fixed expression), or "Grammar" (a grammar point, tense, or structure). Use this classification to guide the fields below.
 
 Generate the back-side content for this flashcard:
 - backAnswer: a concise definition or explanation of the term/topic, appropriate to what it is (a vocabulary word, a grammar point, an idiom, etc).
 - ipa: the IPA phonetic transcription, only if the title is a single word or short phrase with a standard pronunciation — omit it otherwise (e.g. for grammar topics like "Present Perfect Tense").
 - hint: a short, helpful memory cue — this is hidden until tapped during review, so it should nudge recall without giving the answer away outright.
-- examples: 2-3 natural example sentences that use the term/topic in context.
+- personalExamples: relatable, real-life example sentences that use the term/topic the way an actual person would say it in conversation, texting, or everyday situations — never dry textbook sentences.
+  - For Vocabulary or Idioms & Expressions: at least 2 example sentences.
+  - For Grammar: at least 3 example sentences that each demonstrate a different usage structure of the topic (e.g. affirmative, negative, and question forms, or other distinct patterns the topic supports).
 - partsOfSpeech: only if the title is a single word with more than one common part of speech worth distinguishing (e.g. "book" as both noun and verb) — one entry per part of speech, each with its own definition, IPA, and 1-2 examples. Omit entirely (or leave empty) for grammar topics, idioms, phrases, or single-part-of-speech words.
 - suggestedTags: 2-3 short, relevant tag names (e.g. "B2", "Verbs", "Business", "Idioms") — plain words, no leading "#".
+- suggestedDeckCategory: the category name you classified above ("Vocabulary", "Idioms & Expressions", or "Grammar") — always include this even if a deck was already hinted above.
 
 Respond only with the structured fields requested.`;
 }
