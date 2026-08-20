@@ -6,6 +6,7 @@ import WarningIcon from '@/components/app/WarningIcon.vue';
 import ApiKeyField from '@/components/settings/ApiKeyField.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseCard from '@/components/ui/BaseCard.vue';
+import BaseSegmentedToggle from '@/components/ui/BaseSegmentedToggle.vue';
 import BaseSelect from '@/components/ui/BaseSelect.vue';
 import { exportBackup } from '@/services/backup/exporter';
 import { BackupImportError, importBackup, type ImportSummary } from '@/services/backup/importer';
@@ -270,32 +271,15 @@ async function handleClearAll() {
       <BaseCard class="mb-6">
         <h2 class="mb-3 text-sm font-semibold text-black">Pronunciation</h2>
         <p class="mb-2 text-xs font-medium text-gray-600">Accent</p>
-        <div class="mb-3 flex rounded-lg border border-black p-1">
-          <button
-            type="button"
-            class="flex-1 rounded py-2 text-sm font-medium transition-colors"
-            :class="
-              settingsStore.settings.speechAccent === 'en-US'
-                ? 'bg-black text-white'
-                : 'text-black hover:bg-gray-100'
-            "
-            @click="selectAccent('en-US')"
-          >
-            US English
-          </button>
-          <button
-            type="button"
-            class="flex-1 rounded py-2 text-sm font-medium transition-colors"
-            :class="
-              settingsStore.settings.speechAccent === 'en-GB'
-                ? 'bg-black text-white'
-                : 'text-black hover:bg-gray-100'
-            "
-            @click="selectAccent('en-GB')"
-          >
-            UK English
-          </button>
-        </div>
+        <BaseSegmentedToggle
+          class="mb-3"
+          :model-value="settingsStore.settings.speechAccent"
+          :options="[
+            { value: 'en-US', label: 'US English' },
+            { value: 'en-GB', label: 'UK English' },
+          ]"
+          @update:model-value="selectAccent"
+        />
         <BaseButton
           variant="secondary"
           size="sm"

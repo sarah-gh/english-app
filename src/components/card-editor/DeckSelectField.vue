@@ -1,8 +1,17 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import WarningIcon from '@/components/app/WarningIcon.vue';
 import { useDeckStore } from '@/stores/deck-store';
 
 const deckId = defineModel<string>('deckId', { required: true });
+
+defineProps<{
+  error?: string;
+}>();
+
+const emit = defineEmits<{
+  blur: [];
+}>();
 
 const deckStore = useDeckStore();
 
@@ -31,8 +40,9 @@ async function createDeck() {
       <select
         id="deck"
         v-model="deckId"
-        required
-        class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-black focus:outline-none"
+        class="w-full rounded border px-3 py-2 text-sm focus:border-black focus:outline-none"
+        :class="error ? 'border-red-500/80' : 'border-gray-300'"
+        @blur="emit('blur')"
       >
         <option
           value=""
@@ -56,6 +66,13 @@ async function createDeck() {
         + New
       </button>
     </div>
+    <p
+      v-if="error"
+      class="mt-1 flex items-center gap-1.5 text-xs font-medium text-gray-800"
+    >
+      <WarningIcon />
+      {{ error }}
+    </p>
 
     <div
       v-if="isCreating"

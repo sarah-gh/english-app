@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import WarningIcon from '@/components/app/WarningIcon.vue';
 import BaseInput from '@/components/ui/BaseInput.vue';
 import type { WordFamilyFormState } from './card-form-state';
 
 defineProps<{
   /** For the "Word Form" placeholders, e.g. "Success" for a "Successful" adjective placeholder. */
   rootWord: string;
+  error?: string;
 }>();
 
 const data = defineModel<WordFamilyFormState>('data', { required: true });
@@ -20,7 +22,10 @@ const SECTIONS: { key: keyof Omit<WordFamilyFormState, 'usageNotes'>; label: str
 <template>
   <div>
     <p class="mb-2 text-xs font-medium text-gray-600">Word Family Forms</p>
-    <div class="space-y-3">
+    <div
+      class="space-y-3 rounded"
+      :class="error ? 'border border-red-500/80 p-2' : ''"
+    >
       <div
         v-for="section in SECTIONS"
         :key="section.key"
@@ -48,6 +53,13 @@ const SECTIONS: { key: keyof Omit<WordFamilyFormState, 'usageNotes'>; label: str
         />
       </div>
     </div>
+    <p
+      v-if="error"
+      class="mt-1 flex items-center gap-1.5 text-xs font-medium text-gray-800"
+    >
+      <WarningIcon />
+      {{ error }}
+    </p>
 
     <div class="mt-3">
       <label

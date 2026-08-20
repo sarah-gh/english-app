@@ -1,14 +1,20 @@
 <script setup lang="ts">
+import { toTypedSchema } from '@vee-validate/zod';
 import { computed, ref, watch } from 'vue';
+import { useField, useForm } from 'vee-validate';
 import { RouterLink } from 'vue-router';
 import WarningIcon from '@/components/app/WarningIcon.vue';
+import BaseAutocomplete from '@/components/ui/BaseAutocomplete.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
+import BaseSegmentedToggle from '@/components/ui/BaseSegmentedToggle.vue';
+import { useWordAutocomplete, type WordSuggestion } from '@/composables/useWordAutocomplete';
 import { useAutofillCardDetails } from '@/queries/use-autofill-card-details';
 import { useAutofillWordFamily } from '@/queries/use-autofill-word-family';
 import { hasRequiredAiCredentials } from '@/services/ai/ai-card-autofill-service';
 import type { GeneratedCardDetails } from '@/services/ai/card-autofill-schema';
 import { AiServiceError } from '@/services/ai/errors';
 import type { GeneratedWordFamily } from '@/services/ai/word-family-schema';
+import { cardEditorSchema, type CardEditorValidationValues } from '@/schemas/cardSchema';
 import { useDeckStore } from '@/stores/deck-store';
 import { useSettingsStore } from '@/stores/settings-store';
 import { useTagStore } from '@/stores/tag-store';
@@ -26,17 +32,61 @@ const draft = defineModel<CardFormState>('draft', { required: true });
 
 defineProps<{
   isSaving?: boolean;
-  submitLabel?: string;
+  isEditing?: boolean;
 }>();
 
 const emit = defineEmits<{
-  submit: [];
+  submit: ['add-another' | 'exit'];
   cancel: [];
 }>();
 
 const deckStore = useDeckStore();
 const settingsStore = useSettingsStore();
 const tagStore = useTagStore();
+
+function validationSnapshot(): CardEditorValidationValues {
+  return {
+    cardMode: draft.value.cardMode,
+    frontTitle: draft.value.frontTitle,
+    deckId: draft.value.deckId,
+    backAnswer: draft.value.backAnswer,
+    wordFamily: {
+      noun: { ...draft.value.wordFamily.noun },
+      verb: { ...draft.value.wordFamily.verb },
+      adjective: { ...draft.value.wordFamily.adjective },
+      adverb: { ...draft.value.wordFamily.adverb },
+      usageNotes: draft.value.wordFamily.usageNotes,
+    },
+  };
+}
+
+const { handleSubmit, setValues, resetForm, meta: formMeta, errors: formErrors } = useForm<CardEditorValidationValues>({
+  validationSchema: toTypedSchema(cardEditorSchema),
+  initialValues: validationSnapshot(),
+});
+
+const { errorMessage: frontTitleError, meta: frontTitleMeta, handleBlur: touchFrontTitle } = useField<string>('frontTitle');
+const { errorMessage: deckIdError, meta: deckIdMeta, handleBlur: touchDeckId } = useField<string>('deckId');
+const { errorMessage: backAnswerError, meta: backAnswerMeta, handleBlur: touchBackAnswer } = useField<string>('backAnswer');
+/** `useField('wordFamily')` doesn't surface schema errors attached to this object-typed (non-leaf)
+ *  path — vee-validate's per-field validate only resolves leaf paths — so this reads the same
+ *  error straight off the form's schema-validation result instead. */
+const wordFamilyError = computed(() => formErrors.value.wordFamily);
+
+/** Keeps the Zod-backed validation state in sync with `draft` — including AI Auto-Fill, which
+ *  writes straight into `draft` rather than going through vee-validate's own setters. */
+watch(() => validationSnapshot(), (values) => setValues(values, true), { deep: true });
+
+/** Called by the parent after it resets `draft` for "Save & Add Another", so the next card starts
+ *  with a clean, untouched form instead of immediately showing errors for the fields just cleared. */
+function resetValidation() {
+  resetForm({ values: validationSnapshot() });
+}
+
+defineExpose({ resetValidation });
+
+const submitAddAnother = handleSubmit(() => emit('submit', 'add-another'));
+const submitExit = handleSubmit(() => emit('submit', 'exit'));
 
 function selectCardMode(mode: CardMode) {
   draft.value.cardMode = mode;
@@ -53,6 +103,10 @@ watch(
     }
   },
 );
+
+const frontTitleQuery = computed(() => draft.value.frontTitle);
+const { suggestions: frontTitleSuggestions, isLoading: isSuggestingFrontTitle } =
+  useWordAutocomplete(frontTitleQuery);
 
 const hasAiCredentials = computed(() => hasRequiredAiCredentials(settingsStore.settings));
 const canAutofill = computed(
@@ -148,28 +202,18 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
 <template>
   <form
     class="mx-auto flex max-w-xl flex-col gap-5 pb-24"
-    @submit.prevent="emit('submit')"
+    @submit.prevent="isEditing ? submitExit() : submitAddAnother()"
   >
     <div>
       <p class="mb-1 text-xs font-medium text-gray-600">Card Type</p>
-      <div class="flex rounded-lg border border-black p-1">
-        <button
-          type="button"
-          class="flex-1 rounded py-2 text-sm font-medium transition-colors"
-          :class="draft.cardMode === 'standard' ? 'bg-black text-white' : 'text-black hover:bg-gray-100'"
-          @click="selectCardMode('standard')"
-        >
-          Standard Card
-        </button>
-        <button
-          type="button"
-          class="flex-1 rounded py-2 text-sm font-medium transition-colors"
-          :class="draft.cardMode === 'word-family' ? 'bg-black text-white' : 'text-black hover:bg-gray-100'"
-          @click="selectCardMode('word-family')"
-        >
-          Word Family Card
-        </button>
-      </div>
+      <BaseSegmentedToggle
+        :model-value="draft.cardMode"
+        :options="[
+          { value: 'standard', label: 'Standard Card' },
+          { value: 'word-family', label: 'Word Family Card' },
+        ]"
+        @update:model-value="selectCardMode"
+      />
     </div>
 
     <div>
@@ -190,14 +234,27 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
           ✨ {{ isAutofilling ? 'Auto-Filling…' : 'Auto-Fill with AI' }}
         </BaseButton>
       </div>
-      <input
+      <BaseAutocomplete
         id="front-title"
         v-model="draft.frontTitle"
-        type="text"
-        required
+        :items="frontTitleSuggestions"
+        :loading="isSuggestingFrontTitle"
+        :invalid="frontTitleMeta.touched && Boolean(frontTitleError)"
         :placeholder="draft.cardMode === 'word-family' ? 'e.g. Success' : 'e.g. Ubiquitous'"
-        class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-black focus:outline-none"
-      />
+        @blur="touchFrontTitle"
+      >
+        <template #item="{ item }: { item: WordSuggestion }">
+          <span class="flex items-center justify-between gap-2">
+            {{ item.value }}
+            <span
+              v-if="item.source === 'existing'"
+              class="shrink-0 rounded-full border border-gray-300 px-1.5 py-0.5 text-[10px] font-medium text-gray-500"
+            >
+              Your card
+            </span>
+          </span>
+        </template>
+      </BaseAutocomplete>
       <p
         v-if="!hasAiCredentials"
         class="mt-1 text-xs text-gray-500"
@@ -208,6 +265,13 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
           >Configure an AI provider in Settings</RouterLink
         >
         to use Auto-Fill.
+      </p>
+      <p
+        v-if="frontTitleMeta.touched && frontTitleError"
+        class="mt-1 flex items-center gap-1.5 text-xs font-medium text-gray-800"
+      >
+        <WarningIcon />
+        {{ frontTitleError }}
       </p>
       <p
         v-if="autofillErrorMessage"
@@ -222,6 +286,7 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
       v-if="draft.cardMode === 'word-family'"
       v-model:data="draft.wordFamily"
       :root-word="draft.frontTitle"
+      :error="formMeta.touched ? wordFamilyError : undefined"
     />
     <template v-else>
       <div>
@@ -233,17 +298,29 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
         <textarea
           id="back-answer"
           v-model="draft.backAnswer"
-          required
           rows="3"
           placeholder="e.g. Present, appearing, or found everywhere."
-          class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-black focus:outline-none"
+          class="w-full rounded border px-3 py-2 text-sm focus:border-black focus:outline-none"
+          :class="backAnswerMeta.touched && backAnswerError ? 'border-red-500/80' : 'border-gray-300'"
+          @blur="touchBackAnswer"
         />
+        <p
+          v-if="backAnswerMeta.touched && backAnswerError"
+          class="mt-1 flex items-center gap-1.5 text-xs font-medium text-gray-800"
+        >
+          <WarningIcon />
+          {{ backAnswerError }}
+        </p>
       </div>
 
       <PartsOfSpeechField v-model:entries="draft.partsOfSpeech" />
     </template>
 
-    <DeckSelectField v-model:deck-id="draft.deckId" />
+    <DeckSelectField
+      v-model:deck-id="draft.deckId"
+      :error="deckIdMeta.touched ? deckIdError : undefined"
+      @blur="touchDeckId"
+    />
     <TagMultiSelectField v-model:tag-ids="draft.tagIds" />
 
     <PronunciationField
@@ -281,11 +358,20 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
         Cancel
       </button>
       <button
+        v-if="!isEditing"
+        type="button"
+        :disabled="isSaving || (formMeta.touched && !formMeta.valid)"
+        class="flex-1 rounded border border-black py-2.5 text-sm font-medium text-black hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:border-gray-300 disabled:text-gray-400 disabled:hover:bg-transparent"
+        @click="submitExit"
+      >
+        {{ isSaving ? 'Saving…' : 'Save & Exit' }}
+      </button>
+      <button
         type="submit"
-        :disabled="isSaving"
+        :disabled="isSaving || (formMeta.touched && !formMeta.valid)"
         class="flex-1 rounded bg-black py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:bg-gray-400"
       >
-        {{ isSaving ? 'Saving…' : (submitLabel ?? 'Save Card') }}
+        {{ isSaving ? 'Saving…' : isEditing ? 'Save Changes' : 'Save & Add Another' }}
       </button>
     </div>
   </form>

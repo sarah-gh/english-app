@@ -4,7 +4,9 @@ import { RouterLink, useRoute } from 'vue-router';
 import CardListItem from '@/components/card-management/CardListItem.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseInput from '@/components/ui/BaseInput.vue';
+import BaseSegmentedToggle from '@/components/ui/BaseSegmentedToggle.vue';
 import BaseSelect from '@/components/ui/BaseSelect.vue';
+import BaseTag from '@/components/ui/BaseTag.vue';
 import { useCardStore } from '@/stores/card-store';
 import { useDeckStore } from '@/stores/deck-store';
 import { useTagStore } from '@/stores/tag-store';
@@ -84,24 +86,15 @@ const filteredCards = computed(() => {
     </p>
 
     <template v-else>
-      <div class="mb-4 flex rounded-lg border border-black p-1">
-        <button
-          type="button"
-          class="flex-1 rounded py-1.5 text-xs font-medium transition-colors"
-          :class="viewMode === 'study' ? 'bg-black text-white' : 'text-black hover:bg-gray-100'"
-          @click="viewMode = 'study'"
-        >
-          Study
-        </button>
-        <button
-          type="button"
-          class="flex-1 rounded py-1.5 text-xs font-medium transition-colors"
-          :class="viewMode === 'practice' ? 'bg-black text-white' : 'text-black hover:bg-gray-100'"
-          @click="viewMode = 'practice'"
-        >
-          Practice
-        </button>
-      </div>
+      <BaseSegmentedToggle
+        v-model="viewMode"
+        class="mb-4"
+        size="sm"
+        :options="[
+          { value: 'study', label: 'Study' },
+          { value: 'practice', label: 'Practice' },
+        ]"
+      />
 
       <BaseInput
         v-model="searchQuery"
@@ -140,31 +133,22 @@ const filteredCards = computed(() => {
         v-if="tagStore.tags.length > 0"
         class="mb-4 flex flex-wrap gap-2"
       >
-        <button
+        <BaseTag
           v-for="tag in tagStore.tags"
           :key="tag.id"
-          type="button"
-          class="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors"
-          :class="
-            selectedTagIds.includes(tag.id)
-              ? 'border-black bg-black text-white'
-              : 'border-gray-300 text-gray-700 hover:border-black'
-          "
+          :label="tag.name"
+          :color="tag.color"
+          selectable
+          :selected="selectedTagIds.includes(tag.id)"
           @click="toggleTagFilter(tag.id)"
-        >
-          <span
-            class="h-2 w-2 rounded-full"
-            :style="{ backgroundColor: tag.color }"
-          />
-          {{ tag.name }}
-        </button>
+        />
       </div>
 
       <p class="mb-3 text-xs text-gray-500">
         {{ filteredCards.length }} card{{ filteredCards.length === 1 ? '' : 's' }}
       </p>
 
-      <div class="space-y-3">
+      <div class="space-y-3 max-h-150 overflow-y-auto">
         <CardListItem
           v-for="card in filteredCards"
           :key="card.id"

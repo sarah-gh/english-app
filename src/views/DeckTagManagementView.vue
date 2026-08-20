@@ -100,7 +100,7 @@ async function confirmDeleteTag() {
     <template v-else>
       <section class="mb-8">
         <h2 class="mb-2 text-sm font-semibold text-black">Decks</h2>
-        <ul class="divide-y divide-gray-200 rounded-lg border border-gray-300">
+        <ul class="divide-y divide-gray-200 rounded-xl border border-neutral-200/80">
           <li
             v-for="deck in deckStore.decks"
             :key="deck.id"
@@ -158,7 +158,7 @@ async function confirmDeleteTag() {
 
       <section>
         <h2 class="mb-2 text-sm font-semibold text-black">Tags</h2>
-        <ul class="divide-y divide-gray-200 rounded-lg border border-gray-300">
+        <ul class="divide-y divide-gray-200 rounded-xl border border-neutral-200/80">
           <li
             v-for="tag in tagStore.tags"
             :key="tag.id"

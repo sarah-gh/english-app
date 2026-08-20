@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import BaseTag from '@/components/ui/BaseTag.vue';
 import { useTagStore } from '@/stores/tag-store';
 
 const tagIds = defineModel<string[]>('tagIds', { required: true });
@@ -41,24 +42,15 @@ async function createTag() {
     </div>
 
     <div class="flex flex-wrap gap-2">
-      <button
+      <BaseTag
         v-for="tag in tagStore.tags"
         :key="tag.id"
-        type="button"
-        class="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors"
-        :class="
-          tagIds.includes(tag.id)
-            ? 'border-black bg-black text-white'
-            : 'border-gray-300 text-gray-700 hover:border-black'
-        "
+        :label="tag.name"
+        :color="tag.color"
+        selectable
+        :selected="tagIds.includes(tag.id)"
         @click="toggleTag(tag.id)"
-      >
-        <span
-          class="h-2 w-2 rounded-full"
-          :style="{ backgroundColor: tag.color }"
-        />
-        {{ tag.name }}
-      </button>
+      />
       <p
         v-if="tagStore.tags.length === 0"
         class="text-xs text-gray-400"

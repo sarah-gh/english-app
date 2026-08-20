@@ -50,7 +50,7 @@ const variantClasses = computed(() => {
         'disabled:cursor-not-allowed disabled:text-gray-300 disabled:no-underline',
       ].join(' ');
     case 'tile':
-      return 'rounded-lg border border-black px-4 py-3 text-center text-black hover:bg-black hover:text-white';
+      return 'rounded-xl border border-black px-4 py-3 text-center text-black hover:bg-black hover:text-white';
     default:
       return '';
   }
@@ -61,6 +61,11 @@ const sizeClasses = computed(() => {
   if (props.variant === 'link') return props.size === 'sm' ? 'text-xs' : 'text-sm';
   return props.size === 'sm' ? 'px-3 py-1.5 text-xs' : 'px-4 py-2.5 text-sm';
 });
+
+/** "link" stays flat — a shadow/press-scale on underlined text doesn't read as a button. */
+const tactileClasses = computed(() =>
+  props.variant === 'link' ? '' : 'shadow-sm hover:shadow active:scale-[0.98] disabled:shadow-none disabled:active:scale-100',
+);
 </script>
 
 <template>
@@ -69,8 +74,8 @@ const sizeClasses = computed(() => {
     :to="isLink ? to : undefined"
     :type="!isLink ? type : undefined"
     :disabled="isDisabled"
-    class="inline-flex items-center justify-center gap-1.5 font-medium transition-colors"
-    :class="[variantClasses, sizeClasses, block ? 'w-full' : '']"
+    class="inline-flex items-center justify-center gap-1.5 font-medium transition duration-150"
+    :class="[variantClasses, sizeClasses, tactileClasses, block ? 'w-full' : '']"
   >
     <svg
       v-if="loading"

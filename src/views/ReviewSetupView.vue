@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
+import BaseSegmentedToggle from '@/components/ui/BaseSegmentedToggle.vue';
 import { useCardStore } from '@/stores/card-store';
 import { useDeckStore } from '@/stores/deck-store';
 import { useReviewSessionStore } from '@/stores/review-session-store';
@@ -73,30 +74,13 @@ function startWeightedReview() {
     <template v-else>
       <section class="mb-6">
         <h2 class="mb-2 text-sm font-semibold text-black">View Mode</h2>
-        <div class="flex rounded-lg border border-black p-1">
-          <button
-            type="button"
-            class="flex-1 rounded py-2 text-sm font-medium transition-colors"
-            :class="
-              selectedViewMode === 'study' ? 'bg-black text-white' : 'text-black hover:bg-gray-100'
-            "
-            @click="selectedViewMode = 'study'"
-          >
-            Study
-          </button>
-          <button
-            type="button"
-            class="flex-1 rounded py-2 text-sm font-medium transition-colors"
-            :class="
-              selectedViewMode === 'practice'
-                ? 'bg-black text-white'
-                : 'text-black hover:bg-gray-100'
-            "
-            @click="selectedViewMode = 'practice'"
-          >
-            Practice
-          </button>
-        </div>
+        <BaseSegmentedToggle
+          v-model="selectedViewMode"
+          :options="[
+            { value: 'study', label: 'Study' },
+            { value: 'practice', label: 'Practice' },
+          ]"
+        />
         <p class="mt-2 text-xs text-gray-500">
           {{
             selectedViewMode === 'study'

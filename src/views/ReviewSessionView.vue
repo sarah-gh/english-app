@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import ReviewCard from '@/components/review/ReviewCard.vue';
+import BaseSegmentedToggle from '@/components/ui/BaseSegmentedToggle.vue';
 import type { SwipeDirection } from '@/services/review/state-machine';
 import { useReviewSessionStore } from '@/stores/review-session-store';
 
@@ -93,32 +94,15 @@ function backToSetup() {
     </div>
 
     <template v-else>
-      <div class="mx-auto mb-4 flex w-full max-w-sm rounded-lg border border-black p-1">
-        <button
-          type="button"
-          class="flex-1 rounded py-1.5 text-xs font-medium transition-colors"
-          :class="
-            reviewSessionStore.viewMode === 'study'
-              ? 'bg-black text-white'
-              : 'text-black hover:bg-gray-100'
-          "
-          @click="reviewSessionStore.viewMode = 'study'"
-        >
-          Study
-        </button>
-        <button
-          type="button"
-          class="flex-1 rounded py-1.5 text-xs font-medium transition-colors"
-          :class="
-            reviewSessionStore.viewMode === 'practice'
-              ? 'bg-black text-white'
-              : 'text-black hover:bg-gray-100'
-          "
-          @click="reviewSessionStore.viewMode = 'practice'"
-        >
-          Practice
-        </button>
-      </div>
+      <BaseSegmentedToggle
+        v-model="reviewSessionStore.viewMode"
+        class="mx-auto mb-4 w-full max-w-sm"
+        size="sm"
+        :options="[
+          { value: 'study', label: 'Study' },
+          { value: 'practice', label: 'Practice' },
+        ]"
+      />
 
       <div class="relative mx-auto w-full max-w-sm flex-1">
         <div

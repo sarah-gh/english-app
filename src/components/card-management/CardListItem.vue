@@ -5,6 +5,7 @@ import PartsOfSpeechDisplay from '@/components/card/PartsOfSpeechDisplay.vue';
 import WordFamilyDisplay from '@/components/card/WordFamilyDisplay.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseCard from '@/components/ui/BaseCard.vue';
+import BaseTag from '@/components/ui/BaseTag.vue';
 import { useCardAudio } from '@/composables/useCardAudio';
 import { useCardStore } from '@/stores/card-store';
 import { useDeckStore } from '@/stores/deck-store';
@@ -96,17 +97,12 @@ async function handleDelete() {
       v-if="cardTags.length > 0"
       class="mt-2 flex flex-wrap gap-1.5"
     >
-      <span
+      <BaseTag
         v-for="tag in cardTags"
         :key="tag!.id"
-        class="inline-flex items-center gap-1.5 rounded-full border border-gray-300 px-2 py-0.5 text-xs text-gray-700"
-      >
-        <span
-          class="h-2 w-2 rounded-full"
-          :style="{ backgroundColor: tag!.color }"
-        />
-        {{ tag!.name }}
-      </span>
+        :label="tag!.name"
+        :color="tag!.color"
+      />
     </div>
 
     <PartsOfSpeechDisplay

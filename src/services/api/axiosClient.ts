@@ -2,7 +2,7 @@ import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import type { ConcreteAiProvider } from '@/types/settings';
 
 /** Which backend a request targets — used to attribute/format errors consistently. */
-export type ApiProvider = ConcreteAiProvider | 'dictionary';
+export type ApiProvider = ConcreteAiProvider | 'dictionary' | 'datamuse';
 
 declare module 'axios' {
   interface AxiosRequestConfig {
@@ -45,6 +45,7 @@ const PROVIDER_LABEL: Record<ApiProvider, string> = {
   openrouter: 'OpenRouter',
   aihubmix: 'AIHubMix',
   dictionary: 'the pronunciation service',
+  datamuse: 'the word suggestion service',
 };
 
 /** Centralized Axios instance for every HTTP call in the app. `baseURL` is intentionally left

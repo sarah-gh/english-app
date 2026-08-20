@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import PartsOfSpeechDisplay from '@/components/card/PartsOfSpeechDisplay.vue';
 import WordFamilyDisplay from '@/components/card/WordFamilyDisplay.vue';
+import BaseTag from '@/components/ui/BaseTag.vue';
 import { useCardAudio } from '@/composables/useCardAudio';
 import type { SwipeDirection } from '@/services/review/state-machine';
 import { useTagStore } from '@/stores/tag-store';
@@ -280,17 +281,12 @@ onBeforeUnmount(() => {
       v-if="cardTags.length > 0"
       class="mt-4 flex flex-wrap gap-2"
     >
-      <span
+      <BaseTag
         v-for="tag in cardTags"
         :key="tag.id"
-        class="inline-flex items-center gap-1.5 rounded-full border border-gray-300 px-2.5 py-0.5 text-xs text-gray-700"
-      >
-        <span
-          class="h-2 w-2 rounded-full"
-          :style="{ backgroundColor: tag.color }"
-        />
-        {{ tag.name }}
-      </span>
+        :label="tag.name"
+        :color="tag.color"
+      />
     </div>
 
     <button

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue';
+import { nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import CardEditorForm from '@/components/card-editor/CardEditorForm.vue';
 import {
@@ -23,10 +23,13 @@ const cardId = route.params.id as string | undefined;
 const isEditing = ref(false);
 const isReady = ref(false);
 const isSaving = ref(false);
-const saveMessage = ref('');
+const isDirty = ref(false);
+const toastMessage = ref('');
 let editingCardId: string | undefined;
+let toastTimer: ReturnType<typeof setTimeout> | undefined;
 
 const draft = reactive(blankCardFormState());
+const formRef = ref<InstanceType<typeof CardEditorForm> | null>(null);
 
 onMounted(async () => {
   await Promise.all([
@@ -45,20 +48,48 @@ onMounted(async () => {
     }
   }
   isReady.value = true;
+
+  // Wait for the load-time assignment above to settle before tracking edits, so restoring an
+  // existing card's fields doesn't itself count as a user change.
+  await nextTick();
+  isDirty.value = false;
+  watch(draft, () => {
+    isDirty.value = true;
+  }, { deep: true });
 });
 
-async function handleSubmit() {
+onBeforeUnmount(() => {
+  if (toastTimer) clearTimeout(toastTimer);
+});
+
+function showToast(message: string) {
+  toastMessage.value = message;
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toastMessage.value = '';
+  }, 3000);
+}
+
+async function handleSubmit(mode: 'add-another' | 'exit') {
   isSaving.value = true;
-  saveMessage.value = '';
   try {
     const payload = cardFormStateToNewCard(draft);
     if (editingCardId) {
       await cardStore.edit(editingCardId, payload);
-      saveMessage.value = 'Card updated.';
-    } else {
-      await cardStore.add(payload);
-      saveMessage.value = 'Card saved. Add another below.';
+      router.push('/cards');
+      return;
+    }
+
+    await cardStore.add(payload);
+    if (mode === 'add-another') {
+      const keepDeckId = draft.deckId;
       Object.assign(draft, blankCardFormState());
+      draft.deckId = keepDeckId;
+      isDirty.value = false;
+      formRef.value?.resetValidation();
+      showToast('Card saved successfully!');
+    } else {
+      router.push('/cards');
     }
   } finally {
     isSaving.value = false;
@@ -66,6 +97,7 @@ async function handleSubmit() {
 }
 
 function handleCancel() {
+  if (isDirty.value && !window.confirm('Discard unsaved changes?')) return;
   router.back();
 }
 </script>
@@ -76,12 +108,6 @@ function handleCancel() {
       {{ isEditing ? 'Edit Card' : 'New Card' }}
     </h1>
     <p
-      v-if="saveMessage"
-      class="mb-4 text-sm font-medium text-gray-700"
-    >
-      {{ saveMessage }}
-    </p>
-    <p
       v-if="!isReady"
       class="text-sm text-gray-500"
     >
@@ -89,10 +115,32 @@ function handleCancel() {
     </p>
     <CardEditorForm
       v-else
+      ref="formRef"
       v-model:draft="draft"
       :is-saving="isSaving"
+      :is-editing="isEditing"
       @submit="handleSubmit"
       @cancel="handleCancel"
     />
+    <Transition name="fade">
+      <div
+        v-if="toastMessage"
+        class="fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded bg-black px-4 py-2 text-sm font-medium text-white shadow-lg"
+        role="status"
+      >
+        {{ toastMessage }}
+      </div>
+    </Transition>
   </div>
 </template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>
