@@ -1,5 +1,12 @@
+import { apiClient, ApiError } from '@/services/api/axiosClient';
+import {
+  CARD_AUTOFILL_RESPONSE_SCHEMA,
+  parseCardAutofillResponseText,
+  type GeneratedCardDetails,
+} from './card-autofill-schema';
 import { AiProviderError } from './errors';
 import { parseQuizResponseText, QUIZ_RESPONSE_SCHEMA, type GeneratedQuizQuestion } from './quiz-schema';
+import { parseWordFamilyResponseText, WORD_FAMILY_RESPONSE_SCHEMA, type GeneratedWordFamily } from './word-family-schema';
 
 const MODEL = 'gemini-flash-latest';
 
@@ -7,74 +14,91 @@ const MODEL = 'gemini-flash-latest';
  *  HTTP error from the server), retry once against this known-good mirror before giving up. */
 const PREFERRED_FALLBACK_BASE_URL = 'https://api.inferera.com';
 
-function aihubmixError(message: string, retryable: boolean): AiProviderError {
-  return new AiProviderError('aihubmix', message, retryable);
-}
-
-async function fetchAihubmix(baseUrl: string, apiKey: string, prompt: string): Promise<Response> {
-  const endpoint = `${baseUrl}/gemini/v1beta/models/${MODEL}:generateContent`;
-  return fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-goog-api-key': apiKey,
-    },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {
-        responseMimeType: 'application/json',
-        responseSchema: QUIZ_RESPONSE_SCHEMA,
-      },
-    }),
-  });
-}
+type GenerateContentResponse = {
+  candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+};
 
 /** Calls AIHubMix's Gemini-compatible proxy, which accepts the same request/response shape as
  *  the direct Gemini API (including Structured JSON Output) under `{baseUrl}/gemini/...`. */
+async function postToAihubmix(baseUrl: string, apiKey: string, prompt: string, responseSchema: object) {
+  return apiClient.post<GenerateContentResponse>(
+    `/gemini/v1beta/models/${MODEL}:generateContent`,
+    {
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseSchema,
+      },
+    },
+    { baseURL: baseUrl, meta: { provider: 'aihubmix', apiKey } },
+  );
+}
+
+/** Low-level call to AIHubMix's Structured JSON Output endpoint. Returns the raw JSON text the
+ *  model produced — callers validate/parse it into their own feature-specific shape. */
+export async function callAihubmixStructured(
+  apiKey: string,
+  baseUrl: string,
+  prompt: string,
+  responseSchema: object,
+): Promise<string | undefined> {
+  const normalizedBaseUrl = baseUrl.replace(/\/+$/, '');
+
+  let data: GenerateContentResponse;
+  try {
+    ({ data } = await postToAihubmix(normalizedBaseUrl, apiKey, prompt, responseSchema));
+  } catch (error) {
+    // `status` is only set once a response actually came back — undefined means the request
+    // never reached the server (DNS/connection failure), which is when the mirror is worth a try.
+    const isNetworkFailure = error instanceof ApiError && error.status === undefined;
+    if (!isNetworkFailure || normalizedBaseUrl === PREFERRED_FALLBACK_BASE_URL) {
+      if (error instanceof ApiError) throw new AiProviderError('aihubmix', error.message, error.retryable);
+      throw error;
+    }
+
+    console.warn(
+      `[aihubmix-client] Could not reach ${normalizedBaseUrl}; retrying via preferred base URL ${PREFERRED_FALLBACK_BASE_URL}.`,
+    );
+    try {
+      ({ data } = await postToAihubmix(PREFERRED_FALLBACK_BASE_URL, apiKey, prompt, responseSchema));
+    } catch (retryError) {
+      if (retryError instanceof ApiError) {
+        throw new AiProviderError(
+          'aihubmix',
+          'Could not reach AIHubMix on the configured or preferred base URL. Check your connection.',
+          retryError.retryable,
+        );
+      }
+      throw retryError;
+    }
+  }
+
+  return data.candidates?.[0]?.content?.parts?.[0]?.text;
+}
+
 export async function generateQuizViaAihubmix(
   apiKey: string,
   baseUrl: string,
   prompt: string,
 ): Promise<GeneratedQuizQuestion[]> {
-  const normalizedBaseUrl = baseUrl.replace(/\/+$/, '');
+  const text = await callAihubmixStructured(apiKey, baseUrl, prompt, QUIZ_RESPONSE_SCHEMA);
+  return parseQuizResponseText(text, (message) => new AiProviderError('aihubmix', message, false));
+}
 
-  let response: Response;
-  try {
-    response = await fetchAihubmix(normalizedBaseUrl, apiKey, prompt);
-  } catch {
-    if (normalizedBaseUrl === PREFERRED_FALLBACK_BASE_URL) {
-      throw aihubmixError('Could not reach AIHubMix. Check your connection and base URL, and try again.', true);
-    }
-    console.warn(
-      `[aihubmix-client] Could not reach ${normalizedBaseUrl}; retrying via preferred base URL ${PREFERRED_FALLBACK_BASE_URL}.`,
-    );
-    try {
-      response = await fetchAihubmix(PREFERRED_FALLBACK_BASE_URL, apiKey, prompt);
-    } catch {
-      throw aihubmixError(
-        'Could not reach AIHubMix on the configured or preferred base URL. Check your connection.',
-        true,
-      );
-    }
-  }
+export async function autoFillCardViaAihubmix(
+  apiKey: string,
+  baseUrl: string,
+  prompt: string,
+): Promise<GeneratedCardDetails> {
+  const text = await callAihubmixStructured(apiKey, baseUrl, prompt, CARD_AUTOFILL_RESPONSE_SCHEMA);
+  return parseCardAutofillResponseText(text, (message) => new AiProviderError('aihubmix', message, false));
+}
 
-  if (!response.ok) {
-    if (response.status === 400 || response.status === 401 || response.status === 403) {
-      throw aihubmixError('AIHubMix rejected the request — check that your API key is valid.', false);
-    }
-    if (response.status === 429) {
-      throw aihubmixError('AIHubMix rate limit reached. Please wait a moment and try again.', true);
-    }
-    if (response.status >= 500) {
-      throw aihubmixError(`AIHubMix API error (${response.status}). Please try again.`, true);
-    }
-    throw aihubmixError(`AIHubMix API error (${response.status}). Please try again.`, false);
-  }
-
-  const data = (await response.json()) as {
-    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-  };
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-  return parseQuizResponseText(text, (message) => aihubmixError(message, false));
+export async function autoFillWordFamilyViaAihubmix(
+  apiKey: string,
+  baseUrl: string,
+  prompt: string,
+): Promise<GeneratedWordFamily> {
+  const text = await callAihubmixStructured(apiKey, baseUrl, prompt, WORD_FAMILY_RESPONSE_SCHEMA);
+  return parseWordFamilyResponseText(text, (message) => new AiProviderError('aihubmix', message, false));
 }

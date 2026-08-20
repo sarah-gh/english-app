@@ -9,6 +9,7 @@ import {
 } from '@/components/card-editor/card-form-state';
 import { useCardStore } from '@/stores/card-store';
 import { useDeckStore } from '@/stores/deck-store';
+import { useSettingsStore } from '@/stores/settings-store';
 import { useTagStore } from '@/stores/tag-store';
 
 const route = useRoute();
@@ -16,6 +17,7 @@ const router = useRouter();
 const cardStore = useCardStore();
 const deckStore = useDeckStore();
 const tagStore = useTagStore();
+const settingsStore = useSettingsStore();
 
 const cardId = route.params.id as string | undefined;
 const isEditing = ref(false);
@@ -31,6 +33,7 @@ onMounted(async () => {
     cardStore.ensureLoaded(),
     deckStore.ensureLoaded(),
     tagStore.ensureLoaded(),
+    settingsStore.ensureLoaded(),
   ]);
 
   if (cardId) {

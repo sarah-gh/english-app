@@ -3,9 +3,10 @@ import { onMounted, ref } from 'vue';
 import { RouterLink } from 'vue-router';
 import ConfirmDialog from '@/components/app/ConfirmDialog.vue';
 import WarningIcon from '@/components/app/WarningIcon.vue';
+import ApiKeyField from '@/components/settings/ApiKeyField.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseCard from '@/components/ui/BaseCard.vue';
-import BaseInput from '@/components/ui/BaseInput.vue';
+import BaseSelect from '@/components/ui/BaseSelect.vue';
 import { exportBackup } from '@/services/backup/exporter';
 import { BackupImportError, importBackup, type ImportSummary } from '@/services/backup/importer';
 import { clearAllData } from '@/services/data/reset-data';
@@ -15,7 +16,16 @@ import { useCardStore } from '@/stores/card-store';
 import { useDeckStore } from '@/stores/deck-store';
 import { useSettingsStore } from '@/stores/settings-store';
 import { useTagStore } from '@/stores/tag-store';
-import { DEFAULT_AIHUBMIX_BASE_URL, type AiProvider, type SpeechAccent } from '@/types/settings';
+import {
+  DEFAULT_AIHUBMIX_BASE_URL,
+  DEFAULT_GROQ_BASE_URL,
+  DEFAULT_GROQ_MODEL,
+  DEFAULT_OPENROUTER_BASE_URL,
+  DEFAULT_OPENROUTER_MODEL,
+  type AiProvider,
+  type ConcreteAiProvider,
+  type SpeechAccent,
+} from '@/types/settings';
 
 const settingsStore = useSettingsStore();
 const cardStore = useCardStore();
@@ -24,20 +34,71 @@ const tagStore = useTagStore();
 
 const isReady = ref(false);
 
-const aiProviderDraft = ref<AiProvider>('gemini');
-const geminiKeyDraft = ref('');
+const PROVIDER_MODE_OPTIONS: { value: AiProvider; label: string }[] = [
+  { value: 'google', label: 'Google AI Studio (Gemini)' },
+  { value: 'groq', label: 'Groq (ultra-fast, free)' },
+  { value: 'openrouter', label: 'OpenRouter (free models)' },
+  { value: 'aihubmix', label: 'AIHubMix Proxy' },
+  { value: 'fallback', label: 'Automatic Fallback' },
+];
+
+const CONCRETE_PROVIDER_OPTIONS: { value: ConcreteAiProvider; label: string }[] = [
+  { value: 'google', label: 'Google AI Studio' },
+  { value: 'groq', label: 'Groq' },
+  { value: 'openrouter', label: 'OpenRouter' },
+  { value: 'aihubmix', label: 'AIHubMix' },
+];
+
+const aiProviderDraft = ref<AiProvider>('google');
+const fallbackPrimaryDraft = ref<ConcreteAiProvider>('google');
+const fallbackBackupDraft = ref<ConcreteAiProvider>('groq');
+
+const googleKeyDraft = ref('');
+const groqKeyDraft = ref('');
+const groqBaseUrlDraft = ref(DEFAULT_GROQ_BASE_URL);
+const groqModelDraft = ref(DEFAULT_GROQ_MODEL);
+const openrouterKeyDraft = ref('');
+const openrouterBaseUrlDraft = ref(DEFAULT_OPENROUTER_BASE_URL);
+const openrouterModelDraft = ref(DEFAULT_OPENROUTER_MODEL);
 const aihubmixKeyDraft = ref('');
 const aihubmixBaseUrlDraft = ref(DEFAULT_AIHUBMIX_BASE_URL);
-const isGeminiKeyVisible = ref(false);
+
+const isGoogleKeyVisible = ref(false);
+const isGroqKeyVisible = ref(false);
+const isOpenrouterKeyVisible = ref(false);
 const isAihubmixKeyVisible = ref(false);
 const aiConfigStatus = ref('');
 
+function resetAiConfigDrafts() {
+  aiProviderDraft.value = 'google';
+  fallbackPrimaryDraft.value = 'google';
+  fallbackBackupDraft.value = 'groq';
+  googleKeyDraft.value = '';
+  groqKeyDraft.value = '';
+  groqBaseUrlDraft.value = DEFAULT_GROQ_BASE_URL;
+  groqModelDraft.value = DEFAULT_GROQ_MODEL;
+  openrouterKeyDraft.value = '';
+  openrouterBaseUrlDraft.value = DEFAULT_OPENROUTER_BASE_URL;
+  openrouterModelDraft.value = DEFAULT_OPENROUTER_MODEL;
+  aihubmixKeyDraft.value = '';
+  aihubmixBaseUrlDraft.value = DEFAULT_AIHUBMIX_BASE_URL;
+}
+
 onMounted(async () => {
   await settingsStore.ensureLoaded();
-  aiProviderDraft.value = settingsStore.settings.aiProvider;
-  geminiKeyDraft.value = settingsStore.settings.geminiApiKey ?? '';
-  aihubmixKeyDraft.value = settingsStore.settings.aihubmixApiKey ?? '';
-  aihubmixBaseUrlDraft.value = settingsStore.settings.aihubmixBaseUrl;
+  const settings = settingsStore.settings;
+  aiProviderDraft.value = settings.aiProvider;
+  fallbackPrimaryDraft.value = settings.fallbackPrimaryProvider;
+  fallbackBackupDraft.value = settings.fallbackBackupProvider;
+  googleKeyDraft.value = settings.googleApiKey ?? '';
+  groqKeyDraft.value = settings.groqApiKey ?? '';
+  groqBaseUrlDraft.value = settings.groqBaseUrl;
+  groqModelDraft.value = settings.groqModel;
+  openrouterKeyDraft.value = settings.openrouterApiKey ?? '';
+  openrouterBaseUrlDraft.value = settings.openrouterBaseUrl;
+  openrouterModelDraft.value = settings.openrouterModel;
+  aihubmixKeyDraft.value = settings.aihubmixApiKey ?? '';
+  aihubmixBaseUrlDraft.value = settings.aihubmixBaseUrl;
   isReady.value = true;
 });
 
@@ -52,24 +113,67 @@ function testAccent() {
   );
 }
 
+/** Pre-fills a provider's standard base URL the moment it's selected, if the field is still
+ *  empty (e.g. first time that provider is picked, or the user cleared it). */
+function prefillBaseUrlIfEmpty(provider: ConcreteAiProvider) {
+  if (provider === 'groq' && !groqBaseUrlDraft.value.trim()) groqBaseUrlDraft.value = DEFAULT_GROQ_BASE_URL;
+  if (provider === 'openrouter' && !openrouterBaseUrlDraft.value.trim()) {
+    openrouterBaseUrlDraft.value = DEFAULT_OPENROUTER_BASE_URL;
+  }
+  if (provider === 'aihubmix' && !aihubmixBaseUrlDraft.value.trim()) {
+    aihubmixBaseUrlDraft.value = DEFAULT_AIHUBMIX_BASE_URL;
+  }
+}
+
 async function saveAiConfig() {
   await settingsStore.setAiConfig({
     aiProvider: aiProviderDraft.value,
-    geminiApiKey: geminiKeyDraft.value.trim() || null,
+    fallbackPrimaryProvider: fallbackPrimaryDraft.value,
+    fallbackBackupProvider: fallbackBackupDraft.value,
+    googleApiKey: googleKeyDraft.value.trim() || null,
+    groqApiKey: groqKeyDraft.value.trim() || null,
+    groqBaseUrl: groqBaseUrlDraft.value.trim() || DEFAULT_GROQ_BASE_URL,
+    groqModel: groqModelDraft.value.trim() || DEFAULT_GROQ_MODEL,
+    openrouterApiKey: openrouterKeyDraft.value.trim() || null,
+    openrouterBaseUrl: openrouterBaseUrlDraft.value.trim() || DEFAULT_OPENROUTER_BASE_URL,
+    openrouterModel: openrouterModelDraft.value.trim() || DEFAULT_OPENROUTER_MODEL,
     aihubmixApiKey: aihubmixKeyDraft.value.trim() || null,
     aihubmixBaseUrl: aihubmixBaseUrlDraft.value.trim() || DEFAULT_AIHUBMIX_BASE_URL,
   });
-  aiConfigStatus.value = 'Saved.';
-  setTimeout(() => (aiConfigStatus.value = ''), 2000);
+  aiConfigStatus.value = 'Saved successfully';
+  setTimeout(() => (aiConfigStatus.value = ''), 2500);
 }
 
 async function selectAiProvider(provider: AiProvider) {
   aiProviderDraft.value = provider;
+  if (provider !== 'fallback') prefillBaseUrlIfEmpty(provider);
   await saveAiConfig();
 }
 
-async function clearGeminiKey() {
-  geminiKeyDraft.value = '';
+async function selectFallbackPrimary(provider: ConcreteAiProvider) {
+  fallbackPrimaryDraft.value = provider;
+  prefillBaseUrlIfEmpty(provider);
+  await saveAiConfig();
+}
+
+async function selectFallbackBackup(provider: ConcreteAiProvider) {
+  fallbackBackupDraft.value = provider;
+  prefillBaseUrlIfEmpty(provider);
+  await saveAiConfig();
+}
+
+async function clearGoogleKey() {
+  googleKeyDraft.value = '';
+  await saveAiConfig();
+}
+
+async function clearGroqKey() {
+  groqKeyDraft.value = '';
+  await saveAiConfig();
+}
+
+async function clearOpenrouterKey() {
+  openrouterKeyDraft.value = '';
   await saveAiConfig();
 }
 
@@ -140,10 +244,7 @@ async function handleClearAll() {
     tagStore.fetchAll(),
     settingsStore.fetchSettings(),
   ]);
-  aiProviderDraft.value = 'gemini';
-  geminiKeyDraft.value = '';
-  aihubmixKeyDraft.value = '';
-  aihubmixBaseUrlDraft.value = DEFAULT_AIHUBMIX_BASE_URL;
+  resetAiConfigDrafts();
   isConfirmingClear.value = false;
 }
 </script>
@@ -216,119 +317,108 @@ async function handleClearAll() {
       <BaseCard class="mb-6">
         <h2 class="mb-1 text-sm font-semibold text-black">AI Quiz Generator</h2>
         <p class="mb-3 text-xs text-gray-500">
-          Configure the provider(s) used to generate quizzes from your flashcards. Keys are stored
+          Configure the provider(s) used to generate quizzes and auto-fill cards. Keys are stored
           only on this device — never included in exports.
         </p>
 
-        <p class="mb-2 text-xs font-medium text-gray-600">Provider</p>
-        <div class="mb-4 flex flex-col gap-1 rounded-lg border border-black p-1 sm:flex-row">
-          <button
-            type="button"
-            class="flex-1 rounded px-2 py-2 text-sm font-medium transition-colors"
-            :class="
-              aiProviderDraft === 'gemini' ? 'bg-black text-white' : 'text-black hover:bg-gray-100'
-            "
-            @click="selectAiProvider('gemini')"
-          >
-            Direct Gemini
-          </button>
-          <button
-            type="button"
-            class="flex-1 rounded px-2 py-2 text-sm font-medium transition-colors"
-            :class="
-              aiProviderDraft === 'aihubmix' ? 'bg-black text-white' : 'text-black hover:bg-gray-100'
-            "
-            @click="selectAiProvider('aihubmix')"
-          >
-            AIHubMix Proxy
-          </button>
-          <button
-            type="button"
-            class="flex-1 rounded px-2 py-2 text-sm font-medium transition-colors"
-            :class="
-              aiProviderDraft === 'fallback' ? 'bg-black text-white' : 'text-black hover:bg-gray-100'
-            "
-            @click="selectAiProvider('fallback')"
-          >
-            Automatic Fallback
-          </button>
-        </div>
-        <p
-          v-if="aiProviderDraft === 'fallback'"
-          class="mb-4 -mt-2 text-xs text-gray-500"
+        <BaseSelect
+          :model-value="aiProviderDraft"
+          label="Provider"
+          class="mb-2"
+          @update:model-value="(value) => selectAiProvider(value as AiProvider)"
         >
-          Tries Gemini first. If it fails (network error, rate limit, server error), AIHubMix is
-          retried automatically using the credentials below.
-        </p>
-
-        <div class="mb-4">
-          <p class="mb-2 text-xs font-medium text-gray-600">Gemini API Key</p>
-          <div class="flex gap-2">
-            <BaseInput
-              v-model="geminiKeyDraft"
-              :type="isGeminiKeyVisible ? 'text' : 'password'"
-              placeholder="Paste your Gemini API key"
-              class="w-full"
-            />
-            <BaseButton
-              variant="ghost"
-              size="sm"
-              class="shrink-0"
-              @click="isGeminiKeyVisible = !isGeminiKeyVisible"
-            >
-              {{ isGeminiKeyVisible ? 'Hide' : 'Show' }}
-            </BaseButton>
-          </div>
-          <BaseButton
-            v-if="settingsStore.settings.geminiApiKey"
-            variant="link"
-            size="sm"
-            muted
-            class="mt-1"
-            @click="clearGeminiKey"
+          <option
+            v-for="option in PROVIDER_MODE_OPTIONS"
+            :key="option.value"
+            :value="option.value"
           >
-            Remove Key
-          </BaseButton>
-        </div>
+            {{ option.label }}
+          </option>
+        </BaseSelect>
 
-        <div class="mb-4">
-          <p class="mb-2 text-xs font-medium text-gray-600">AIHubMix API Key</p>
-          <div class="flex gap-2">
-            <BaseInput
-              v-model="aihubmixKeyDraft"
-              :type="isAihubmixKeyVisible ? 'text' : 'password'"
-              placeholder="Paste your AIHubMix API key"
-              class="w-full"
-            />
-            <BaseButton
-              variant="ghost"
-              size="sm"
-              class="shrink-0"
-              @click="isAihubmixKeyVisible = !isAihubmixKeyVisible"
+        <template v-if="aiProviderDraft === 'fallback'">
+          <p class="mb-3 text-xs text-gray-500">
+            Tries the primary provider first. If it fails (network error, rate limit, server
+            error, or a missing key), a warning is logged and the backup provider is retried
+            automatically using the credentials below.
+          </p>
+          <div class="mb-4 grid grid-cols-2 gap-2">
+            <BaseSelect
+              :model-value="fallbackPrimaryDraft"
+              label="Primary Provider"
+              @update:model-value="(value) => selectFallbackPrimary(value as ConcreteAiProvider)"
             >
-              {{ isAihubmixKeyVisible ? 'Hide' : 'Show' }}
-            </BaseButton>
+              <option
+                v-for="option in CONCRETE_PROVIDER_OPTIONS"
+                :key="option.value"
+                :value="option.value"
+              >
+                {{ option.label }}
+              </option>
+            </BaseSelect>
+            <BaseSelect
+              :model-value="fallbackBackupDraft"
+              label="Backup Provider"
+              @update:model-value="(value) => selectFallbackBackup(value as ConcreteAiProvider)"
+            >
+              <option
+                v-for="option in CONCRETE_PROVIDER_OPTIONS"
+                :key="option.value"
+                :value="option.value"
+              >
+                {{ option.label }}
+              </option>
+            </BaseSelect>
           </div>
-          <BaseButton
-            v-if="settingsStore.settings.aihubmixApiKey"
-            variant="link"
-            size="sm"
-            muted
-            class="mt-1"
-            @click="clearAihubmixKey"
-          >
-            Remove Key
-          </BaseButton>
-        </div>
+        </template>
 
-        <div class="mb-4">
-          <p class="mb-2 text-xs font-medium text-gray-600">AIHubMix Base URL</p>
-          <BaseInput
-            v-model="aihubmixBaseUrlDraft"
-            placeholder="https://aihubmix.com"
-            class="w-full"
-          />
-        </div>
+        <ApiKeyField
+          v-model:api-key="googleKeyDraft"
+          v-model:is-visible="isGoogleKeyVisible"
+          title="Google AI Studio API Key"
+          key-placeholder="Paste your Google AI Studio API key"
+          get-key-url="https://aistudio.google.com/apikey"
+          :stored-key="settingsStore.settings.googleApiKey"
+          @clear="clearGoogleKey"
+        />
+
+        <ApiKeyField
+          v-model:api-key="groqKeyDraft"
+          v-model:is-visible="isGroqKeyVisible"
+          v-model:base-url="groqBaseUrlDraft"
+          v-model:model="groqModelDraft"
+          title="Groq API Key"
+          key-placeholder="Paste your Groq API key"
+          get-key-url="https://console.groq.com/keys"
+          base-url-placeholder="https://api.groq.com/openai/v1"
+          :stored-key="settingsStore.settings.groqApiKey"
+          @clear="clearGroqKey"
+        />
+
+        <ApiKeyField
+          v-model:api-key="openrouterKeyDraft"
+          v-model:is-visible="isOpenrouterKeyVisible"
+          v-model:base-url="openrouterBaseUrlDraft"
+          v-model:model="openrouterModelDraft"
+          title="OpenRouter API Key"
+          key-placeholder="Paste your OpenRouter API key"
+          get-key-url="https://openrouter.ai/keys"
+          base-url-placeholder="https://openrouter.ai/api/v1"
+          :stored-key="settingsStore.settings.openrouterApiKey"
+          @clear="clearOpenrouterKey"
+        />
+
+        <ApiKeyField
+          v-model:api-key="aihubmixKeyDraft"
+          v-model:is-visible="isAihubmixKeyVisible"
+          v-model:base-url="aihubmixBaseUrlDraft"
+          title="AIHubMix API Key"
+          key-placeholder="Paste your AIHubMix API key"
+          get-key-url="https://aihubmix.com"
+          base-url-placeholder="https://aihubmix.com"
+          :stored-key="settingsStore.settings.aihubmixApiKey"
+          @clear="clearAihubmixKey"
+        />
 
         <div class="flex items-center gap-3">
           <BaseButton
@@ -340,9 +430,10 @@ async function handleClearAll() {
           </BaseButton>
           <span
             v-if="aiConfigStatus"
-            class="text-xs font-medium text-gray-700"
-            >{{ aiConfigStatus }}</span
+            class="inline-flex items-center gap-1 rounded-full bg-black px-2.5 py-1 text-xs font-medium text-white"
           >
+            ✓ {{ aiConfigStatus }}
+          </span>
         </div>
       </BaseCard>
 

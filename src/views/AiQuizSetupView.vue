@@ -5,7 +5,8 @@ import WarningIcon from '@/components/app/WarningIcon.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseCard from '@/components/ui/BaseCard.vue';
 import BaseSelect from '@/components/ui/BaseSelect.vue';
-import { generateAiQuiz, hasRequiredAiCredentials } from '@/services/ai/ai-quiz-service';
+import { useGenerateAiQuiz } from '@/queries/use-generate-ai-quiz';
+import { hasRequiredAiCredentials } from '@/services/ai/ai-quiz-service';
 import { AiServiceError } from '@/services/ai/errors';
 import { buildQuizPrompt } from '@/services/ai/quiz-prompt-builder';
 import { useCardStore } from '@/stores/card-store';
@@ -26,8 +27,21 @@ const selectedDeckId = ref('');
 const selectedTagIds = ref<string[]>([]);
 const selectedCardIds = ref<Set<string>>(new Set());
 
-const isGenerating = ref(false);
-const generationError = ref('');
+const {
+  mutateAsync: generateQuiz,
+  isPending: isGenerating,
+  error: generationApiError,
+} = useGenerateAiQuiz();
+/** Distinct from `generationApiError`: not an API failure, but a mapping failure — the provider
+ *  responded successfully but its questions couldn't be matched back to the selected cards. */
+const mappingError = ref('');
+
+const generationError = computed(() => {
+  if (mappingError.value) return mappingError.value;
+  const error = generationApiError.value;
+  if (!error) return '';
+  return error instanceof AiServiceError ? error.message : 'Quiz generation failed. Please try again.';
+});
 
 onMounted(async () => {
   await Promise.all([
@@ -83,11 +97,10 @@ async function handleGenerate() {
   const selectedCards = cardStore.cards.filter((card) => selectedCardIds.value.has(card.id));
   if (selectedCards.length === 0) return;
 
-  generationError.value = '';
-  isGenerating.value = true;
+  mappingError.value = '';
   try {
     const prompt = buildQuizPrompt(selectedCards);
-    const generated = await generateAiQuiz(settingsStore.settings, prompt);
+    const generated = await generateQuiz({ settings: settingsStore.settings, prompt });
 
     const questions: QuizSessionQuestion[] = generated
       .map((question): QuizSessionQuestion | null => {
@@ -106,17 +119,14 @@ async function handleGenerate() {
       .filter((question): question is QuizSessionQuestion => question !== null);
 
     if (questions.length === 0) {
-      generationError.value = "Gemini's response couldn't be matched back to your selected cards. Please try again.";
+      mappingError.value = "Gemini's response couldn't be matched back to your selected cards. Please try again.";
       return;
     }
 
     quizSessionStore.setQuestions(questions);
     router.push('/ai-quiz/session');
-  } catch (error) {
-    generationError.value =
-      error instanceof AiServiceError ? error.message : 'Quiz generation failed. Please try again.';
-  } finally {
-    isGenerating.value = false;
+  } catch {
+    // generationError (computed above) already reflects the mutation's error state.
   }
 }
 </script>

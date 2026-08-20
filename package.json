@@ -16,7 +16,9 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@tanstack/vue-query": "^5.101.4",
     "@vueuse/core": "^14.4.0",
+    "axios": "^1.19.0",
     "dexie": "^4.4.5",
     "jszip": "^3.10.1",
     "pinia": "^4.0.2",

@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue';
 import ConfirmDialog from '@/components/app/ConfirmDialog.vue';
 import PartsOfSpeechDisplay from '@/components/card/PartsOfSpeechDisplay.vue';
+import WordFamilyDisplay from '@/components/card/WordFamilyDisplay.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseCard from '@/components/ui/BaseCard.vue';
 import { useCardAudio } from '@/composables/useCardAudio';
@@ -116,29 +117,46 @@ async function handleDelete() {
       class="mt-3"
     />
 
-    <template v-if="showAnswer">
-      <p class="mt-3 text-sm text-black">{{ card.backAnswer }}</p>
-      <ul
-        v-if="card.examples.length > 0"
-        class="mt-2 space-y-0.5"
+    <template v-if="card.wordFamily">
+      <WordFamilyDisplay
+        v-if="showAnswer"
+        :data="card.wordFamily"
+        class="mt-3"
+      />
+      <button
+        v-else
+        type="button"
+        class="mt-3 w-full rounded border border-dashed border-gray-300 py-2 text-xs font-medium text-gray-500 hover:border-black hover:text-black"
+        @click="isRevealed = true"
       >
-        <li
-          v-for="(example, index) in card.examples"
-          :key="index"
-          class="text-xs text-gray-500"
-        >
-          “{{ example }}”
-        </li>
-      </ul>
+        Show Word Family
+      </button>
     </template>
-    <button
-      v-else
-      type="button"
-      class="mt-3 w-full rounded border border-dashed border-gray-300 py-2 text-xs font-medium text-gray-500 hover:border-black hover:text-black"
-      @click="isRevealed = true"
-    >
-      Show Answer
-    </button>
+    <template v-else>
+      <template v-if="showAnswer">
+        <p class="mt-3 text-sm text-black">{{ card.backAnswer }}</p>
+        <ul
+          v-if="card.examples.length > 0"
+          class="mt-2 space-y-0.5"
+        >
+          <li
+            v-for="(example, index) in card.examples"
+            :key="index"
+            class="text-xs text-gray-500"
+          >
+            “{{ example }}”
+          </li>
+        </ul>
+      </template>
+      <button
+        v-else
+        type="button"
+        class="mt-3 w-full rounded border border-dashed border-gray-300 py-2 text-xs font-medium text-gray-500 hover:border-black hover:text-black"
+        @click="isRevealed = true"
+      >
+        Show Answer
+      </button>
+    </template>
 
     <ConfirmDialog
       v-if="isConfirmingDelete"

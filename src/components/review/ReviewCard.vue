@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import PartsOfSpeechDisplay from '@/components/card/PartsOfSpeechDisplay.vue';
+import WordFamilyDisplay from '@/components/card/WordFamilyDisplay.vue';
 import { useCardAudio } from '@/composables/useCardAudio';
 import type { SwipeDirection } from '@/services/review/state-machine';
 import { useTagStore } from '@/stores/tag-store';
@@ -39,7 +40,32 @@ const isHintRevealed = ref(false);
 const isImageExpanded = ref(false);
 const isAnswerManuallyRevealed = ref(false);
 
-/** Study mode always shows the answer; Practice mode conceals it until tapped or a swipe starts. */
+type WordFamilyPos = 'noun' | 'verb' | 'adjective' | 'adverb';
+const WORD_FAMILY_POS_LABELS: Record<WordFamilyPos, string> = {
+  noun: 'Noun',
+  verb: 'Verb',
+  adjective: 'Adjective',
+  adverb: 'Adverb',
+};
+
+function pickWordFamilyChallengeForm(card: Card): WordFamilyPos | null {
+  const wordFamily = card.wordFamily;
+  if (!wordFamily) return null;
+  const available = (['noun', 'verb', 'adjective', 'adverb'] as WordFamilyPos[]).filter(
+    (pos) => wordFamily[pos]?.word,
+  );
+  if (available.length === 0) return null;
+  return available[Math.floor(Math.random() * available.length)];
+}
+
+/** Picked once when this card instance is created (the wrapping `ReviewCard` remounts fresh per
+ *  card via `:key`, so this stays stable across reveals but varies from card to card) — the
+ *  Practice-mode "Form Challenge" asks about this one form before revealing the rest. */
+const wordFamilyChallengeForm = pickWordFamilyChallengeForm(props.card);
+
+/** Study mode always shows the answer; Practice mode conceals it until the Show Answer button
+ *  is tapped explicitly — tapping elsewhere on the card, or starting a swipe drag, must not
+ *  reveal it. */
 const showAnswer = computed(() => props.viewMode === 'study' || isAnswerManuallyRevealed.value);
 
 function revealAnswer() {
@@ -54,7 +80,6 @@ function onPointerDown(event: PointerEvent) {
   activePointerId = event.pointerId;
   startX = event.clientX;
   isDragging.value = true;
-  revealAnswer();
   rootEl.value?.setPointerCapture(activePointerId);
 }
 
@@ -193,40 +218,63 @@ onBeforeUnmount(() => {
       {{ card.ipa }}
     </p>
 
-    <template v-if="showAnswer">
-      <p class="mt-4 text-base text-black">{{ card.backAnswer }}</p>
-
-      <ul
-        v-if="card.examples.length > 0"
-        class="mt-4 space-y-1"
+    <template v-if="card.wordFamily">
+      <WordFamilyDisplay
+        v-if="showAnswer"
+        :data="card.wordFamily"
+        :highlight="wordFamilyChallengeForm ?? undefined"
+        class="mt-4"
+      />
+      <button
+        v-else
+        type="button"
+        class="mt-4 rounded border-2 border-dashed border-gray-300 py-3 text-sm font-medium text-gray-500 hover:border-black hover:text-black"
+        @pointerdown.stop
+        @click.stop="revealAnswer"
       >
-        <li
-          v-for="(example, index) in card.examples"
-          :key="index"
-          class="text-sm text-gray-600"
-        >
-          “{{ example }}”
-        </li>
-      </ul>
+        <template v-if="wordFamilyChallengeForm">
+          What is the {{ WORD_FAMILY_POS_LABELS[wordFamilyChallengeForm] }} form of
+          “{{ card.wordFamily.rootWord }}”?
+        </template>
+        <template v-else>Show Word Family</template>
+      </button>
     </template>
-    <button
-      v-else
-      type="button"
-      class="mt-4 rounded border-2 border-dashed border-gray-300 py-3 text-sm font-medium text-gray-500 hover:border-black hover:text-black"
-      @pointerdown.stop
-      @click.stop="revealAnswer"
-    >
-      Show Answer
-    </button>
+    <template v-else>
+      <template v-if="showAnswer">
+        <p class="mt-4 text-base text-black">{{ card.backAnswer }}</p>
 
-    <PartsOfSpeechDisplay
-      v-if="card.partsOfSpeech && card.partsOfSpeech.length > 0"
-      :entries="card.partsOfSpeech"
-      :view-mode="viewMode"
-      :front-title="card.frontTitle"
-      :interactive="interactive"
-      class="mt-4"
-    />
+        <ul
+          v-if="card.examples.length > 0"
+          class="mt-4 space-y-1"
+        >
+          <li
+            v-for="(example, index) in card.examples"
+            :key="index"
+            class="text-sm text-gray-600"
+          >
+            “{{ example }}”
+          </li>
+        </ul>
+      </template>
+      <button
+        v-else
+        type="button"
+        class="mt-4 rounded border-2 border-dashed border-gray-300 py-3 text-sm font-medium text-gray-500 hover:border-black hover:text-black"
+        @pointerdown.stop
+        @click.stop="revealAnswer"
+      >
+        Show Answer
+      </button>
+
+      <PartsOfSpeechDisplay
+        v-if="card.partsOfSpeech && card.partsOfSpeech.length > 0"
+        :entries="card.partsOfSpeech"
+        :view-mode="viewMode"
+        :front-title="card.frontTitle"
+        :interactive="interactive"
+        class="mt-4"
+      />
+    </template>
 
     <div
       v-if="cardTags.length > 0"

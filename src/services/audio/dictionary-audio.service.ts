@@ -1,3 +1,5 @@
+import { apiClient, ApiError } from '@/services/api/axiosClient';
+
 const DICTIONARY_API_BASE = 'https://api.dictionaryapi.dev/api/v2/entries/en';
 
 export class DictionaryAudioNotFoundError extends Error {
@@ -31,10 +33,20 @@ export const dictionaryAudioService = {
     const trimmed = word.trim();
     if (!trimmed) throw new DictionaryAudioNotFoundError(word);
 
-    const response = await fetch(`${DICTIONARY_API_BASE}/${encodeURIComponent(trimmed)}`);
-    if (!response.ok) throw new DictionaryAudioNotFoundError(trimmed);
+    let entries: DictionaryEntry[];
+    try {
+      const response = await apiClient.get<DictionaryEntry[]>(
+        `/${encodeURIComponent(trimmed)}`,
+        { baseURL: DICTIONARY_API_BASE, meta: { provider: 'dictionary' } },
+      );
+      entries = response.data;
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) {
+        throw new DictionaryAudioNotFoundError(trimmed);
+      }
+      throw error;
+    }
 
-    const entries = (await response.json()) as DictionaryEntry[];
     const phoneticWithAudio = entries.flatMap((entry) => entry.phonetics).find((p) => p.audio);
     if (!phoneticWithAudio?.audio) throw new DictionaryAudioNotFoundError(trimmed);
 
@@ -42,10 +54,17 @@ export const dictionaryAudioService = {
       ? phoneticWithAudio.audio
       : `https:${phoneticWithAudio.audio}`;
 
-    const audioResponse = await fetch(audioUrl);
-    if (!audioResponse.ok) throw new DictionaryAudioNotFoundError(trimmed);
+    let audioBlob: Blob;
+    try {
+      const audioResponse = await apiClient.get<Blob>(audioUrl, {
+        responseType: 'blob',
+        meta: { provider: 'dictionary' },
+      });
+      audioBlob = audioResponse.data;
+    } catch {
+      throw new DictionaryAudioNotFoundError(trimmed);
+    }
 
-    const audioBlob = await audioResponse.blob();
     const phonetic =
       entries.find((entry) => entry.phonetic)?.phonetic ?? phoneticWithAudio.text ?? undefined;
 

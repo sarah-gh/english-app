@@ -1,11 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import WarningIcon from '@/components/app/WarningIcon.vue';
 import { useSpeech } from '@/composables/useSpeech';
-import {
-  dictionaryAudioService,
-  DictionaryAudioNotFoundError,
-} from '@/services/audio/dictionary-audio.service';
+import { useFetchPronunciationAudio } from '@/queries/use-fetch-pronunciation-audio';
+import { DictionaryAudioNotFoundError } from '@/services/audio/dictionary-audio.service';
 import { playAudioBlob } from '@/utils/play-audio-blob';
 
 const props = defineProps<{
@@ -18,8 +16,22 @@ const ttsEnabled = defineModel<boolean>('ttsEnabled', { required: true });
 
 const { speak, isSupported: isTtsSupported } = useSpeech();
 
-const isFetchingAudio = ref(false);
-const fetchError = ref('');
+const {
+  mutateAsync: fetchPronunciationAudio,
+  isPending: isFetchingAudio,
+  error: fetchApiError,
+} = useFetchPronunciationAudio();
+/** Set only for the "enter a word first" guard, which isn't an API failure. */
+const localError = ref('');
+
+const fetchError = computed(() => {
+  if (localError.value) return localError.value;
+  const error = fetchApiError.value;
+  if (!error) return '';
+  return error instanceof DictionaryAudioNotFoundError
+    ? error.message
+    : 'Could not reach the pronunciation service.';
+});
 
 function speakWord() {
   if (props.word.trim()) speak(props.word);
@@ -31,22 +43,16 @@ function playCachedAudio() {
 
 async function fetchAudio() {
   if (!props.word.trim()) {
-    fetchError.value = 'Enter the front title first.';
+    localError.value = 'Enter the front title first.';
     return;
   }
-  isFetchingAudio.value = true;
-  fetchError.value = '';
+  localError.value = '';
   try {
-    const result = await dictionaryAudioService.fetchPronunciation(props.word);
+    const result = await fetchPronunciationAudio(props.word);
     audioBlob.value = result.audioBlob;
     if (result.phonetic && !ipa.value) ipa.value = result.phonetic;
-  } catch (error) {
-    fetchError.value =
-      error instanceof DictionaryAudioNotFoundError
-        ? error.message
-        : 'Could not reach the pronunciation service.';
-  } finally {
-    isFetchingAudio.value = false;
+  } catch {
+    // fetchError (computed above) already reflects the mutation's error state.
   }
 }
 

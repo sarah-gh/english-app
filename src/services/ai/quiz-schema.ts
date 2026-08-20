@@ -32,6 +32,14 @@ export const QUIZ_RESPONSE_SCHEMA = {
   required: ['questions'],
 };
 
+/** OpenAI-compatible chat APIs (Groq, OpenRouter) don't support Gemini-style JSON Schema
+ *  enforcement — their JSON mode only guarantees valid JSON, not a specific shape — so this gets
+ *  appended to the prompt itself to describe the shape in words. */
+export const QUIZ_JSON_SHAPE_HINT = `
+
+Respond with ONLY a JSON object of this exact shape, no other text:
+{"questions": [{"sourceIndex": number, "type": "multiple-choice" | "fill-blank", "question": string, "options": string[] (only for "multiple-choice"), "correctAnswer": string}]}`;
+
 function isGeneratedQuizQuestion(value: unknown): value is GeneratedQuizQuestion {
   if (!value || typeof value !== 'object') return false;
   const q = value as Record<string, unknown>;
