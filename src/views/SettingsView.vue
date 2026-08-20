@@ -15,7 +15,7 @@ import { useCardStore } from '@/stores/card-store';
 import { useDeckStore } from '@/stores/deck-store';
 import { useSettingsStore } from '@/stores/settings-store';
 import { useTagStore } from '@/stores/tag-store';
-import type { SpeechAccent } from '@/types/settings';
+import { DEFAULT_AIHUBMIX_BASE_URL, type AiProvider, type SpeechAccent } from '@/types/settings';
 
 const settingsStore = useSettingsStore();
 const cardStore = useCardStore();
@@ -23,13 +23,21 @@ const deckStore = useDeckStore();
 const tagStore = useTagStore();
 
 const isReady = ref(false);
-const apiKeyDraft = ref('');
-const isApiKeyVisible = ref(false);
-const apiKeyStatus = ref('');
+
+const aiProviderDraft = ref<AiProvider>('gemini');
+const geminiKeyDraft = ref('');
+const aihubmixKeyDraft = ref('');
+const aihubmixBaseUrlDraft = ref(DEFAULT_AIHUBMIX_BASE_URL);
+const isGeminiKeyVisible = ref(false);
+const isAihubmixKeyVisible = ref(false);
+const aiConfigStatus = ref('');
 
 onMounted(async () => {
   await settingsStore.ensureLoaded();
-  apiKeyDraft.value = settingsStore.settings.geminiApiKey ?? '';
+  aiProviderDraft.value = settingsStore.settings.aiProvider;
+  geminiKeyDraft.value = settingsStore.settings.geminiApiKey ?? '';
+  aihubmixKeyDraft.value = settingsStore.settings.aihubmixApiKey ?? '';
+  aihubmixBaseUrlDraft.value = settingsStore.settings.aihubmixBaseUrl;
   isReady.value = true;
 });
 
@@ -44,15 +52,30 @@ function testAccent() {
   );
 }
 
-async function saveApiKey() {
-  await settingsStore.setGeminiApiKey(apiKeyDraft.value.trim() || null);
-  apiKeyStatus.value = 'Saved.';
-  setTimeout(() => (apiKeyStatus.value = ''), 2000);
+async function saveAiConfig() {
+  await settingsStore.setAiConfig({
+    aiProvider: aiProviderDraft.value,
+    geminiApiKey: geminiKeyDraft.value.trim() || null,
+    aihubmixApiKey: aihubmixKeyDraft.value.trim() || null,
+    aihubmixBaseUrl: aihubmixBaseUrlDraft.value.trim() || DEFAULT_AIHUBMIX_BASE_URL,
+  });
+  aiConfigStatus.value = 'Saved.';
+  setTimeout(() => (aiConfigStatus.value = ''), 2000);
 }
 
-async function clearApiKey() {
-  apiKeyDraft.value = '';
-  await settingsStore.setGeminiApiKey(null);
+async function selectAiProvider(provider: AiProvider) {
+  aiProviderDraft.value = provider;
+  await saveAiConfig();
+}
+
+async function clearGeminiKey() {
+  geminiKeyDraft.value = '';
+  await saveAiConfig();
+}
+
+async function clearAihubmixKey() {
+  aihubmixKeyDraft.value = '';
+  await saveAiConfig();
 }
 
 // --- PWA install ---
@@ -117,7 +140,10 @@ async function handleClearAll() {
     tagStore.fetchAll(),
     settingsStore.fetchSettings(),
   ]);
-  apiKeyDraft.value = '';
+  aiProviderDraft.value = 'gemini';
+  geminiKeyDraft.value = '';
+  aihubmixKeyDraft.value = '';
+  aihubmixBaseUrlDraft.value = DEFAULT_AIHUBMIX_BASE_URL;
   isConfirmingClear.value = false;
 }
 </script>
@@ -188,48 +214,134 @@ async function handleClearAll() {
       </BaseCard>
 
       <BaseCard class="mb-6">
-        <h2 class="mb-1 text-sm font-semibold text-black">Gemini API Key</h2>
+        <h2 class="mb-1 text-sm font-semibold text-black">AI Quiz Generator</h2>
         <p class="mb-3 text-xs text-gray-500">
-          Used by the AI Quiz Generator. Stored only on this device — it is never included in
-          exports and never sent anywhere except directly to Google's API.
+          Configure the provider(s) used to generate quizzes from your flashcards. Keys are stored
+          only on this device — never included in exports.
         </p>
-        <div class="mb-2 flex gap-2">
-          <BaseInput
-            v-model="apiKeyDraft"
-            :type="isApiKeyVisible ? 'text' : 'password'"
-            placeholder="Paste your Gemini API key"
-            class="w-full"
-          />
-          <BaseButton
-            variant="ghost"
-            size="sm"
-            class="shrink-0"
-            @click="isApiKeyVisible = !isApiKeyVisible"
+
+        <p class="mb-2 text-xs font-medium text-gray-600">Provider</p>
+        <div class="mb-4 flex flex-col gap-1 rounded-lg border border-black p-1 sm:flex-row">
+          <button
+            type="button"
+            class="flex-1 rounded px-2 py-2 text-sm font-medium transition-colors"
+            :class="
+              aiProviderDraft === 'gemini' ? 'bg-black text-white' : 'text-black hover:bg-gray-100'
+            "
+            @click="selectAiProvider('gemini')"
           >
-            {{ isApiKeyVisible ? 'Hide' : 'Show' }}
-          </BaseButton>
+            Direct Gemini
+          </button>
+          <button
+            type="button"
+            class="flex-1 rounded px-2 py-2 text-sm font-medium transition-colors"
+            :class="
+              aiProviderDraft === 'aihubmix' ? 'bg-black text-white' : 'text-black hover:bg-gray-100'
+            "
+            @click="selectAiProvider('aihubmix')"
+          >
+            AIHubMix Proxy
+          </button>
+          <button
+            type="button"
+            class="flex-1 rounded px-2 py-2 text-sm font-medium transition-colors"
+            :class="
+              aiProviderDraft === 'fallback' ? 'bg-black text-white' : 'text-black hover:bg-gray-100'
+            "
+            @click="selectAiProvider('fallback')"
+          >
+            Automatic Fallback
+          </button>
         </div>
-        <div class="flex items-center gap-3">
-          <BaseButton
-            variant="primary"
-            size="sm"
-            @click="saveApiKey"
-          >
-            Save Key
-          </BaseButton>
+        <p
+          v-if="aiProviderDraft === 'fallback'"
+          class="mb-4 -mt-2 text-xs text-gray-500"
+        >
+          Tries Gemini first. If it fails (network error, rate limit, server error), AIHubMix is
+          retried automatically using the credentials below.
+        </p>
+
+        <div class="mb-4">
+          <p class="mb-2 text-xs font-medium text-gray-600">Gemini API Key</p>
+          <div class="flex gap-2">
+            <BaseInput
+              v-model="geminiKeyDraft"
+              :type="isGeminiKeyVisible ? 'text' : 'password'"
+              placeholder="Paste your Gemini API key"
+              class="w-full"
+            />
+            <BaseButton
+              variant="ghost"
+              size="sm"
+              class="shrink-0"
+              @click="isGeminiKeyVisible = !isGeminiKeyVisible"
+            >
+              {{ isGeminiKeyVisible ? 'Hide' : 'Show' }}
+            </BaseButton>
+          </div>
           <BaseButton
             v-if="settingsStore.settings.geminiApiKey"
             variant="link"
             size="sm"
             muted
-            @click="clearApiKey"
+            class="mt-1"
+            @click="clearGeminiKey"
           >
             Remove Key
           </BaseButton>
+        </div>
+
+        <div class="mb-4">
+          <p class="mb-2 text-xs font-medium text-gray-600">AIHubMix API Key</p>
+          <div class="flex gap-2">
+            <BaseInput
+              v-model="aihubmixKeyDraft"
+              :type="isAihubmixKeyVisible ? 'text' : 'password'"
+              placeholder="Paste your AIHubMix API key"
+              class="w-full"
+            />
+            <BaseButton
+              variant="ghost"
+              size="sm"
+              class="shrink-0"
+              @click="isAihubmixKeyVisible = !isAihubmixKeyVisible"
+            >
+              {{ isAihubmixKeyVisible ? 'Hide' : 'Show' }}
+            </BaseButton>
+          </div>
+          <BaseButton
+            v-if="settingsStore.settings.aihubmixApiKey"
+            variant="link"
+            size="sm"
+            muted
+            class="mt-1"
+            @click="clearAihubmixKey"
+          >
+            Remove Key
+          </BaseButton>
+        </div>
+
+        <div class="mb-4">
+          <p class="mb-2 text-xs font-medium text-gray-600">AIHubMix Base URL</p>
+          <BaseInput
+            v-model="aihubmixBaseUrlDraft"
+            placeholder="https://aihubmix.com"
+            class="w-full"
+          />
+        </div>
+
+        <div class="flex items-center gap-3">
+          <BaseButton
+            variant="primary"
+            size="sm"
+            @click="saveAiConfig"
+          >
+            Save
+          </BaseButton>
           <span
-            v-if="apiKeyStatus"
+            v-if="aiConfigStatus"
             class="text-xs font-medium text-gray-700"
-            >{{ apiKeyStatus }}</span
+            >{{ aiConfigStatus }}</span
           >
         </div>
       </BaseCard>

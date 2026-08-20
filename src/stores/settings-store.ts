@@ -16,13 +16,15 @@ export const useSettingsStore = defineStore('settings', () => {
     if (!isLoaded.value) await fetchSettings();
   }
 
-  async function setGeminiApiKey(apiKey: string | null): Promise<void> {
-    settings.value = await settingsRepository.setGeminiApiKey(apiKey);
+  async function setAiConfig(
+    config: Pick<AppSettings, 'aiProvider' | 'geminiApiKey' | 'aihubmixApiKey' | 'aihubmixBaseUrl'>,
+  ): Promise<void> {
+    settings.value = await settingsRepository.setAiConfig(config);
   }
 
   async function setSpeechAccent(accent: SpeechAccent): Promise<void> {
     settings.value = await settingsRepository.setSpeechAccent(accent);
   }
 
-  return { settings, isLoaded, fetchSettings, ensureLoaded, setGeminiApiKey, setSpeechAccent };
+  return { settings, isLoaded, fetchSettings, ensureLoaded, setAiConfig, setSpeechAccent };
 });

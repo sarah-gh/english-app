@@ -19,8 +19,10 @@ export const settingsRepository = {
     return updated;
   },
 
-  async setGeminiApiKey(apiKey: string | null): Promise<AppSettings> {
-    return settingsRepository.update({ geminiApiKey: apiKey });
+  async setAiConfig(
+    config: Pick<AppSettings, 'aiProvider' | 'geminiApiKey' | 'aihubmixApiKey' | 'aihubmixBaseUrl'>,
+  ): Promise<AppSettings> {
+    return settingsRepository.update(config);
   },
 
   async setSpeechAccent(accent: AppSettings['speechAccent']): Promise<AppSettings> {

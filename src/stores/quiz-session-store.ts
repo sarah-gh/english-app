@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { computed, ref, toRaw } from 'vue';
-import type { GeneratedQuestionType } from '@/services/ai/gemini-client';
+import type { GeneratedQuestionType } from '@/services/ai/quiz-schema';
 import { useCardStore } from '@/stores/card-store';
 import type { QuizQuestion } from '@/types/card';
 

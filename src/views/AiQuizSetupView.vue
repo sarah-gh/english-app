@@ -5,7 +5,8 @@ import WarningIcon from '@/components/app/WarningIcon.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseCard from '@/components/ui/BaseCard.vue';
 import BaseSelect from '@/components/ui/BaseSelect.vue';
-import { GeminiApiError, generateQuiz } from '@/services/ai/gemini-client';
+import { generateAiQuiz, hasRequiredAiCredentials } from '@/services/ai/ai-quiz-service';
+import { AiServiceError } from '@/services/ai/errors';
 import { buildQuizPrompt } from '@/services/ai/quiz-prompt-builder';
 import { useCardStore } from '@/stores/card-store';
 import { useDeckStore } from '@/stores/deck-store';
@@ -38,7 +39,7 @@ onMounted(async () => {
   isReady.value = true;
 });
 
-const hasApiKey = computed(() => Boolean(settingsStore.settings.geminiApiKey));
+const hasApiKey = computed(() => hasRequiredAiCredentials(settingsStore.settings));
 
 function toggleTagFilter(id: string) {
   selectedTagIds.value = selectedTagIds.value.includes(id)
@@ -77,8 +78,7 @@ function clearSelection() {
 const selectedCount = computed(() => selectedCardIds.value.size);
 
 async function handleGenerate() {
-  const apiKey = settingsStore.settings.geminiApiKey;
-  if (!apiKey) return;
+  if (!hasApiKey.value) return;
 
   const selectedCards = cardStore.cards.filter((card) => selectedCardIds.value.has(card.id));
   if (selectedCards.length === 0) return;
@@ -87,7 +87,7 @@ async function handleGenerate() {
   isGenerating.value = true;
   try {
     const prompt = buildQuizPrompt(selectedCards);
-    const generated = await generateQuiz(apiKey, prompt);
+    const generated = await generateAiQuiz(settingsStore.settings, prompt);
 
     const questions: QuizSessionQuestion[] = generated
       .map((question): QuizSessionQuestion | null => {
@@ -114,7 +114,7 @@ async function handleGenerate() {
     router.push('/ai-quiz/session');
   } catch (error) {
     generationError.value =
-      error instanceof GeminiApiError ? error.message : 'Quiz generation failed. Please try again.';
+      error instanceof AiServiceError ? error.message : 'Quiz generation failed. Please try again.';
   } finally {
     isGenerating.value = false;
   }
@@ -143,10 +143,10 @@ async function handleGenerate() {
         v-if="!hasApiKey"
         class="mb-6 rounded-lg border-2 border-black p-4"
       >
-        <p class="mb-1 text-sm font-semibold text-black">A Gemini API key is required</p>
+        <p class="mb-1 text-sm font-semibold text-black">An AI provider API key is required</p>
         <p class="mb-3 text-xs text-gray-600">
-          The AI Quiz Generator sends your selected cards to Google's Gemini API using your own
-          key. Add one in Settings to continue.
+          The AI Quiz Generator sends your selected cards to your configured AI provider (Gemini
+          and/or AIHubMix) using your own key. Add one in Settings to continue.
         </p>
         <BaseButton
           variant="primary"
