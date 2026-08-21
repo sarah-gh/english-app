@@ -18,4 +18,11 @@ export const queryKeys = {
     all: ['word-family-autofill'] as const,
     generate: () => [...queryKeys.wordFamilyAutofill.all, 'generate'] as const,
   },
+  fieldAutofill: {
+    all: ['field-autofill'] as const,
+    definition: () => [...queryKeys.fieldAutofill.all, 'definition'] as const,
+    ipa: () => [...queryKeys.fieldAutofill.all, 'ipa'] as const,
+    examples: () => [...queryKeys.fieldAutofill.all, 'examples'] as const,
+    partsOfSpeech: () => [...queryKeys.fieldAutofill.all, 'parts-of-speech'] as const,
+  },
 };

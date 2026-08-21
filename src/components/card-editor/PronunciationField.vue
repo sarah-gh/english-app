@@ -3,8 +3,13 @@ import { computed, ref } from 'vue';
 import WarningIcon from '@/components/app/WarningIcon.vue';
 import { useSpeech } from '@/composables/useSpeech';
 import { useFetchPronunciationAudio } from '@/queries/use-fetch-pronunciation-audio';
+import { useGenerateIpa } from '@/queries/use-generate-ipa';
+import { hasRequiredAiCredentials } from '@/services/ai/ai-card-autofill-service';
+import { AiServiceError } from '@/services/ai/errors';
 import { DictionaryAudioNotFoundError } from '@/services/audio/dictionary-audio.service';
+import { useSettingsStore } from '@/stores/settings-store';
 import { playAudioBlob } from '@/utils/play-audio-blob';
+import AiFieldButton from './AiFieldButton.vue';
 
 const props = defineProps<{
   word: string;
@@ -32,6 +37,26 @@ const fetchError = computed(() => {
     ? error.message
     : 'Could not reach the pronunciation service.';
 });
+
+const settingsStore = useSettingsStore();
+const { mutateAsync: requestIpa, isPending: isGeneratingIpa, error: generateIpaApiError } = useGenerateIpa();
+
+const canGenerateIpa = computed(() => hasRequiredAiCredentials(settingsStore.settings) && props.word.trim().length > 0);
+const generateIpaErrorMessage = computed(() => {
+  const error = generateIpaApiError.value;
+  if (!error) return '';
+  return error instanceof AiServiceError ? error.message : 'Auto-fill failed. Please try again.';
+});
+
+async function generateIpaValue() {
+  const title = props.word.trim();
+  if (!title) return;
+  try {
+    ipa.value = await requestIpa({ settings: settingsStore.settings, title });
+  } catch {
+    // generateIpaErrorMessage (computed above) already reflects the mutation's error state.
+  }
+}
 
 function speakWord() {
   if (props.word.trim()) speak(props.word);
@@ -76,11 +101,19 @@ function removeCachedAudio() {
     </div>
 
     <div>
-      <label
-        for="ipa"
-        class="mb-1 block text-xs font-medium text-gray-600"
-        >IPA (optional)</label
-      >
+      <div class="mb-1 flex items-center justify-between gap-2">
+        <label
+          for="ipa"
+          class="block text-xs font-medium text-gray-600"
+          >IPA (optional)</label
+        >
+        <AiFieldButton
+          :loading="isGeneratingIpa"
+          :disabled="!canGenerateIpa"
+          :title="word.trim() ? 'Auto-fill this field with AI' : 'Enter a word first to use AI Auto-Fill'"
+          @click="generateIpaValue"
+        />
+      </div>
       <input
         id="ipa"
         v-model="ipa"
@@ -150,6 +183,13 @@ function removeCachedAudio() {
     >
       <WarningIcon />
       {{ fetchError }}
+    </p>
+    <p
+      v-if="generateIpaErrorMessage"
+      class="flex items-center gap-1.5 text-xs font-medium text-gray-800"
+    >
+      <WarningIcon />
+      {{ generateIpaErrorMessage }}
     </p>
   </div>
 </template>

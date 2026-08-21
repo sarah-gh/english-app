@@ -1,15 +1,53 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import WarningIcon from '@/components/app/WarningIcon.vue';
 import BaseInput from '@/components/ui/BaseInput.vue';
+import { useAutofillWordFamily } from '@/queries/use-autofill-word-family';
+import { hasRequiredAiCredentials } from '@/services/ai/ai-card-autofill-service';
+import { AiServiceError } from '@/services/ai/errors';
+import { useSettingsStore } from '@/stores/settings-store';
+import AiFieldButton from './AiFieldButton.vue';
 import type { WordFamilyFormState } from './card-form-state';
 
-defineProps<{
+const props = defineProps<{
   /** For the "Word Form" placeholders, e.g. "Success" for a "Successful" adjective placeholder. */
   rootWord: string;
   error?: string;
 }>();
 
 const data = defineModel<WordFamilyFormState>('data', { required: true });
+
+const settingsStore = useSettingsStore();
+const { mutateAsync: requestWordFamily, isPending: isGenerating, error: generateApiError } = useAutofillWordFamily();
+
+const canGenerate = computed(() => hasRequiredAiCredentials(settingsStore.settings) && props.rootWord.trim().length > 0);
+const generateErrorMessage = computed(() => {
+  const apiError = generateApiError.value;
+  if (!apiError) return '';
+  return apiError instanceof AiServiceError ? apiError.message : 'Auto-fill failed. Please try again.';
+});
+
+async function handleGenerate() {
+  const rootWord = props.rootWord.trim();
+  if (!rootWord) return;
+  try {
+    const result = await requestWordFamily({ settings: settingsStore.settings, rootWord });
+    const toFormState = (detail?: { word: string; meaning?: string; example?: string }) => ({
+      word: detail?.word ?? '',
+      meaning: detail?.meaning ?? '',
+      example: detail?.example ?? '',
+    });
+    data.value = {
+      noun: toFormState(result.noun),
+      verb: toFormState(result.verb),
+      adjective: toFormState(result.adjective),
+      adverb: toFormState(result.adverb),
+      usageNotes: result.usageNotes ?? data.value.usageNotes,
+    };
+  } catch {
+    // generateErrorMessage (computed above) already reflects the mutation's error state.
+  }
+}
 
 const SECTIONS: { key: keyof Omit<WordFamilyFormState, 'usageNotes'>; label: string }[] = [
   { key: 'noun', label: 'Noun' },
@@ -21,7 +59,24 @@ const SECTIONS: { key: keyof Omit<WordFamilyFormState, 'usageNotes'>; label: str
 
 <template>
   <div>
-    <p class="mb-2 text-xs font-medium text-gray-600">Word Family Forms</p>
+    <div class="mb-2 flex items-center justify-between gap-2">
+      <span class="flex items-center gap-1 text-xs font-medium text-gray-600">
+        Word Family Forms
+        <AiFieldButton
+          :loading="isGenerating"
+          :disabled="!canGenerate"
+          :title="rootWord.trim() ? 'Auto-fill this field with AI' : 'Enter a word first to use AI Auto-Fill'"
+          @click="handleGenerate"
+        />
+      </span>
+    </div>
+    <p
+      v-if="generateErrorMessage"
+      class="mb-2 flex items-center gap-1.5 text-xs font-medium text-gray-800"
+    >
+      <WarningIcon />
+      {{ generateErrorMessage }}
+    </p>
     <div
       class="space-y-3 rounded"
       :class="error ? 'border border-red-500/80 p-2' : ''"

@@ -62,7 +62,7 @@ export type AiConfigFields = Pick<
 export const SETTINGS_ID = 'app-settings' as const;
 
 export const DEFAULT_GROQ_BASE_URL = 'https://api.groq.com/openai/v1';
-export const DEFAULT_GROQ_MODEL = 'llama-3.3-70b-versatile';
+export const DEFAULT_GROQ_MODEL = 'openai/gpt-oss-120b';
 export const DEFAULT_OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 export const DEFAULT_OPENROUTER_MODEL = 'google/gemini-2.0-flash-exp:free';
 export const DEFAULT_AIHUBMIX_BASE_URL = 'https://aihubmix.com';

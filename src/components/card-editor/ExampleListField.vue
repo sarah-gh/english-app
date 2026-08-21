@@ -1,7 +1,46 @@
 <script setup lang="ts">
-withDefaults(defineProps<{ label?: string }>(), { label: 'Personal Examples' });
+import { computed } from 'vue';
+import WarningIcon from '@/components/app/WarningIcon.vue';
+import { useGenerateExamples } from '@/queries/use-generate-examples';
+import { AiServiceError } from '@/services/ai/errors';
+import { hasRequiredAiCredentials } from '@/services/ai/ai-card-autofill-service';
+import { useSettingsStore } from '@/stores/settings-store';
+import AiFieldButton from './AiFieldButton.vue';
+
+const props = withDefaults(
+  defineProps<{
+    label?: string;
+    /** The card's front title/root word to generate from. Only pass this when this list IS the
+     *  card's "Personal Examples" section — omit it (e.g. for per-part-of-speech example lists)
+     *  to hide the AI button entirely. */
+    aiWord?: string;
+  }>(),
+  { label: 'Personal Examples', aiWord: undefined },
+);
 
 const examples = defineModel<string[]>('examples', { required: true });
+
+const settingsStore = useSettingsStore();
+const { mutateAsync: requestExamples, isPending: isGenerating, error: generateApiError } = useGenerateExamples();
+
+const canGenerate = computed(
+  () => props.aiWord !== undefined && hasRequiredAiCredentials(settingsStore.settings) && props.aiWord.trim().length > 0,
+);
+const generateErrorMessage = computed(() => {
+  const error = generateApiError.value;
+  if (!error) return '';
+  return error instanceof AiServiceError ? error.message : 'Auto-fill failed. Please try again.';
+});
+
+async function handleGenerate() {
+  const title = props.aiWord?.trim();
+  if (!title) return;
+  try {
+    examples.value = await requestExamples({ settings: settingsStore.settings, title, count: 3 });
+  } catch {
+    // generateErrorMessage (computed above) already reflects the mutation's error state.
+  }
+}
 
 function addExample() {
   examples.value = [...examples.value, ''];
@@ -23,8 +62,17 @@ function moveExample(index: number, direction: -1 | 1) {
 
 <template>
   <div>
-    <div class="mb-1 flex items-center justify-between">
-      <span class="text-xs font-medium text-gray-600">{{ label }}</span>
+    <div class="mb-1 flex items-center justify-between gap-2">
+      <span class="flex items-center gap-1 text-xs font-medium text-gray-600">
+        {{ label }}
+        <AiFieldButton
+          v-if="aiWord !== undefined"
+          :loading="isGenerating"
+          :disabled="!canGenerate"
+          :title="aiWord.trim() ? 'Auto-fill this field with AI' : 'Enter a word first to use AI Auto-Fill'"
+          @click="handleGenerate"
+        />
+      </span>
       <button
         type="button"
         class="text-xs font-medium text-black underline underline-offset-2 hover:no-underline"
@@ -33,6 +81,13 @@ function moveExample(index: number, direction: -1 | 1) {
         + Add example
       </button>
     </div>
+    <p
+      v-if="generateErrorMessage"
+      class="mb-1 flex items-center gap-1.5 text-xs font-medium text-gray-800"
+    >
+      <WarningIcon />
+      {{ generateErrorMessage }}
+    </p>
 
     <div class="space-y-2">
       <div

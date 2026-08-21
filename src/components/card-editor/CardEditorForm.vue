@@ -3,6 +3,7 @@ import { toTypedSchema } from '@vee-validate/zod';
 import { computed, ref, watch } from 'vue';
 import { useField, useForm } from 'vee-validate';
 import { RouterLink } from 'vue-router';
+import AiSparkleIcon from '@/components/app/AiSparkleIcon.vue';
 import WarningIcon from '@/components/app/WarningIcon.vue';
 import BaseAutocomplete from '@/components/ui/BaseAutocomplete.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
@@ -10,6 +11,7 @@ import BaseSegmentedToggle from '@/components/ui/BaseSegmentedToggle.vue';
 import { useWordAutocomplete, type WordSuggestion } from '@/composables/useWordAutocomplete';
 import { useAutofillCardDetails } from '@/queries/use-autofill-card-details';
 import { useAutofillWordFamily } from '@/queries/use-autofill-word-family';
+import { useGenerateDefinition } from '@/queries/use-generate-definition';
 import { hasRequiredAiCredentials } from '@/services/ai/ai-card-autofill-service';
 import type { GeneratedCardDetails } from '@/services/ai/card-autofill-schema';
 import { AiServiceError } from '@/services/ai/errors';
@@ -18,6 +20,7 @@ import { cardEditorSchema, type CardEditorValidationValues } from '@/schemas/car
 import { useDeckStore } from '@/stores/deck-store';
 import { useSettingsStore } from '@/stores/settings-store';
 import { useTagStore } from '@/stores/tag-store';
+import AiFieldButton from './AiFieldButton.vue';
 import type { CardFormState, CardMode, PosEntryFormState } from './card-form-state';
 import DeckSelectField from './DeckSelectField.vue';
 import ExampleListField from './ExampleListField.vue';
@@ -117,6 +120,25 @@ const { mutateAsync: requestCardAutofill, isPending: isCardAutofilling, error: c
 const { mutateAsync: requestWordFamilyAutofill, isPending: isWordFamilyAutofilling, error: wordFamilyAutofillApiError } = useAutofillWordFamily();
 
 const isAutofilling = computed(() => isCardAutofilling.value || isWordFamilyAutofilling.value);
+
+const { mutateAsync: requestDefinition, isPending: isGeneratingDefinition, error: definitionApiError } =
+  useGenerateDefinition();
+const canAutofillField = computed(() => hasAiCredentials.value && draft.value.frontTitle.trim().length > 0);
+const definitionErrorMessage = computed(() => {
+  const error = definitionApiError.value;
+  if (!error) return '';
+  return error instanceof AiServiceError ? error.message : 'Auto-fill failed. Please try again.';
+});
+
+async function handleGenerateDefinition() {
+  const title = draft.value.frontTitle.trim();
+  if (!title) return;
+  try {
+    draft.value.backAnswer = await requestDefinition({ settings: settingsStore.settings, title });
+  } catch {
+    // definitionErrorMessage (computed above) already reflects the mutation's error state.
+  }
+}
 
 /** Cleared on every attempt; set only if the response couldn't be applied for a non-API reason. */
 const autofillLocalError = ref('');
@@ -249,7 +271,8 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
           :loading="isAutofilling"
           @click="handleAutofill"
         >
-          ✨ {{ isAutofilling ? 'Auto-Filling…' : 'Auto-Fill with AI' }}
+          <AiSparkleIcon :size="14" />
+          {{ isAutofilling ? 'Auto-Filling…' : 'Auto-Fill with AI' }}
         </BaseButton>
       </div>
       <BaseAutocomplete
@@ -308,11 +331,19 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
     />
     <template v-else>
       <div>
-        <label
-          for="back-answer"
-          class="mb-1 block text-xs font-medium text-gray-600"
-          >Back Answer / Explanation *</label
-        >
+        <div class="mb-1 flex items-center justify-between gap-2">
+          <label
+            for="back-answer"
+            class="block text-xs font-medium text-gray-600"
+            >Back Answer / Explanation *</label
+          >
+          <AiFieldButton
+            :loading="isGeneratingDefinition"
+            :disabled="!canAutofillField"
+            :title="draft.frontTitle.trim() ? 'Auto-fill this field with AI' : 'Enter a word first to use AI Auto-Fill'"
+            @click="handleGenerateDefinition"
+          />
+        </div>
         <textarea
           id="back-answer"
           v-model="draft.backAnswer"
@@ -328,6 +359,13 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
         >
           <WarningIcon />
           {{ backAnswerError }}
+        </p>
+        <p
+          v-if="definitionErrorMessage"
+          class="mt-1 flex items-center gap-1.5 text-xs font-medium text-gray-800"
+        >
+          <WarningIcon />
+          {{ definitionErrorMessage }}
         </p>
       </div>
 
@@ -366,7 +404,10 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
       />
     </div>
 
-    <ExampleListField v-model:examples="draft.examples" />
+    <ExampleListField
+      v-model:examples="draft.examples"
+      :ai-word="draft.frontTitle"
+    />
     <QuizQuestionListField v-model:quiz-questions="draft.quizQuestions" />
     <ImageUploadField v-model:image-blob="draft.imageBlob" />
 

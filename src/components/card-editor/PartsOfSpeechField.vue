@@ -1,17 +1,57 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+import WarningIcon from '@/components/app/WarningIcon.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseInput from '@/components/ui/BaseInput.vue';
 import BaseSelect from '@/components/ui/BaseSelect.vue';
+import { useGeneratePartsOfSpeech } from '@/queries/use-generate-parts-of-speech';
+import { hasRequiredAiCredentials } from '@/services/ai/ai-card-autofill-service';
+import { AiServiceError } from '@/services/ai/errors';
+import { useSettingsStore } from '@/stores/settings-store';
+import AiFieldButton from './AiFieldButton.vue';
 import type { PosEntryFormState } from './card-form-state';
 import ExampleListField from './ExampleListField.vue';
 import type { PosType } from '@/types/card';
 
-defineProps<{
+const props = defineProps<{
   /** For the "Word Form" placeholder, e.g. "Decision" for a "Decide" root word. */
   rootWord?: string;
 }>();
 
 const entries = defineModel<PosEntryFormState[]>('entries', { required: true });
+
+const settingsStore = useSettingsStore();
+const { mutateAsync: requestPartsOfSpeech, isPending: isGenerating, error: generateApiError } =
+  useGeneratePartsOfSpeech();
+
+const canGenerate = computed(
+  () => hasRequiredAiCredentials(settingsStore.settings) && Boolean(props.rootWord?.trim()),
+);
+const generateErrorMessage = computed(() => {
+  const error = generateApiError.value;
+  if (!error) return '';
+  return error instanceof AiServiceError ? error.message : 'Auto-fill failed. Please try again.';
+});
+
+async function handleGenerate() {
+  const title = props.rootWord?.trim();
+  if (!title) return;
+  try {
+    const result = await requestPartsOfSpeech({ settings: settingsStore.settings, title });
+    entries.value = result.map(
+      (entry): PosEntryFormState => ({
+        id: crypto.randomUUID(),
+        pos: entry.pos,
+        wordForm: entry.wordForm ?? '',
+        definition: entry.definition,
+        ipa: entry.ipa ?? '',
+        examples: entry.examples ?? [],
+      }),
+    );
+  } catch {
+    // generateErrorMessage (computed above) already reflects the mutation's error state.
+  }
+}
 
 const POS_OPTIONS: { value: PosType; label: string }[] = [
   { value: 'noun', label: 'Noun' },
@@ -35,8 +75,16 @@ function removeEntry(id: string) {
 
 <template>
   <div>
-    <div class="mb-1 flex items-center justify-between">
-      <span class="text-xs font-medium text-gray-600">Parts of Speech (Optional)</span>
+    <div class="mb-1 flex items-center justify-between gap-2">
+      <span class="flex items-center gap-1 text-xs font-medium text-gray-600">
+        Parts of Speech (Optional)
+        <AiFieldButton
+          :loading="isGenerating"
+          :disabled="!canGenerate"
+          :title="rootWord?.trim() ? 'Auto-fill this field with AI' : 'Enter a word first to use AI Auto-Fill'"
+          @click="handleGenerate"
+        />
+      </span>
       <BaseButton
         variant="link"
         size="sm"
@@ -45,6 +93,13 @@ function removeEntry(id: string) {
         + Add Part of Speech
       </BaseButton>
     </div>
+    <p
+      v-if="generateErrorMessage"
+      class="mb-2 flex items-center gap-1.5 text-xs font-medium text-gray-800"
+    >
+      <WarningIcon />
+      {{ generateErrorMessage }}
+    </p>
 
     <div class="space-y-3">
       <div

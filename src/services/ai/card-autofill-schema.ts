@@ -30,6 +30,20 @@ export interface GeneratedCardDetails {
 
 const POS_TYPES: PosType[] = ['noun', 'verb', 'adjective', 'adverb', 'other'];
 
+/** Gemini Structured Output schema for a single parts-of-speech entry — shared between the
+ *  full-card autofill schema below and the standalone per-field parts-of-speech endpoint. */
+export const POS_ENTRY_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    pos: { type: 'STRING', enum: POS_TYPES },
+    wordForm: { type: 'STRING' },
+    definition: { type: 'STRING' },
+    ipa: { type: 'STRING' },
+    examples: { type: 'ARRAY', items: { type: 'STRING' } },
+  },
+  required: ['pos', 'definition'],
+};
+
 export const CARD_AUTOFILL_RESPONSE_SCHEMA = {
   type: 'OBJECT',
   properties: {
@@ -37,20 +51,7 @@ export const CARD_AUTOFILL_RESPONSE_SCHEMA = {
     ipa: { type: 'STRING' },
     hint: { type: 'STRING' },
     personalExamples: { type: 'ARRAY', items: { type: 'STRING' } },
-    partsOfSpeech: {
-      type: 'ARRAY',
-      items: {
-        type: 'OBJECT',
-        properties: {
-          pos: { type: 'STRING', enum: POS_TYPES },
-          wordForm: { type: 'STRING' },
-          definition: { type: 'STRING' },
-          ipa: { type: 'STRING' },
-          examples: { type: 'ARRAY', items: { type: 'STRING' } },
-        },
-        required: ['pos', 'definition'],
-      },
-    },
+    partsOfSpeech: { type: 'ARRAY', items: POS_ENTRY_SCHEMA },
     suggestedTags: { type: 'ARRAY', items: { type: 'STRING' } },
     suggestedDeckCategory: { type: 'STRING' },
   },
@@ -65,7 +66,7 @@ export const CARD_AUTOFILL_JSON_SHAPE_HINT = `
 Respond with ONLY a JSON object of this exact shape, no other text:
 {"backAnswer": string, "ipa": string (optional), "hint": string (optional), "personalExamples": string[], "partsOfSpeech": [{"pos": "noun" | "verb" | "adjective" | "adverb" | "other", "wordForm": string (optional), "definition": string, "ipa": string (optional), "examples": string[] (optional)}] (optional), "suggestedTags": string[], "suggestedDeckCategory": string (optional)}`;
 
-function isGeneratedPosEntry(value: unknown): value is GeneratedPosEntry {
+export function isGeneratedPosEntry(value: unknown): value is GeneratedPosEntry {
   if (!value || typeof value !== 'object') return false;
   const entry = value as Record<string, unknown>;
   return (

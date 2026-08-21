@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import ConfirmDialog from '@/components/app/ConfirmDialog.vue';
 import CardEditorForm from '@/components/card-editor/CardEditorForm.vue';
 import {
   blankCardFormState,
@@ -25,6 +26,7 @@ const isReady = ref(false);
 const isSaving = ref(false);
 const isDirty = ref(false);
 const toastMessage = ref('');
+const isConfirmingCancel = ref(false);
 let editingCardId: string | undefined;
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -97,7 +99,15 @@ async function handleSubmit(mode: 'add-another' | 'exit') {
 }
 
 function handleCancel() {
-  if (isDirty.value && !window.confirm('Discard unsaved changes?')) return;
+  if (isDirty.value) {
+    isConfirmingCancel.value = true;
+    return;
+  }
+  router.back();
+}
+
+function confirmDiscardChanges() {
+  isConfirmingCancel.value = false;
   router.back();
 }
 </script>
@@ -131,6 +141,15 @@ function handleCancel() {
         {{ toastMessage }}
       </div>
     </Transition>
+
+    <ConfirmDialog
+      v-if="isConfirmingCancel"
+      title="Discard unsaved changes?"
+      message="You have unsaved changes that will be lost."
+      confirm-label="Discard"
+      @confirm="confirmDiscardChanges"
+      @cancel="isConfirmingCancel = false"
+    />
   </div>
 </template>
 
