@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import AiQuizSetupView from '@/views/AiQuizSetupView.vue'
 import AiQuizView from '@/views/AiQuizView.vue'
 import CardEditorView from '@/views/CardEditorView.vue'
+import CardImportView from '@/views/CardImportView.vue'
 import CardManagementView from '@/views/CardManagementView.vue'
 import DashboardView from '@/views/DashboardView.vue'
 import DeckTagManagementView from '@/views/DeckTagManagementView.vue'
@@ -15,6 +16,7 @@ const router = createRouter({
     { path: '/', name: 'dashboard', component: DashboardView },
     { path: '/cards', name: 'card-management', component: CardManagementView },
     { path: '/cards/new', name: 'card-create', component: CardEditorView },
+    { path: '/cards/import', name: 'card-import', component: CardImportView },
     { path: '/cards/:id/edit', name: 'card-edit', component: CardEditorView },
     { path: '/decks', name: 'deck-management', component: DeckTagManagementView },
     { path: '/review', name: 'review-setup', component: ReviewSetupView },

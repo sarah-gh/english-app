@@ -1,10 +1,12 @@
 import { toRaw } from 'vue';
 import type { Card, NewCard, PartOfSpeechEntry, POSDetail, PosType, QuizQuestion, WordFamilyData } from '@/types/card';
 
-/** Form-editable mirror of PartOfSpeechEntry, with `ipa`/`examples` normalized to plain strings/arrays. */
+/** Form-editable mirror of PartOfSpeechEntry, with `ipa`/`examples`/`wordForm` normalized to plain
+ *  strings/arrays. */
 export interface PosEntryFormState {
   id: string;
   pos: PosType;
+  wordForm: string;
   definition: string;
   ipa: string;
   examples: string[];
@@ -104,6 +106,7 @@ export function cardFormStateFromCard(card: Card): CardFormState {
     partsOfSpeech: (card.partsOfSpeech ?? []).map((entry) => ({
       id: entry.id,
       pos: entry.pos,
+      wordForm: entry.wordForm ?? '',
       definition: entry.definition,
       ipa: entry.ipa ?? '',
       examples: entry.examples ? [...entry.examples] : [],
@@ -164,6 +167,7 @@ export function cardFormStateToNewCard(state: CardFormState): NewCard {
       return {
         id: entry.id,
         pos: entry.pos,
+        wordForm: entry.wordForm.trim() || undefined,
         definition,
         ipa: entry.ipa.trim() || undefined,
         examples: examples.length > 0 ? examples : undefined,

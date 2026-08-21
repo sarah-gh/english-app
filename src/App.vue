@@ -5,7 +5,14 @@ import InstallPrompt from '@/components/pwa/InstallPrompt.vue';
 
 <template>
   <div class="max-w-lg mx-auto">
-    <RouterView />
+    <RouterView v-slot="{ Component }">
+      <transition
+        name="fade"
+        mode="out-in"
+      >
+        <component :is="Component" />
+      </transition>
+    </RouterView>
     <InstallPrompt />
   </div>
 </template>

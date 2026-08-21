@@ -158,6 +158,7 @@ async function applyAutofillResult(result: GeneratedCardDetails): Promise<void> 
       (entry): PosEntryFormState => ({
         id: crypto.randomUUID(),
         pos: entry.pos,
+        wordForm: entry.wordForm ?? '',
         definition: entry.definition,
         ipa: entry.ipa ?? '',
         examples: entry.examples ?? [],
@@ -330,7 +331,10 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
         </p>
       </div>
 
-      <PartsOfSpeechField v-model:entries="draft.partsOfSpeech" />
+      <PartsOfSpeechField
+        v-model:entries="draft.partsOfSpeech"
+        :root-word="draft.frontTitle"
+      />
     </template>
 
     <DeckSelectField

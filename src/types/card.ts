@@ -12,6 +12,9 @@ export type PosType = 'noun' | 'verb' | 'adjective' | 'adverb' | 'other';
 export interface PartOfSpeechEntry {
   id: string;
   pos: PosType;
+  /** The specific spelling/inflection for this part of speech, e.g. "Decision" when the card's
+   *  root word is "Decide" — distinct from `pos`, which is only the grammatical category. */
+  wordForm?: string;
   definition: string;
   ipa?: string;
   examples?: string[];

@@ -40,6 +40,20 @@ export const cardRepository = {
     return record;
   },
 
+  /** Used by bulk import (e.g. Excel) — creates many cards in one transaction. */
+  async createMany(newCards: NewCard[]): Promise<Card[]> {
+    const timestamp = Date.now();
+    const records: Card[] = newCards.map((card) => ({
+      ...card,
+      id: crypto.randomUUID(),
+      reviewStatus: 'new',
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    }));
+    await db.cards.bulkAdd(records);
+    return records;
+  },
+
   async update(id: string, changes: CardUpdate): Promise<void> {
     await db.cards.update(id, { ...changes, updatedAt: Date.now() });
   },

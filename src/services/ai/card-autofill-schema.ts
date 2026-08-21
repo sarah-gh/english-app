@@ -2,6 +2,9 @@ import type { PosType } from '@/types/card';
 
 export interface GeneratedPosEntry {
   pos: PosType;
+  /** The specific spelling for this part of speech, only when it differs from the card's title
+   *  (e.g. "Decision" for the noun form of "Decide"). */
+  wordForm?: string;
   definition: string;
   ipa?: string;
   examples?: string[];
@@ -40,6 +43,7 @@ export const CARD_AUTOFILL_RESPONSE_SCHEMA = {
         type: 'OBJECT',
         properties: {
           pos: { type: 'STRING', enum: POS_TYPES },
+          wordForm: { type: 'STRING' },
           definition: { type: 'STRING' },
           ipa: { type: 'STRING' },
           examples: { type: 'ARRAY', items: { type: 'STRING' } },
@@ -59,7 +63,7 @@ export const CARD_AUTOFILL_RESPONSE_SCHEMA = {
 export const CARD_AUTOFILL_JSON_SHAPE_HINT = `
 
 Respond with ONLY a JSON object of this exact shape, no other text:
-{"backAnswer": string, "ipa": string (optional), "hint": string (optional), "personalExamples": string[], "partsOfSpeech": [{"pos": "noun" | "verb" | "adjective" | "adverb" | "other", "definition": string, "ipa": string (optional), "examples": string[] (optional)}] (optional), "suggestedTags": string[], "suggestedDeckCategory": string (optional)}`;
+{"backAnswer": string, "ipa": string (optional), "hint": string (optional), "personalExamples": string[], "partsOfSpeech": [{"pos": "noun" | "verb" | "adjective" | "adverb" | "other", "wordForm": string (optional), "definition": string, "ipa": string (optional), "examples": string[] (optional)}] (optional), "suggestedTags": string[], "suggestedDeckCategory": string (optional)}`;
 
 function isGeneratedPosEntry(value: unknown): value is GeneratedPosEntry {
   if (!value || typeof value !== 'object') return false;
@@ -69,6 +73,7 @@ function isGeneratedPosEntry(value: unknown): value is GeneratedPosEntry {
     POS_TYPES.includes(entry.pos as PosType) &&
     typeof entry.definition === 'string' &&
     entry.definition.trim().length > 0 &&
+    (entry.wordForm === undefined || typeof entry.wordForm === 'string') &&
     (entry.ipa === undefined || typeof entry.ipa === 'string') &&
     (entry.examples === undefined || Array.isArray(entry.examples))
   );

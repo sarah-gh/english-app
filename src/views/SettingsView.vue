@@ -494,6 +494,20 @@ async function handleClearAll() {
           <WarningIcon />
           {{ importError }}
         </p>
+
+        <hr class="my-4 border-gray-200" />
+
+        <p class="mb-3 text-xs text-gray-500">
+          Bulk-create new cards from a spreadsheet instead of a backup file — useful for adding a
+          batch of vocabulary, grammar, or idiom cards at once.
+        </p>
+        <BaseButton
+          variant="secondary"
+          size="sm"
+          to="/cards/import"
+        >
+          Import Cards (Excel)
+        </BaseButton>
       </BaseCard>
 
       <BaseCard>

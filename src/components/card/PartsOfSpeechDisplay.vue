@@ -47,6 +47,12 @@ function posLabel(pos: string): string {
             {{ entry.pos }}
           </span>
           <span
+            v-if="entry.wordForm"
+            class="text-sm font-semibold text-black"
+          >
+            {{ entry.wordForm }}
+          </span>
+          <span
             v-if="entry.ipa"
             class="text-xs text-gray-500"
           >

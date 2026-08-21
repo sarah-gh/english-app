@@ -6,6 +6,11 @@ import type { PosEntryFormState } from './card-form-state';
 import ExampleListField from './ExampleListField.vue';
 import type { PosType } from '@/types/card';
 
+defineProps<{
+  /** For the "Word Form" placeholder, e.g. "Decision" for a "Decide" root word. */
+  rootWord?: string;
+}>();
+
 const entries = defineModel<PosEntryFormState[]>('entries', { required: true });
 
 const POS_OPTIONS: { value: PosType; label: string }[] = [
@@ -19,7 +24,7 @@ const POS_OPTIONS: { value: PosType; label: string }[] = [
 function addEntry() {
   entries.value = [
     ...entries.value,
-    { id: crypto.randomUUID(), pos: 'noun', definition: '', ipa: '', examples: [] },
+    { id: crypto.randomUUID(), pos: 'noun', wordForm: '', definition: '', ipa: '', examples: [] },
   ];
 }
 
@@ -62,6 +67,15 @@ function removeEntry(id: string) {
               {{ option.label }}
             </option>
           </BaseSelect>
+          <BaseInput
+            v-model="entry.wordForm"
+            label="Word Form"
+            :placeholder="rootWord ? `e.g. ${rootWord}...` : 'e.g. Decision'"
+            class="w-full"
+          />
+        </div>
+
+        <div class="flex items-end gap-2">
           <BaseInput
             v-model="entry.ipa"
             label="IPA (optional)"

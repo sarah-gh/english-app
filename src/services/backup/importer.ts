@@ -2,7 +2,7 @@ import JSZip from 'jszip';
 import { cardRepository } from '@/db/repositories/card-repository';
 import { deckRepository } from '@/db/repositories/deck-repository';
 import { tagRepository } from '@/db/repositories/tag-repository';
-import type { Card, QuizQuestion, ReviewStatus } from '@/types/card';
+import type { Card, PartOfSpeechEntry, POSDetail, PosType, QuizQuestion, ReviewStatus, WordFamilyData } from '@/types/card';
 import type { Deck } from '@/types/deck';
 import type { Tag } from '@/types/tag';
 import { mimeTypeForFilename } from '@/utils/mime';
@@ -28,9 +28,65 @@ interface BackupManifest {
 }
 
 const VALID_STATUSES: ReviewStatus[] = ['new', 'easy', 'medium', 'hard'];
+const VALID_POS_TYPES: PosType[] = ['noun', 'verb', 'adjective', 'adverb', 'other'];
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.length > 0;
+}
+
+/** Parses a card's `partsOfSpeech` from an archive that may predate this field (older backups),
+ *  or predate the `wordForm` sub-field — malformed/incomplete entries are dropped individually
+ *  rather than failing the whole card, so a partially-corrupt list doesn't lose the rest. */
+function parsePartsOfSpeech(raw: unknown): PartOfSpeechEntry[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+
+  const entries = raw
+    .map((item): PartOfSpeechEntry | null => {
+      if (!item || typeof item !== 'object') return null;
+      const entry = item as Record<string, unknown>;
+      if (!isNonEmptyString(entry.id) || !isNonEmptyString(entry.definition)) return null;
+      if (!VALID_POS_TYPES.includes(entry.pos as PosType)) return null;
+
+      return {
+        id: entry.id,
+        pos: entry.pos as PosType,
+        wordForm: typeof entry.wordForm === 'string' ? entry.wordForm : undefined,
+        definition: entry.definition,
+        ipa: typeof entry.ipa === 'string' ? entry.ipa : undefined,
+        examples: Array.isArray(entry.examples) ? (entry.examples as string[]) : undefined,
+      };
+    })
+    .filter((entry): entry is PartOfSpeechEntry => entry !== null);
+
+  return entries.length > 0 ? entries : undefined;
+}
+
+function parsePosDetail(raw: unknown): POSDetail | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const detail = raw as Record<string, unknown>;
+  if (!isNonEmptyString(detail.word)) return undefined;
+
+  return {
+    word: detail.word,
+    meaning: typeof detail.meaning === 'string' ? detail.meaning : undefined,
+    example: typeof detail.example === 'string' ? detail.example : undefined,
+  };
+}
+
+/** Parses a card's `wordFamily` from an archive that may predate this field entirely. */
+function parseWordFamily(raw: unknown): WordFamilyData | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const data = raw as Record<string, unknown>;
+  if (!isNonEmptyString(data.rootWord)) return undefined;
+
+  return {
+    rootWord: data.rootWord,
+    noun: parsePosDetail(data.noun),
+    verb: parsePosDetail(data.verb),
+    adjective: parsePosDetail(data.adjective),
+    adverb: parsePosDetail(data.adverb),
+    usageNotes: typeof data.usageNotes === 'string' ? data.usageNotes : undefined,
+  };
 }
 
 /** Throws a clear, user-facing error the moment the archive's data doesn't look right. */
@@ -130,6 +186,8 @@ export async function importBackup(file: File): Promise<ImportSummary> {
       hint: typeof raw.hint === 'string' ? raw.hint : undefined,
       examples: Array.isArray(raw.examples) ? (raw.examples as string[]) : [],
       quizQuestions: Array.isArray(raw.quizQuestions) ? (raw.quizQuestions as QuizQuestion[]) : [],
+      partsOfSpeech: parsePartsOfSpeech(raw.partsOfSpeech),
+      wordFamily: parseWordFamily(raw.wordFamily),
       imageBlob,
       reviewStatus: VALID_STATUSES.includes(raw.reviewStatus as ReviewStatus)
         ? (raw.reviewStatus as ReviewStatus)

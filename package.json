@@ -23,10 +23,12 @@
     "dexie": "^4.4.5",
     "jszip": "^3.10.1",
     "pinia": "^4.0.2",
+    "read-excel-file": "^9.3.10",
     "swiper": "^14.1.0",
     "vee-validate": "^4.15.1",
     "vue": "rc",
     "vue-router": "^5.2.0",
+    "write-excel-file": "^4.1.1",
     "zod": "^3.25.76"
   },
   "devDependencies": {

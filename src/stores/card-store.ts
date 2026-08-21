@@ -39,6 +39,13 @@ export const useCardStore = defineStore('cards', () => {
     return created;
   }
 
+  /** Used by bulk import (e.g. Excel) — adds many cards in one go, newest-first. */
+  async function addMany(newCards: NewCard[]): Promise<Card[]> {
+    const created = await cardRepository.createMany(newCards);
+    cards.value = [...created, ...cards.value];
+    return created;
+  }
+
   async function edit(id: string, changes: CardUpdate): Promise<void> {
     await cardRepository.update(id, changes);
     const card = getById(id);
@@ -66,6 +73,7 @@ export const useCardStore = defineStore('cards', () => {
     byTag,
     byReviewStatus,
     add,
+    addMany,
     edit,
     setReviewStatus,
     remove,
