@@ -17,8 +17,8 @@ withDefaults(
     class="inline-flex items-center justify-center font-medium underline-offset-4 transition-colors hover:underline"
     :class="
       variant === 'mono'
-        ? 'text-slate-600 hover:text-slate-900'
-        : 'text-blue-600 hover:text-blue-800'
+        ? 'text-text/60 hover:text-text'
+        : 'text-primary hover:text-primary/70'
     "
     :style="{ fontSize: `${size}px` }"
   >

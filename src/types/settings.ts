@@ -39,6 +39,9 @@ export interface AppSettings {
 
   /** True once the first-launch sample decks/cards have been seeded, so it never happens twice. */
   hasSeededInitialData: boolean;
+
+  /** Target number of cards to study per day, shown as a progress ring on the Dashboard. */
+  dailyGoalCards: number;
   updatedAt: number;
 }
 
@@ -83,5 +86,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
   fallbackPrimaryProvider: 'google',
   fallbackBackupProvider: 'groq',
   hasSeededInitialData: false,
+  dailyGoalCards: 15,
   updatedAt: 0,
 };

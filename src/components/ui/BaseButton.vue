@@ -4,15 +4,17 @@ import { RouterLink } from 'vue-router';
 
 const props = withDefaults(
   defineProps<{
-    /** primary=solid black CTA, secondary=black outline, ghost=neutral outline, link=underlined text, tile=nav grid tile */
+    /** primary=solid teal CTA, secondary=solid amber CTA, ghost=neutral outline, link=underlined text, tile=nav grid tile */
     variant?: 'primary' | 'secondary' | 'ghost' | 'link' | 'tile';
     size?: 'sm' | 'md';
     type?: 'button' | 'submit';
     disabled?: boolean;
     loading?: boolean;
     block?: boolean;
-    /** Dims ghost/link variants to gray-500 for lower-emphasis actions (e.g. "Remove Key"). */
+    /** Dims ghost/link variants to text/50 for lower-emphasis actions. */
     muted?: boolean;
+    /** Recolors primary/ghost/link toward danger red for destructive actions (e.g. "Delete", "Remove Key"). */
+    danger?: boolean;
     /** Renders as a RouterLink instead of a <button> when set. */
     to?: string;
   }>(),
@@ -24,6 +26,7 @@ const props = withDefaults(
     loading: false,
     block: false,
     muted: false,
+    danger: false,
     to: undefined,
   },
 );
@@ -32,25 +35,35 @@ const isLink = computed(() => Boolean(props.to));
 const isDisabled = computed(() => !isLink.value && (props.disabled || props.loading));
 
 const variantClasses = computed(() => {
+  if (props.danger) {
+    switch (props.variant) {
+      case 'ghost':
+        return 'rounded border border-danger/30 text-danger hover:border-danger hover:text-danger disabled:cursor-not-allowed disabled:border-text/10 disabled:text-text/25 disabled:hover:border-text/10 disabled:hover:text-text/25';
+      case 'link':
+        return 'underline underline-offset-2 hover:no-underline text-danger hover:text-danger/70 disabled:cursor-not-allowed disabled:text-text/25 disabled:no-underline';
+      default:
+        return 'rounded bg-danger text-background hover:bg-danger/90 disabled:bg-danger/30';
+    }
+  }
   switch (props.variant) {
     case 'primary':
-      return 'rounded bg-black text-white hover:bg-gray-800 disabled:bg-gray-300';
+      return 'rounded bg-primary text-background hover:bg-primary/90 disabled:bg-primary/30';
     case 'secondary':
-      return 'rounded border border-black text-black hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:border-gray-300 disabled:text-gray-400 disabled:hover:bg-transparent';
+      return 'rounded bg-secondary text-text hover:bg-secondary/90 disabled:bg-secondary/30 disabled:text-text/30';
     case 'ghost':
       return [
         'rounded border',
-        props.muted ? 'border-gray-300 text-gray-500' : 'border-gray-300 text-gray-700',
-        'hover:border-black hover:text-black disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-300 disabled:hover:border-gray-200 disabled:hover:text-gray-300',
+        props.muted ? 'border-text/15 text-text/50' : 'border-text/15 text-text/70',
+        'hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:border-text/10 disabled:text-text/25 disabled:hover:border-text/10 disabled:hover:text-text/25',
       ].join(' ');
     case 'link':
       return [
         'underline underline-offset-2 hover:no-underline',
-        props.muted ? 'text-gray-500 hover:text-black' : 'text-black',
-        'disabled:cursor-not-allowed disabled:text-gray-300 disabled:no-underline',
+        props.muted ? 'text-text/50 hover:text-primary' : 'text-primary',
+        'disabled:cursor-not-allowed disabled:text-text/25 disabled:no-underline',
       ].join(' ');
     case 'tile':
-      return 'rounded-xl border border-black px-4 py-3 text-center text-black hover:bg-black hover:text-white';
+      return 'rounded-xl border border-primary/30 px-4 py-3 text-center text-text hover:bg-primary hover:text-background';
     default:
       return '';
   }

@@ -1,23 +1,29 @@
 import JSZip from 'jszip';
+import { aiQuizResultRepository } from '@/db/repositories/ai-quiz-result-repository';
 import { cardRepository } from '@/db/repositories/card-repository';
+import { dailyStatRepository } from '@/db/repositories/daily-stat-repository';
 import { deckRepository } from '@/db/repositories/deck-repository';
 import { settingsRepository } from '@/db/repositories/settings-repository';
 import { tagRepository } from '@/db/repositories/tag-repository';
+import { topicRepository } from '@/db/repositories/topic-repository';
 import { extensionForMimeType } from '@/utils/mime';
 
-const BACKUP_VERSION = 1;
+const BACKUP_VERSION = 2;
 
 /**
- * Bundles all decks, tags, and cards into data.json, moving each card's audio/image Blob
- * out into a media/ directory (JSON can't hold binary data) and leaving a relative path
- * reference in its place. The Gemini API key is intentionally never included — exporting
- * it would turn a shared backup file into a leaked credential.
+ * Bundles all decks, topics, tags, cards, AI quiz history, and daily stats into data.json,
+ * moving each card's audio/image Blob out into a media/ directory (JSON can't hold binary data)
+ * and leaving a relative path reference in its place. The Gemini API key is intentionally never
+ * included — exporting it would turn a shared backup file into a leaked credential.
  */
 export async function exportBackup(): Promise<void> {
-  const [cards, decks, tags, settings] = await Promise.all([
+  const [cards, decks, topics, tags, aiQuizResults, dailyStats, settings] = await Promise.all([
     cardRepository.getAll(),
     deckRepository.getAll(),
+    topicRepository.getAll(),
     tagRepository.getAll(),
+    aiQuizResultRepository.getAll(),
+    dailyStatRepository.getAll(),
     settingsRepository.get(),
   ]);
 
@@ -48,9 +54,12 @@ export async function exportBackup(): Promise<void> {
     version: BACKUP_VERSION,
     exportedAt: Date.now(),
     decks,
+    topics,
     tags,
     cards: cardRecords,
-    settings: { speechAccent: settings.speechAccent },
+    aiQuizResults,
+    dailyStats,
+    settings: { speechAccent: settings.speechAccent, dailyGoalCards: settings.dailyGoalCards },
   };
 
   zip.file('data.json', JSON.stringify(manifest, null, 2));

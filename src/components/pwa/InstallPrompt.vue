@@ -30,12 +30,12 @@ async function handleInstall() {
   <Transition name="install-sheet">
     <div
       v-if="shouldShow"
-      class="fixed inset-x-0 bottom-0 z-40 border-t-2 border-black bg-white p-4"
+      class="fixed inset-x-0 bottom-0 z-40 border-t-2 border-primary/30 bg-background p-4"
     >
       <div class="mx-auto flex max-w-md items-center gap-3">
         <div class="min-w-0 flex-1">
-          <p class="text-sm font-semibold text-black">Install Flashcards</p>
-          <p class="text-xs text-gray-600">Add it to your home screen for quick, offline access.</p>
+          <p class="text-sm font-semibold text-text">Install Flashcards</p>
+          <p class="text-xs text-text/60">Add it to your home screen for quick, offline access.</p>
         </div>
         <BaseButton
           variant="ghost"

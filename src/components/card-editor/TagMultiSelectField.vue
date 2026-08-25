@@ -31,13 +31,17 @@ async function createTag() {
 <template>
   <div>
     <div class="mb-1 flex items-center justify-between">
-      <span class="text-xs font-medium text-gray-600">Tags</span>
+      <span class="text-xs font-medium text-text/60">Tags</span>
       <button
         type="button"
-        class="text-xs font-medium text-black underline underline-offset-2 hover:no-underline"
+        class="inline-flex items-center gap-1 text-xs font-medium text-primary underline underline-offset-2 hover:no-underline"
         @click="isCreating = !isCreating"
       >
-        + New tag
+        <AppIcon
+          icon-name="Add"
+          :size="12"
+        />
+        New tag
       </button>
     </div>
 
@@ -53,7 +57,7 @@ async function createTag() {
       />
       <p
         v-if="tagStore.tags.length === 0"
-        class="text-xs text-gray-400"
+        class="text-xs text-text/35"
       >
         No tags yet.
       </p>
@@ -66,18 +70,18 @@ async function createTag() {
       <input
         v-model="newTagColor"
         type="color"
-        class="h-8 w-8 shrink-0 cursor-pointer rounded border border-gray-300"
+        class="h-8 w-8 shrink-0 cursor-pointer rounded border border-text/20"
       />
       <input
         v-model="newTagName"
         type="text"
         placeholder="Tag name"
-        class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-black focus:outline-none"
+        class="w-full rounded border border-text/20 px-3 py-2 text-sm focus:border-primary focus:outline-none"
         @keyup.enter="createTag"
       />
       <button
         type="button"
-        class="shrink-0 rounded bg-black px-3 py-2 text-xs font-medium text-white hover:bg-gray-800"
+        class="shrink-0 rounded bg-primary px-3 py-2 text-xs font-medium text-background hover:bg-primary/90"
         @click="createTag"
       >
         Add

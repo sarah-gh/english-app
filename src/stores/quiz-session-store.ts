@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { computed, ref, toRaw } from 'vue';
+import { aiQuizResultRepository } from '@/db/repositories';
 import type { GeneratedQuestionType } from '@/services/ai/quiz-schema';
 import { useCardStore } from '@/stores/card-store';
 import type { QuizQuestion } from '@/types/card';
@@ -19,6 +20,7 @@ export const useQuizSessionStore = defineStore('quiz-session', () => {
   const answers = ref<Record<string, string>>({});
   const isSubmitted = ref(false);
   const savedQuestionIds = ref<Set<string>>(new Set());
+  const isResultSaved = ref(false);
 
   function isCorrect(question: QuizSessionQuestion): boolean {
     const given = (answers.value[question.id] ?? '').trim().toLowerCase();
@@ -36,14 +38,39 @@ export const useQuizSessionStore = defineStore('quiz-session', () => {
     answers.value = {};
     isSubmitted.value = false;
     savedQuestionIds.value = new Set();
+    isResultSaved.value = false;
   }
 
   function setAnswer(questionId: string, value: string): void {
     answers.value[questionId] = value;
   }
 
-  function submit(): void {
+  /** Marks the quiz submitted and persists an `AiQuizResult` so the score/date/deck survive
+   *  navigation — shown later in the Dashboard's AI Quiz History, separate from mini matching
+   *  quizzes run during study sessions. */
+  async function submit(): Promise<void> {
     isSubmitted.value = true;
+    if (isResultSaved.value || questions.value.length === 0) return;
+
+    const cardStore = useCardStore();
+    const deckIds = new Set<string>();
+    const topicIds = new Set<string>();
+    for (const question of questions.value) {
+      const card = cardStore.getById(question.cardId);
+      if (card) {
+        deckIds.add(card.deckId);
+        if (card.topicId) topicIds.add(card.topicId);
+      }
+    }
+
+    await aiQuizResultRepository.create({
+      deckIds: [...deckIds],
+      topicIds: [...topicIds],
+      cardCount: questions.value.length,
+      score: score.value,
+      total: questions.value.length,
+    });
+    isResultSaved.value = true;
   }
 
   /**

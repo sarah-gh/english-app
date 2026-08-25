@@ -29,6 +29,7 @@ import PartsOfSpeechField from './PartsOfSpeechField.vue';
 import PronunciationField from './PronunciationField.vue';
 import QuizQuestionListField from './QuizQuestionListField.vue';
 import TagMultiSelectField from './TagMultiSelectField.vue';
+import TopicSelectField from './TopicSelectField.vue';
 import WordFamilyField from './WordFamilyField.vue';
 
 const draft = defineModel<CardFormState>('draft', { required: true });
@@ -245,7 +246,7 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
     @submit.prevent="isEditing ? submitExit() : submitAddAnother()"
   >
     <div>
-      <p class="mb-1 text-xs font-medium text-gray-600">Card Type</p>
+      <p class="mb-1 text-xs font-medium text-text/60">Card Type</p>
       <BaseSegmentedToggle
         :model-value="draft.cardMode"
         :options="[
@@ -260,7 +261,7 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
       <div class="mb-1 flex items-center justify-between gap-2">
         <label
           for="front-title"
-          class="block text-xs font-medium text-gray-600"
+          class="block text-xs font-medium text-text/60"
           >{{ draft.cardMode === 'word-family' ? 'Root / Base Word *' : 'Front Title / Question *' }}</label
         >
         <BaseButton
@@ -289,7 +290,7 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
             {{ item.value }}
             <span
               v-if="item.source === 'existing'"
-              class="shrink-0 rounded-full border border-gray-300 px-1.5 py-0.5 text-[10px] font-medium text-gray-500"
+              class="shrink-0 rounded-full border border-text/20 px-1.5 py-0.5 text-[10px] font-medium text-text/50"
             >
               Your card
             </span>
@@ -298,7 +299,7 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
       </BaseAutocomplete>
       <p
         v-if="!hasAiCredentials"
-        class="mt-1 text-xs text-gray-500"
+        class="mt-1 text-xs text-text/50"
       >
         <RouterLink
           to="/settings"
@@ -309,14 +310,14 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
       </p>
       <p
         v-if="frontTitleMeta.touched && frontTitleError"
-        class="mt-1 flex items-center gap-1.5 text-xs font-medium text-gray-800"
+        class="mt-1 flex items-center gap-1.5 text-xs font-medium text-danger"
       >
         <WarningIcon />
         {{ frontTitleError }}
       </p>
       <p
         v-if="autofillErrorMessage"
-        class="mt-1 flex items-center gap-1.5 text-xs font-medium text-gray-800"
+        class="mt-1 flex items-center gap-1.5 text-xs font-medium text-danger"
       >
         <WarningIcon />
         {{ autofillErrorMessage }}
@@ -334,7 +335,7 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
         <div class="mb-1 flex items-center justify-between gap-2">
           <label
             for="back-answer"
-            class="block text-xs font-medium text-gray-600"
+            class="block text-xs font-medium text-text/60"
             >Back Answer / Explanation *</label
           >
           <AiFieldButton
@@ -349,20 +350,20 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
           v-model="draft.backAnswer"
           rows="3"
           placeholder="e.g. Present, appearing, or found everywhere."
-          class="w-full rounded border px-3 py-2 text-sm focus:border-black focus:outline-none"
-          :class="backAnswerMeta.touched && backAnswerError ? 'border-red-500/80' : 'border-gray-300'"
+          class="w-full rounded border px-3 py-2 text-sm focus:border-primary focus:outline-none"
+          :class="backAnswerMeta.touched && backAnswerError ? 'border-danger/80' : 'border-text/20'"
           @blur="touchBackAnswer"
         />
         <p
           v-if="backAnswerMeta.touched && backAnswerError"
-          class="mt-1 flex items-center gap-1.5 text-xs font-medium text-gray-800"
+          class="mt-1 flex items-center gap-1.5 text-xs font-medium text-danger"
         >
           <WarningIcon />
           {{ backAnswerError }}
         </p>
         <p
           v-if="definitionErrorMessage"
-          class="mt-1 flex items-center gap-1.5 text-xs font-medium text-gray-800"
+          class="mt-1 flex items-center gap-1.5 text-xs font-medium text-danger"
         >
           <WarningIcon />
           {{ definitionErrorMessage }}
@@ -380,6 +381,10 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
       :error="deckIdMeta.touched ? deckIdError : undefined"
       @blur="touchDeckId"
     />
+    <TopicSelectField
+      v-model:topic-id="draft.topicId"
+      :deck-id="draft.deckId"
+    />
     <TagMultiSelectField v-model:tag-ids="draft.tagIds" />
 
     <PronunciationField
@@ -392,7 +397,7 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
     <div>
       <label
         for="hint"
-        class="mb-1 block text-xs font-medium text-gray-600"
+        class="mb-1 block text-xs font-medium text-text/60"
         >Hint / Hidden Section (optional)</label
       >
       <input
@@ -400,7 +405,7 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
         v-model="draft.hint"
         type="text"
         placeholder="Revealed via tap during review"
-        class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-black focus:outline-none"
+        class="w-full rounded border border-text/20 px-3 py-2 text-sm focus:border-primary focus:outline-none"
       />
     </div>
 
@@ -411,10 +416,10 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
     <QuizQuestionListField v-model:quiz-questions="draft.quizQuestions" />
     <ImageUploadField v-model:image-blob="draft.imageBlob" />
 
-    <div class="fixed inset-x-0 bottom-0 flex gap-3 border-t border-gray-200 bg-white p-4">
+    <div class="fixed inset-x-0 bottom-0 flex gap-3 border-t border-text/10 bg-background p-4">
       <button
         type="button"
-        class="flex-1 rounded border border-gray-300 py-2.5 text-sm font-medium text-gray-700 hover:border-black hover:text-black"
+        class="flex-1 rounded border border-text/20 py-2.5 text-sm font-medium text-text/70 hover:border-primary hover:text-primary"
         @click="emit('cancel')"
       >
         Cancel
@@ -423,7 +428,7 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
         v-if="!isEditing"
         type="button"
         :disabled="isSaving || (formMeta.touched && !formMeta.valid)"
-        class="flex-1 rounded border border-black py-2.5 text-sm font-medium text-black hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:border-gray-300 disabled:text-gray-400 disabled:hover:bg-transparent"
+        class="flex-1 rounded border border-primary py-2.5 text-sm font-medium text-primary hover:bg-primary hover:text-background disabled:cursor-not-allowed disabled:border-text/20 disabled:text-text/30 disabled:hover:bg-transparent"
         @click="submitExit"
       >
         {{ isSaving ? 'Saving…' : 'Save & Exit' }}
@@ -431,7 +436,7 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
       <button
         type="submit"
         :disabled="isSaving || (formMeta.touched && !formMeta.valid)"
-        class="flex-1 rounded bg-black py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:bg-gray-400"
+        class="flex-1 rounded bg-secondary py-2.5 text-sm font-medium text-text hover:bg-secondary/90 disabled:bg-secondary/30 disabled:text-text/30"
       >
         {{ isSaving ? 'Saving…' : isEditing ? 'Save Changes' : 'Save & Add Another' }}
       </button>

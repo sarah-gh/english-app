@@ -17,6 +17,8 @@ import { useCardStore } from '@/stores/card-store';
 import { useDeckStore } from '@/stores/deck-store';
 import { useSettingsStore } from '@/stores/settings-store';
 import { useTagStore } from '@/stores/tag-store';
+import { useThemeStore } from '@/stores/theme-store';
+import type { ThemeMode } from '@/services/theme/apply-theme';
 import {
   DEFAULT_AIHUBMIX_BASE_URL,
   DEFAULT_GROQ_BASE_URL,
@@ -32,8 +34,19 @@ const settingsStore = useSettingsStore();
 const cardStore = useCardStore();
 const deckStore = useDeckStore();
 const tagStore = useTagStore();
+const themeStore = useThemeStore();
 
 const isReady = ref(false);
+
+const THEME_MODE_OPTIONS: { value: ThemeMode; label: string }[] = [
+  { value: 'light', label: '☀️ Light' },
+  { value: 'dark', label: '🌙 Dark' },
+  { value: 'system', label: '🖥️ System' },
+];
+
+function selectThemeMode(mode: ThemeMode) {
+  themeStore.setMode(mode);
+}
 
 const PROVIDER_MODE_OPTIONS: { value: AiProvider; label: string }[] = [
   { value: 'google', label: 'Google AI Studio (Gemini)' },
@@ -251,26 +264,48 @@ async function handleClearAll() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-white px-4 py-6">
+  <div class="min-h-screen bg-background px-4 py-6">
     <RouterLink
       to="/"
-      class="mb-4 inline-block text-sm text-gray-500 hover:text-black"
+      class="mb-4 inline-flex items-center gap-1 text-sm text-text/50 hover:text-primary"
     >
-      ← Dashboard
+      <AppIcon
+        icon-name="ArrowLeft"
+        :size="14"
+      />
+      Dashboard
     </RouterLink>
-    <h1 class="mb-6 text-xl font-semibold text-black">Settings</h1>
+    <h1 class="mb-6 text-xl font-semibold text-text">Settings</h1>
 
     <p
       v-if="!isReady"
-      class="text-sm text-gray-500"
+      class="text-sm text-text/50"
     >
       Loading…
     </p>
 
     <template v-else>
       <BaseCard class="mb-6">
-        <h2 class="mb-3 text-sm font-semibold text-black">Pronunciation</h2>
-        <p class="mb-2 text-xs font-medium text-gray-600">Accent</p>
+        <h2 class="mb-3 text-sm font-semibold text-text">Appearance</h2>
+        <p class="mb-2 text-xs font-medium text-text/60">Theme</p>
+        <BaseSegmentedToggle
+          class="mb-2"
+          :model-value="themeStore.mode"
+          :options="THEME_MODE_OPTIONS"
+          @update:model-value="selectThemeMode"
+        />
+        <p class="text-xs text-text/50">
+          {{
+            themeStore.mode === 'system'
+              ? `Following your device's setting (currently ${themeStore.isDark ? 'dark' : 'light'}).`
+              : `Always ${themeStore.mode}, regardless of your device's setting.`
+          }}
+        </p>
+      </BaseCard>
+
+      <BaseCard class="mb-6">
+        <h2 class="mb-3 text-sm font-semibold text-text">Pronunciation</h2>
+        <p class="mb-2 text-xs font-medium text-text/60">Accent</p>
         <BaseSegmentedToggle
           class="mb-3"
           :model-value="settingsStore.settings.speechAccent"
@@ -285,22 +320,17 @@ async function handleClearAll() {
           size="sm"
           @click="testAccent"
         >
-          <svg
-            viewBox="0 0 24 24"
-            width="12"
-            height="12"
-            fill="currentColor"
-            aria-hidden="true"
-          >
-            <path d="M8 5v14l11-7z" />
-          </svg>
+          <AppIcon
+            icon-name="Play"
+            :size="12"
+          />
           Test Voice
         </BaseButton>
       </BaseCard>
 
       <BaseCard class="mb-6">
-        <h2 class="mb-1 text-sm font-semibold text-black">AI Quiz Generator</h2>
-        <p class="mb-3 text-xs text-gray-500">
+        <h2 class="mb-1 text-sm font-semibold text-text">AI Quiz Generator</h2>
+        <p class="mb-3 text-xs text-text/50">
           Configure the provider(s) used to generate quizzes and auto-fill cards. Keys are stored
           only on this device — never included in exports.
         </p>
@@ -321,7 +351,7 @@ async function handleClearAll() {
         </BaseSelect>
 
         <template v-if="aiProviderDraft === 'fallback'">
-          <p class="mb-3 text-xs text-gray-500">
+          <p class="mb-3 text-xs text-text/50">
             Tries the primary provider first. If it fails (network error, rate limit, server
             error, or a missing key), a warning is logged and the backup provider is retried
             automatically using the credentials below.
@@ -414,7 +444,7 @@ async function handleClearAll() {
           </BaseButton>
           <span
             v-if="aiConfigStatus"
-            class="inline-flex items-center gap-1 rounded-full bg-black px-2.5 py-1 text-xs font-medium text-white"
+            class="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-xs font-medium text-background"
           >
             ✓ {{ aiConfigStatus }}
           </span>
@@ -425,8 +455,8 @@ async function handleClearAll() {
         v-if="!isStandalone"
         class="mb-6"
       >
-        <h2 class="mb-1 text-sm font-semibold text-black">Install Application</h2>
-        <p class="mb-3 text-xs text-gray-500">
+        <h2 class="mb-1 text-sm font-semibold text-text">Install Application</h2>
+        <p class="mb-3 text-xs text-text/50">
           Install Flashcards on this device for quick access and a full-screen, offline-ready
           experience.
         </p>
@@ -440,7 +470,7 @@ async function handleClearAll() {
         </BaseButton>
         <p
           v-if="!isInstallable"
-          class="mt-2 text-xs text-gray-400"
+          class="mt-2 text-xs text-text/35"
         >
           Not available right now — your browser may not support installation, or it may already
           be installed.
@@ -448,8 +478,8 @@ async function handleClearAll() {
       </BaseCard>
 
       <BaseCard class="mb-6">
-        <h2 class="mb-1 text-sm font-semibold text-black">Backup &amp; Data</h2>
-        <p class="mb-4 text-xs text-gray-500">
+        <h2 class="mb-1 text-sm font-semibold text-text">Backup &amp; Data</h2>
+        <p class="mb-4 text-xs text-text/50">
           Export everything into a single .zip file, or import one to restore or merge data on
           this or another device.
         </p>
@@ -461,6 +491,11 @@ async function handleClearAll() {
             :loading="isExporting"
             @click="handleExport"
           >
+            <AppIcon
+              v-if="!isExporting"
+              icon-name="DocumentDownload"
+              :size="14"
+            />
             {{ isExporting ? 'Exporting…' : 'Export Backup (.zip)' }}
           </BaseButton>
           <BaseButton
@@ -469,6 +504,11 @@ async function handleClearAll() {
             :loading="isImporting"
             @click="triggerImportPicker"
           >
+            <AppIcon
+              v-if="!isImporting"
+              icon-name="DocumentUpload"
+              :size="14"
+            />
             {{ isImporting ? 'Importing…' : 'Import Backup (.zip)' }}
           </BaseButton>
           <input
@@ -482,22 +522,22 @@ async function handleClearAll() {
 
         <p
           v-if="importSummary"
-          class="text-xs font-medium text-gray-700"
+          class="text-xs font-medium text-text/70"
         >
-          Imported {{ importSummary.decks }} deck(s), {{ importSummary.tags }} tag(s),
-          {{ importSummary.cards }} card(s).
+          Imported {{ importSummary.decks }} deck(s), {{ importSummary.topics }} topic(s),
+          {{ importSummary.tags }} tag(s), {{ importSummary.cards }} card(s).
         </p>
         <p
           v-if="importError"
-          class="flex items-center gap-1.5 text-xs font-medium text-gray-800"
+          class="flex items-center gap-1.5 text-xs font-medium text-danger"
         >
           <WarningIcon />
           {{ importError }}
         </p>
 
-        <hr class="my-4 border-gray-200" />
+        <hr class="my-4 border-text/10" />
 
-        <p class="mb-3 text-xs text-gray-500">
+        <p class="mb-3 text-xs text-text/50">
           Bulk-create new cards from a spreadsheet instead of a backup file — useful for adding a
           batch of vocabulary, grammar, or idiom cards at once.
         </p>
@@ -511,16 +551,21 @@ async function handleClearAll() {
       </BaseCard>
 
       <BaseCard>
-        <h2 class="mb-1 text-sm font-semibold text-black">Danger Zone</h2>
-        <p class="mb-3 text-xs text-gray-500">
+        <h2 class="mb-1 text-sm font-semibold text-text">Danger Zone</h2>
+        <p class="mb-3 text-xs text-text/50">
           Permanently deletes every deck, card, and tag on this device, and resets your settings.
           This can't be undone.
         </p>
         <BaseButton
           variant="primary"
+          danger
           size="sm"
           @click="isConfirmingClear = true"
         >
+          <AppIcon
+            icon-name="Trash"
+            :size="14"
+          />
           Clear All Data
         </BaseButton>
       </BaseCard>
@@ -531,6 +576,7 @@ async function handleClearAll() {
       title="Clear all data?"
       message="This permanently deletes every deck, card, and tag on this device, and resets your settings. This can't be undone."
       confirm-label="Clear Everything"
+      variant="danger"
       @confirm="handleClearAll"
       @cancel="isConfirmingClear = false"
     />

@@ -23,7 +23,7 @@ const selectId = useId();
     <label
       v-if="label"
       :for="selectId"
-      class="mb-1 block text-xs font-medium text-gray-600"
+      class="mb-1 block text-xs font-medium text-text/60"
     >
       {{ label }}
     </label>
@@ -31,7 +31,7 @@ const selectId = useId();
       :id="selectId"
       :value="modelValue"
       :disabled="disabled"
-      class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-black focus:outline-none disabled:bg-gray-50"
+      class="w-full rounded border border-text/20 px-3 py-2 text-sm focus:border-primary focus:outline-none disabled:bg-text/5"
       @change="$emit('update:modelValue', ($event.target as HTMLSelectElement).value)"
     >
       <slot />

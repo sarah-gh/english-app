@@ -15,9 +15,14 @@ const props = withDefaults(
   defineProps<{
     card: Card;
     interactive: boolean;
+    /** Gates only the drag-to-assess gesture (and the Known/Not Known fly-away it triggers),
+     *  independently of `interactive` — Study mode keeps audio/hint/image interactions live but
+     *  has no Known/Not Known assessment, so its card must not respond to swipe drags. */
+    swipeEnabled?: boolean;
     viewMode?: CardViewMode;
   }>(),
   {
+    swipeEnabled: true,
     viewMode: 'study',
   },
 );
@@ -78,7 +83,7 @@ let activePointerId: number | null = null;
 let startX = 0;
 
 function onPointerDown(event: PointerEvent) {
-  if (!props.interactive || isFlying.value) return;
+  if (!props.interactive || !props.swipeEnabled || isFlying.value) return;
   activePointerId = event.pointerId;
   startX = event.clientX;
   isDragging.value = true;
@@ -103,7 +108,7 @@ function endDrag(event: PointerEvent) {
 }
 
 function commitSwipe(direction: SwipeDirection) {
-  if (isFlying.value) return;
+  if (!props.swipeEnabled || isFlying.value) return;
   isFlying.value = true;
   flyDirection.value = direction;
   offsetX.value = direction === 'right' ? FLY_DISTANCE : -FLY_DISTANCE;
@@ -170,7 +175,7 @@ onBeforeUnmount(() => {
 <template>
   <div
     ref="rootEl"
-    class="relative flex h-full w-full touch-none flex-col overflow-y-auto rounded-xl border-2 border-black bg-white p-5 select-none"
+    class="relative flex h-full w-full touch-none flex-col overflow-y-auto rounded-xl border-2 border-text/10 bg-background p-5 select-none"
     :style="cardStyle"
     @pointerdown="onPointerDown"
     @pointermove="onPointerMove"
@@ -179,43 +184,36 @@ onBeforeUnmount(() => {
     @transitionend="onTransitionEnd"
   >
     <div
-      class="pointer-events-none absolute top-4 left-4 rounded border-2 border-black bg-red-500 px-3 py-1 text-sm font-bold text-white uppercase shadow-md"
+      class="pointer-events-none absolute top-4 left-4 rounded border-2 border-text/20 bg-danger px-3 py-1 text-sm font-bold text-white uppercase shadow-md"
       :style="{ opacity: leftLabelOpacity }"
     >
       Not Known
     </div>
     <div
-      class="pointer-events-none absolute top-4 right-4 rounded border-2 border-black bg-green-500 px-3 py-1 text-sm font-bold text-white uppercase shadow-md"
+      class="pointer-events-none absolute top-4 right-4 rounded border-2 border-text/20 bg-green-500 px-3 py-1 text-sm font-bold text-white uppercase shadow-md"
       :style="{ opacity: rightLabelOpacity }"
     >
       Known
     </div>
 
     <div class="flex items-start justify-between gap-2">
-      <h2 class="text-xl font-semibold text-black">{{ card.frontTitle }}</h2>
+      <h2 class="text-xl font-semibold text-text">{{ card.frontTitle }}</h2>
       <button
         type="button"
         aria-label="Play pronunciation"
-        class="shrink-0 rounded-full border border-black p-2 text-black hover:bg-black hover:text-white"
+        class="shrink-0 rounded-full border border-primary p-2 text-primary hover:bg-primary hover:text-background"
         @pointerdown.stop
         @click.stop="playAudio"
       >
-        <svg
-          viewBox="0 0 24 24"
-          width="18"
-          height="18"
-          fill="currentColor"
-          aria-hidden="true"
-        >
-          <path
-            d="M4 9v6h4l5 5V4L8 9H4zm11.5 3a3.5 3.5 0 0 0-2-3.16v6.32a3.5 3.5 0 0 0 2-3.16z"
-          />
-        </svg>
+        <AppIcon
+          icon-name="VolumeHigh"
+          :size="18"
+        />
       </button>
     </div>
     <p
       v-if="card.ipa"
-      class="mt-1 text-sm text-gray-500"
+      class="mt-1 text-sm text-text/50"
     >
       {{ card.ipa }}
     </p>
@@ -231,7 +229,7 @@ onBeforeUnmount(() => {
         <button
           v-else
           type="button"
-          class="mt-4 rounded border-2 border-dashed border-gray-300 py-3 text-sm font-medium text-gray-500 hover:border-black hover:text-black"
+          class="mt-4 rounded border-2 border-dashed border-text/20 py-3 text-sm font-medium text-text/50 hover:border-primary hover:text-primary"
           @pointerdown.stop
           @click.stop="revealAnswer"
         >
@@ -244,7 +242,7 @@ onBeforeUnmount(() => {
       </template>
       <template v-else>
         <template v-if="showAnswer">
-          <p class="mt-4 text-base text-black">{{ card.backAnswer }}</p>
+          <p class="mt-4 text-base text-text">{{ card.backAnswer }}</p>
 
           <ul
             v-if="card.examples.length > 0"
@@ -253,7 +251,7 @@ onBeforeUnmount(() => {
             <li
               v-for="(example, index) in card.examples"
               :key="index"
-              class="text-sm text-gray-600"
+              class="text-sm text-text/60"
             >
               “{{ example }}”
             </li>
@@ -262,7 +260,7 @@ onBeforeUnmount(() => {
         <button
           v-else
           type="button"
-          class="mt-4 rounded border-2 border-dashed border-gray-300 py-3 text-sm font-medium text-gray-500 hover:border-black hover:text-black"
+          class="mt-4 rounded border-2 border-dashed border-text/20 py-3 text-sm font-medium text-text/50 hover:border-primary hover:text-primary"
           @pointerdown.stop
           @click.stop="revealAnswer"
         >
@@ -295,18 +293,18 @@ onBeforeUnmount(() => {
     <button
       v-if="card.hint"
       type="button"
-      class="mt-4 rounded border border-gray-300 px-3 py-2 text-left text-sm text-gray-600 hover:border-black"
+      class="mt-4 rounded border border-text/20 px-3 py-2 text-left text-sm text-text/60 hover:border-primary"
       @pointerdown.stop
       @click.stop="toggleHint"
     >
-      <span class="font-medium text-black">Hint:</span>
+      <span class="font-medium text-text">Hint:</span>
       {{ isHintRevealed ? card.hint : 'Tap to reveal' }}
     </button>
 
     <button
       v-if="imageUrl"
       type="button"
-      class="mt-4 overflow-hidden rounded border border-gray-300 transition-[height]"
+      class="mt-4 overflow-hidden rounded border border-text/20 transition-[height]"
       :class="isImageExpanded ? 'h-56' : 'h-24'"
       @pointerdown.stop
       @click.stop="toggleImage"

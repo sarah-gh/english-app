@@ -24,7 +24,7 @@ const emit = defineEmits<{ click: [] }>();
     :disabled="disabled || loading"
     :title="title"
     :aria-label="title"
-    class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded text-black transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-300 disabled:hover:bg-transparent"
+    class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded text-accent transition-colors hover:bg-accent/10 disabled:cursor-not-allowed disabled:text-text/25 disabled:hover:bg-transparent"
     @click="emit('click')"
   >
     <svg

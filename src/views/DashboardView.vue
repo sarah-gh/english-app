@@ -1,16 +1,14 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
-import { RouterLink, useRouter } from 'vue-router';
+import { onMounted, ref } from 'vue';
+import { RouterLink } from 'vue-router';
+import AiSparkleIcon from '@/components/app/AiSparkleIcon.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseCard from '@/components/ui/BaseCard.vue';
 import { useCardStore } from '@/stores/card-store';
 import { useDeckStore } from '@/stores/deck-store';
-import { useReviewSessionStore } from '@/stores/review-session-store';
 
-const router = useRouter();
 const cardStore = useCardStore();
 const deckStore = useDeckStore();
-const reviewSessionStore = useReviewSessionStore();
 
 const isReady = ref(false);
 
@@ -19,98 +17,44 @@ onMounted(async () => {
   isReady.value = true;
 });
 
-const hasWeightedCards = computed(
-  () => cardStore.cards.filter((card) => card.reviewStatus !== 'new').length > 0,
-);
-
-function startQuickWeightedReview() {
-  reviewSessionStore.start({ type: 'weighted' });
-  router.push('/review/session');
-}
-
-const statusCounts = computed(() => ({
-  new: cardStore.byReviewStatus('new').length,
-  easy: cardStore.byReviewStatus('easy').length,
-  medium: cardStore.byReviewStatus('medium').length,
-  hard: cardStore.byReviewStatus('hard').length,
-}));
-
 function deckCardCount(deckId: string): number {
   return cardStore.byDeck(deckId).length;
 }
 </script>
 
 <template>
-  <div class="min-h-screen bg-white px-4 py-6">
-    <h1 class="mb-1 text-xl font-semibold text-black">Flashcards</h1>
-    <p class="mb-6 text-sm text-gray-500">Your offline vocabulary trainer</p>
+  <div class="min-h-screen bg-background px-4 py-6">
+    <h1 class="mb-1 text-xl font-semibold text-text">Flashcards</h1>
+    <p class="mb-6 text-sm text-text/50">Your offline vocabulary trainer</p>
 
-    <p
-      v-if="!isReady"
-      class="text-sm text-gray-500"
-    >
+    <p v-if="!isReady" class="text-sm text-text/50">
       Loading…
     </p>
 
     <template v-else>
-      <section class="mb-6 grid gap-3 grid-cols-4">
-        <BaseCard class="text-center">
-          <p class="text-2xl font-semibold text-black">{{ statusCounts.new }}</p>
-          <p class="text-xs text-gray-500">New</p>
-        </BaseCard>
-        <BaseCard class="text-center">
-          <p class="text-2xl font-semibold text-black">{{ statusCounts.easy }}</p>
-          <p class="text-xs text-gray-500">Easy</p>
-        </BaseCard>
-        <BaseCard class="text-center">
-          <p class="text-2xl font-semibold text-black">{{ statusCounts.medium }}</p>
-          <p class="text-xs text-gray-500">Medium</p>
-        </BaseCard>
-        <BaseCard class="text-center">
-          <p class="text-2xl font-semibold text-black">{{ statusCounts.hard }}</p>
-          <p class="text-xs text-gray-500">Hard</p>
-        </BaseCard>
-      </section>
-
-      <BaseButton
-        variant="primary"
-        block
-        :disabled="!hasWeightedCards"
-        class="mb-8"
-        @click="startQuickWeightedReview"
-      >
-        Quick Start Weighted Review
+      <BaseButton variant="primary" block class="mb-8" to="/study">
+        Start Studying
       </BaseButton>
 
       <section class="mb-8">
         <div class="mb-2 flex items-center justify-between">
-          <h2 class="text-sm font-semibold text-black">Decks</h2>
-          <BaseButton
-            variant="link"
-            size="sm"
-            to="/cards/new"
-          >
-            + Add Card
+          <h2 class="text-sm font-semibold text-text">Decks</h2>
+          <BaseButton variant="link" size="sm" to="/cards/new">
+            <AppIcon icon-name="Add" :size="14" />
+            Add Card
           </BaseButton>
         </div>
         <BaseCard padding="none">
-          <ul class="divide-y divide-gray-200">
-            <li
-              v-for="deck in deckStore.decks"
-              :key="deck.id"
-            >
+          <ul class="divide-y divide-text/10">
+            <li v-for="deck in deckStore.decks" :key="deck.id">
               <RouterLink
-                :to="`/cards?deckId=${deck.id}`"
-                class="flex items-center justify-between px-4 py-3 hover:bg-gray-50"
-              >
-                <span class="text-sm text-black">{{ deck.name }}</span>
-                <span class="text-xs text-gray-500">{{ deckCardCount(deck.id) }} cards</span>
+                :to="`/cards/${deck.id}`"
+                class="flex items-center justify-between px-4 py-3 hover:bg-primary/5">
+                <span class="text-sm text-text">{{ deck.name }}</span>
+                <span class="text-xs text-text/50">{{ deckCardCount(deck.id) }} cards</span>
               </RouterLink>
             </li>
-            <li
-              v-if="deckStore.decks.length === 0"
-              class="px-4 py-3 text-sm text-gray-400"
-            >
+            <li v-if="deckStore.decks.length === 0" class="px-4 py-3 text-sm text-text/35">
               No decks yet.
             </li>
           </ul>
@@ -118,43 +62,37 @@ function deckCardCount(deckId: string): number {
       </section>
 
       <section>
-        <h2 class="mb-2 text-sm font-semibold text-black">Sections</h2>
+        <h2 class="mb-2 text-sm font-semibold text-text">Sections</h2>
         <div class="grid grid-cols-2 gap-3">
-          <BaseButton
-            variant="tile"
-            to="/cards"
-          >
-            Browse Cards
+          <BaseButton variant="tile" to="/cards">
+            <span class="flex flex-row items-center gap-1.5">
+              <AppIcon icon-name="DocumentText" :size="20" :viewBox="'0 0 23 23'" />
+              Browse Cards
+            </span>
           </BaseButton>
-          <BaseButton
-            variant="tile"
-            to="/cards/new"
-          >
-            Card Creator
+          <BaseButton variant="tile" to="/cards/new">
+            <span class="flex flex-row items-center gap-1.5">
+              <AppIcon icon-name="AddSquare" :size="20" :viewBox="'0 0 23 23'"  />
+              Card Creator
+            </span>
           </BaseButton>
-          <BaseButton
-            variant="tile"
-            to="/decks"
-          >
-            Deck Management
+          <BaseButton variant="tile" to="/decks">
+            <span class="flex flex-row items-center gap-1.5">
+              <AppIcon icon-name="Folder2" :size="20" :viewBox="'0 0 23 23'"  />
+              Deck Management
+            </span>
           </BaseButton>
-          <BaseButton
-            variant="tile"
-            to="/review"
-          >
-            Review Session
+          <BaseButton variant="tile" to="/study">
+            <span class="flex flex-row items-center gap-1.5 ">
+              <AppIcon icon-name="RefreshCircle" :size="20" :viewBox="'0 0 23 23'"  />
+              Study
+            </span>
           </BaseButton>
-          <BaseButton
-            variant="tile"
-            to="/ai-quiz"
-          >
-            AI Quiz Generator
-          </BaseButton>
-          <BaseButton
-            variant="tile"
-            to="/settings"
-          >
-            Settings
+          <BaseButton variant="tile" to="/ai-quiz">
+            <span class="flex flex-row items-center gap-1.5">
+              <AiSparkleIcon :size="20"  />
+              AI Quiz Generator
+            </span>
           </BaseButton>
         </div>
       </section>

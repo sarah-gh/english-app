@@ -103,8 +103,8 @@ function handleKeydown(event: KeyboardEvent) {
       role="combobox"
       aria-autocomplete="list"
       :aria-expanded="isOpen"
-      class="w-full rounded border px-3 py-2 text-sm focus:border-black focus:outline-none"
-      :class="invalid ? 'border-red-500/80' : 'border-gray-300'"
+      class="w-full rounded border px-3 py-2 text-sm focus:border-primary focus:outline-none"
+      :class="invalid ? 'border-danger/80' : 'border-text/20'"
       @input="handleInput"
       @focus="handleFocus"
       @click="handleClick"
@@ -113,11 +113,11 @@ function handleKeydown(event: KeyboardEvent) {
     />
     <ul
       v-if="isOpen"
-      class="absolute inset-x-0 top-full z-20 mt-1 max-h-60 overflow-y-auto rounded-lg border border-neutral-200/80 bg-white py-1 text-sm shadow-lg"
+      class="absolute inset-x-0 top-full z-20 mt-1 max-h-60 overflow-y-auto rounded-lg border border-text/10 bg-white/95 dark:bg-slate-900/95 py-1 text-sm shadow-lg"
     >
       <li
         v-if="items.length === 0"
-        class="px-3 py-2 text-xs text-gray-400"
+        class="px-3 py-2 text-xs text-text/35"
       >
         {{ loading ? 'Searching…' : 'No matches found.' }}
       </li>
@@ -126,7 +126,7 @@ function handleKeydown(event: KeyboardEvent) {
           v-for="(item, index) in items"
           :key="item.value + index"
           class="cursor-pointer px-3 py-2 transition-colors duration-100"
-          :class="index === activeIndex ? 'bg-gray-100' : 'hover:bg-gray-50'"
+          :class="index === activeIndex ? 'bg-primary/10' : 'hover:bg-primary/5'"
           @mousedown.prevent="selectItem(item)"
           @mouseenter="activeIndex = index"
         >
@@ -140,7 +140,7 @@ function handleKeydown(event: KeyboardEvent) {
         </li>
         <li
           v-if="loading"
-          class="border-t border-gray-100 px-3 py-2 text-xs text-gray-400"
+          class="border-t border-text/10 px-3 py-2 text-xs text-text/35"
         >
           Searching…
         </li>

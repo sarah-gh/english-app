@@ -186,62 +186,70 @@ function goToCards() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-white px-4 py-6">
+  <div class="min-h-screen bg-background px-4 py-6">
     <RouterLink
       to="/cards"
-      class="mb-4 inline-block text-sm text-gray-500 hover:text-black"
+      class="mb-4 inline-flex items-center gap-1 text-sm text-text/50 hover:text-primary"
     >
-      ← Cards
+      <AppIcon
+        icon-name="ArrowLeft"
+        :size="14"
+      />
+      Cards
     </RouterLink>
 
-    <h1 class="mb-1 text-xl font-semibold text-black">Import from Excel</h1>
-    <p class="mb-6 text-sm text-gray-500">
+    <h1 class="mb-1 text-xl font-semibold text-text">Import from Excel</h1>
+    <p class="mb-6 text-sm text-text/50">
       Bulk-create cards from an .xlsx file. Since a spreadsheet cell can't hold binary data, imported cards are
       text-only — add photos, videos, or audio afterwards from each card's editor.
     </p>
 
-    <div class="mb-6 flex flex-wrap items-center gap-3 rounded-lg border border-gray-200 p-4">
+    <div class="mb-6 flex flex-wrap items-center gap-3 rounded-lg border border-text/10 p-4">
       <BaseButton
         variant="secondary"
         size="sm"
         @click="downloadImportTemplate"
       >
+        <AppIcon
+          icon-name="DocumentDownload"
+          :size="14"
+        />
         Download template
       </BaseButton>
-      <span class="text-xs text-gray-500">
+      <span class="text-xs text-text/50">
         Columns: Front, Back, Deck, Tags, Hint, IPA, Examples. Only Front, Back, and Deck are required. Separate
         multiple Tags or Examples with a comma or semicolon.
       </span>
     </div>
 
     <div class="mb-6">
-      <label class="mb-1 block text-xs font-medium text-gray-600">Excel file (.xlsx)</label>
+      <label class="mb-1 block text-xs font-medium text-text/60">Excel file (.xlsx)</label>
       <input
         ref="fileInput"
         type="file"
         accept=".xlsx"
-        class="block w-full text-sm text-gray-700 file:mr-3 file:rounded file:border file:border-black file:bg-white file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-black hover:file:bg-black hover:file:text-white"
+        class="block w-full text-sm text-text/70 file:mr-3 file:rounded file:border file:border-primary file:bg-background file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-primary hover:file:bg-primary hover:file:text-background"
         @change="handleFileChange"
       />
     </div>
 
     <p
       v-if="isParsing"
-      class="text-sm text-gray-500"
+      class="text-sm text-text/50"
     >
       Reading {{ fileName }}…
     </p>
 
     <p
       v-if="parseError"
-      class="rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-800"
+      class="rounded-lg border border-text/20 bg-text/5 px-4 py-3 text-sm text-text"
     >
       {{ parseError }}
     </p>
 
     <p
       v-if="importSummary"
-      class="rounded-lg border border-black bg-black px-4 py-3 text-sm font-medium text-white"
+      class="rounded-lg border border-primary bg-primary px-4 py-3 text-sm font-medium text-background"
     >
       {{ importSummary }}
       <button
@@ -254,26 +262,26 @@ function goToCards() {
     </p>
 
     <template v-if="parsedRows.length > 0">
-      <div class="mb-4 flex flex-wrap gap-4 text-xs text-gray-600">
+      <div class="mb-4 flex flex-wrap gap-4 text-xs text-text/60">
         <span>{{ parsedRows.length }} row{{ parsedRows.length === 1 ? '' : 's' }} found</span>
-        <span class="font-medium text-black">{{ validRows.length }} ready to import</span>
+        <span class="font-medium text-text">{{ validRows.length }} ready to import</span>
         <span v-if="invalidRows.length > 0">{{ invalidRows.length }} with errors (skipped)</span>
         <span v-if="newDeckNames.size > 0">{{ newDeckNames.size }} new deck(s) will be created</span>
         <span v-if="newTagNames.size > 0">{{ newTagNames.size }} new tag(s) will be created</span>
       </div>
 
-      <div class="mb-4 flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2.5">
-        <label class="flex items-center gap-2 text-sm text-gray-700">
+      <div class="mb-4 flex items-center justify-between rounded-lg border border-text/10 px-3 py-2.5">
+        <label class="flex items-center gap-2 text-sm text-text/70">
           <input
             type="checkbox"
             :checked="allSelected"
             :disabled="validRows.length === 0"
-            class="h-4 w-4 accent-black disabled:cursor-not-allowed"
+            class="h-4 w-4 accent-primary disabled:cursor-not-allowed"
             @change="toggleSelectAll"
           />
           {{ allSelected ? 'Deselect All' : 'Select All' }}
         </label>
-        <span class="text-xs font-medium text-gray-600">
+        <span class="text-xs font-medium text-text/60">
           {{ selectedRows.length }}/{{ validRows.length }} selected
         </span>
       </div>

@@ -33,15 +33,15 @@ async function createDeck() {
   <div>
     <label
       for="deck"
-      class="mb-1 block text-xs font-medium text-gray-600"
+      class="mb-1 block text-xs font-medium text-text/60"
       >Deck / Category *</label
     >
     <div class="flex gap-2">
       <select
         id="deck"
         v-model="deckId"
-        class="w-full rounded border px-3 py-2 text-sm focus:border-black focus:outline-none"
-        :class="error ? 'border-red-500/80' : 'border-gray-300'"
+        class="w-full rounded border px-3 py-2 text-sm focus:border-primary focus:outline-none"
+        :class="error ? 'border-danger/80' : 'border-text/20'"
         @blur="emit('blur')"
       >
         <option
@@ -60,15 +60,19 @@ async function createDeck() {
       </select>
       <button
         type="button"
-        class="shrink-0 rounded border border-black px-3 py-2 text-xs font-medium text-black hover:bg-black hover:text-white"
+        class="inline-flex shrink-0 items-center gap-1 rounded border border-primary px-3 py-2 text-xs font-medium text-primary hover:bg-primary hover:text-background"
         @click="isCreating = !isCreating"
       >
-        + New
+        <AppIcon
+          icon-name="Add"
+          :size="14"
+        />
+        New
       </button>
     </div>
     <p
       v-if="error"
-      class="mt-1 flex items-center gap-1.5 text-xs font-medium text-gray-800"
+      class="mt-1 flex items-center gap-1.5 text-xs font-medium text-danger"
     >
       <WarningIcon />
       {{ error }}
@@ -82,12 +86,12 @@ async function createDeck() {
         v-model="newDeckName"
         type="text"
         placeholder="New deck name"
-        class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-black focus:outline-none"
+        class="w-full rounded border border-text/20 px-3 py-2 text-sm focus:border-primary focus:outline-none"
         @keyup.enter="createDeck"
       />
       <button
         type="button"
-        class="shrink-0 rounded bg-black px-3 py-2 text-xs font-medium text-white hover:bg-gray-800"
+        class="shrink-0 rounded bg-primary px-3 py-2 text-xs font-medium text-background hover:bg-primary/90"
         @click="createDeck"
       >
         Add

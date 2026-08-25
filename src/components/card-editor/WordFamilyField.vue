@@ -60,7 +60,7 @@ const SECTIONS: { key: keyof Omit<WordFamilyFormState, 'usageNotes'>; label: str
 <template>
   <div>
     <div class="mb-2 flex items-center justify-between gap-2">
-      <span class="flex items-center gap-1 text-xs font-medium text-gray-600">
+      <span class="flex items-center gap-1 text-xs font-medium text-text/60">
         Word Family Forms
         <AiFieldButton
           :loading="isGenerating"
@@ -72,22 +72,22 @@ const SECTIONS: { key: keyof Omit<WordFamilyFormState, 'usageNotes'>; label: str
     </div>
     <p
       v-if="generateErrorMessage"
-      class="mb-2 flex items-center gap-1.5 text-xs font-medium text-gray-800"
+      class="mb-2 flex items-center gap-1.5 text-xs font-medium text-danger"
     >
       <WarningIcon />
       {{ generateErrorMessage }}
     </p>
     <div
       class="space-y-3 rounded"
-      :class="error ? 'border border-red-500/80 p-2' : ''"
+      :class="error ? 'border border-danger/80 p-2' : ''"
     >
       <div
         v-for="section in SECTIONS"
         :key="section.key"
-        class="space-y-2 rounded border border-gray-200 p-3"
+        class="space-y-2 rounded border border-text/10 p-3"
       >
         <div class="flex items-center gap-2">
-          <span class="rounded bg-black px-1.5 py-0.5 text-[10px] font-bold text-white uppercase">
+          <span class="rounded bg-secondary px-1.5 py-0.5 text-[10px] font-bold text-text uppercase">
             {{ section.label }}
           </span>
         </div>
@@ -110,7 +110,7 @@ const SECTIONS: { key: keyof Omit<WordFamilyFormState, 'usageNotes'>; label: str
     </div>
     <p
       v-if="error"
-      class="mt-1 flex items-center gap-1.5 text-xs font-medium text-gray-800"
+      class="mt-1 flex items-center gap-1.5 text-xs font-medium text-danger"
     >
       <WarningIcon />
       {{ error }}
@@ -119,7 +119,7 @@ const SECTIONS: { key: keyof Omit<WordFamilyFormState, 'usageNotes'>; label: str
     <div class="mt-3">
       <label
         for="word-family-usage-notes"
-        class="mb-1 block text-xs font-medium text-gray-600"
+        class="mb-1 block text-xs font-medium text-text/60"
         >Usage Notes (optional)</label
       >
       <textarea
@@ -127,7 +127,7 @@ const SECTIONS: { key: keyof Omit<WordFamilyFormState, 'usageNotes'>; label: str
         v-model="data.usageNotes"
         rows="2"
         placeholder="Any nuance in how these forms are used differently"
-        class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-black focus:outline-none"
+        class="w-full rounded border border-text/20 px-3 py-2 text-sm focus:border-primary focus:outline-none"
       />
     </div>
   </div>

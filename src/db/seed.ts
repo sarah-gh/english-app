@@ -1,6 +1,7 @@
 import { cardRepository } from './repositories/card-repository';
 import { deckRepository } from './repositories/deck-repository';
 import { settingsRepository } from './repositories/settings-repository';
+import { topicRepository } from './repositories/topic-repository';
 
 interface SeedCard {
   frontTitle: string;
@@ -97,11 +98,13 @@ export async function seedInitialDataIfNeeded(): Promise<void> {
 
   for (const seedDeck of SEED_DECKS) {
     const deck = await deckRepository.create({ name: seedDeck.name });
+    const topic = await topicRepository.create({ deckId: deck.id, name: 'General' });
     for (const seedCard of seedDeck.cards) {
       await cardRepository.create({
         frontTitle: seedCard.frontTitle,
         backAnswer: seedCard.backAnswer,
         deckId: deck.id,
+        topicId: topic.id,
         tagIds: [],
         ipa: seedCard.ipa,
         ttsEnabled: true,

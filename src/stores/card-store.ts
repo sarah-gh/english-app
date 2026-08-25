@@ -24,6 +24,10 @@ export const useCardStore = defineStore('cards', () => {
     return cards.value.filter((card) => card.deckId === deckId);
   }
 
+  function byTopic(topicId: string): Card[] {
+    return cards.value.filter((card) => card.topicId === topicId);
+  }
+
   function byTag(tagId: string): Card[] {
     return cards.value.filter((card) => card.tagIds.includes(tagId));
   }
@@ -63,6 +67,20 @@ export const useCardStore = defineStore('cards', () => {
     cards.value = cards.value.filter((card) => card.id !== id);
   }
 
+  /** Records a mini matching-quiz outcome for one card and syncs the cache's `reviewStats`. */
+  async function recordMatchResult(id: string, success: boolean): Promise<void> {
+    await cardRepository.recordMatchResult(id, success);
+    const card = getById(id);
+    if (!card) return;
+
+    card.reviewStats = {
+      timesReviewed: card.reviewStats.timesReviewed + 1,
+      lastReviewedAt: Date.now(),
+      successfulMatches: card.reviewStats.successfulMatches + (success ? 1 : 0),
+      failedMatches: card.reviewStats.failedMatches + (success ? 0 : 1),
+    };
+  }
+
   return {
     cards,
     isLoaded,
@@ -70,12 +88,14 @@ export const useCardStore = defineStore('cards', () => {
     ensureLoaded,
     getById,
     byDeck,
+    byTopic,
     byTag,
     byReviewStatus,
     add,
     addMany,
     edit,
     setReviewStatus,
+    recordMatchResult,
     remove,
   };
 });

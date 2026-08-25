@@ -38,11 +38,26 @@ export interface WordFamilyData {
   usageNotes?: string;
 }
 
+export interface CardReviewStats {
+  timesReviewed: number;
+  lastReviewedAt?: number;
+  successfulMatches: number;
+  failedMatches: number;
+}
+
+export const DEFAULT_REVIEW_STATS: CardReviewStats = {
+  timesReviewed: 0,
+  successfulMatches: 0,
+  failedMatches: 0,
+};
+
 export interface Card {
   id: string;
   frontTitle: string;
   backAnswer: string;
   deckId: string;
+  /** Optional — cards created before Topics existed (or never sorted) have no topic. */
+  topicId?: string;
   tagIds: string[];
   ipa?: string;
   ttsEnabled: boolean;
@@ -57,9 +72,10 @@ export interface Card {
   wordFamily?: WordFamilyData;
   imageBlob?: Blob;
   reviewStatus: ReviewStatus;
+  reviewStats: CardReviewStats;
   createdAt: number;
   updatedAt: number;
 }
 
-export type NewCard = Omit<Card, 'id' | 'reviewStatus' | 'createdAt' | 'updatedAt'>;
+export type NewCard = Omit<Card, 'id' | 'reviewStatus' | 'reviewStats' | 'createdAt' | 'updatedAt'>;
 export type CardUpdate = Partial<Omit<Card, 'id' | 'createdAt'>>;

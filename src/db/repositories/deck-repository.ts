@@ -24,10 +24,11 @@ export const deckRepository = {
     await db.decks.update(id, changes);
   },
 
-  /** Deletes the deck and cascades to every card assigned to it. */
+  /** Deletes the deck and cascades to every card and topic assigned to it. */
   async delete(id: string): Promise<void> {
-    await db.transaction('rw', db.decks, db.cards, async () => {
+    await db.transaction('rw', db.decks, db.cards, db.topics, async () => {
       await db.cards.where('deckId').equals(id).delete();
+      await db.topics.where('deckId').equals(id).delete();
       await db.decks.delete(id);
     });
   },

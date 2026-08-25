@@ -1,7 +1,35 @@
 @import "tailwindcss";
 
+/* Makes `dark:` utilities respond to a `.dark` class on <html> (toggled by the theme store),
+ * rather than only `prefers-color-scheme` — required for a user-selectable Light/Dark/System
+ * setting instead of pure OS-driven dark mode. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-text: #010e10;
+  --color-background: #f7fefe;
+  --color-primary: #35B5BE;
+  --color-secondary: #FEBD17;
+  --color-accent: #f38856;
+  --color-danger: #dc2626;
+}
+
+/* Dark theme token overrides — every `bg-background`/`text-text`/`border-text/*` utility across
+ * the app is generated from these same CSS variables, so redefining them here instantly re-themes
+ * the whole app with no per-component changes needed. Surfaces that use a literal `bg-white/*`
+ * instead of the `background` token (cards, modals, dropdowns) still need an explicit `dark:`
+ * class alongside them — see BaseCard/BaseModal/BaseAutocomplete. */
+.dark {
+  --color-text: #f0fdfd;
+  --color-background: #0b1719;
+  --color-primary: #35B5BE;
+  --color-secondary: #FEBD17;
+  --color-accent: #f38856;
+  --color-danger: #f87171;
+}
+
 body {
-  @apply bg-white text-black antialiased;
+  @apply bg-background text-text antialiased transition-colors duration-150;
 }
 
 /* Global Custom Scrollbar Style */
@@ -29,6 +57,27 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background-color: #333333;
+}
+
+.dark * {
+  scrollbar-color: #4b5563 #0f2023;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background-color: #0f2023;
+}
+
+.dark ::-webkit-scrollbar {
+  background-color: #0f2023;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background-color: #4b5563;
+  border-color: #0f2023;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: #6b7280;
 }
 
 /* Global Route Fade Transition */

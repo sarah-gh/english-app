@@ -10,7 +10,7 @@ const emit = defineEmits<{ close: [] }>();
     @click.self="emit('close')"
   >
     <div
-      class="w-full rounded-lg border border-black bg-white p-5"
+      class="w-full rounded-lg border border-text/10 bg-white/95 dark:bg-slate-900/95 p-5"
       :class="maxWidth"
     >
       <slot />

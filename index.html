@@ -8,6 +8,18 @@
     <meta name="theme-color" content="#000000">
     <meta name="description" content="Offline-first smart flashcard app for learning English vocabulary and grammar.">
     <title>Flashcards</title>
+    <script type="text/javascript">
+      // Applied inline, before any CSS/JS module loads, so a dark-mode user never sees a flash of
+      // the light theme on first paint — `src/main.ts` re-applies the same logic once Vue boots,
+      // this is purely about beating the very first paint.
+      (function () {
+        try {
+          var stored = localStorage.getItem('theme-mode');
+          var isDark = stored === 'dark' || (stored !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          document.documentElement.classList.toggle('dark', isDark);
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <script type="text/javascript">

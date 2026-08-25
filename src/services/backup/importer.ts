@@ -1,10 +1,26 @@
 import JSZip from 'jszip';
+import { aiQuizResultRepository } from '@/db/repositories/ai-quiz-result-repository';
 import { cardRepository } from '@/db/repositories/card-repository';
+import { dailyStatRepository } from '@/db/repositories/daily-stat-repository';
 import { deckRepository } from '@/db/repositories/deck-repository';
 import { tagRepository } from '@/db/repositories/tag-repository';
-import type { Card, PartOfSpeechEntry, POSDetail, PosType, QuizQuestion, ReviewStatus, WordFamilyData } from '@/types/card';
+import { topicRepository } from '@/db/repositories/topic-repository';
+import type { AiQuizResult } from '@/types/ai-quiz-result';
+import {
+  DEFAULT_REVIEW_STATS,
+  type Card,
+  type CardReviewStats,
+  type PartOfSpeechEntry,
+  type POSDetail,
+  type PosType,
+  type QuizQuestion,
+  type ReviewStatus,
+  type WordFamilyData,
+} from '@/types/card';
+import type { DailyStat } from '@/types/daily-stat';
 import type { Deck } from '@/types/deck';
 import type { Tag } from '@/types/tag';
+import type { Topic } from '@/types/topic';
 import { mimeTypeForFilename } from '@/utils/mime';
 
 export class BackupImportError extends Error {
@@ -16,15 +32,20 @@ export class BackupImportError extends Error {
 
 export interface ImportSummary {
   decks: number;
+  topics: number;
   tags: number;
   cards: number;
+  aiQuizResults: number;
 }
 
 interface BackupManifest {
   version: number;
   decks: Deck[];
+  topics?: Topic[];
   tags: Tag[];
   cards: Array<Record<string, unknown>>;
+  aiQuizResults?: AiQuizResult[];
+  dailyStats?: DailyStat[];
 }
 
 const VALID_STATUSES: ReviewStatus[] = ['new', 'easy', 'medium', 'hard'];
@@ -86,6 +107,20 @@ function parseWordFamily(raw: unknown): WordFamilyData | undefined {
     adjective: parsePosDetail(data.adjective),
     adverb: parsePosDetail(data.adverb),
     usageNotes: typeof data.usageNotes === 'string' ? data.usageNotes : undefined,
+  };
+}
+
+/** Parses a card's `reviewStats` from an archive that may predate this field entirely (v1
+ *  backups) — falls back to zeroed stats rather than failing the card. */
+function parseReviewStats(raw: unknown): CardReviewStats {
+  if (!raw || typeof raw !== 'object') return { ...DEFAULT_REVIEW_STATS };
+  const stats = raw as Record<string, unknown>;
+
+  return {
+    timesReviewed: typeof stats.timesReviewed === 'number' ? stats.timesReviewed : 0,
+    lastReviewedAt: typeof stats.lastReviewedAt === 'number' ? stats.lastReviewedAt : undefined,
+    successfulMatches: typeof stats.successfulMatches === 'number' ? stats.successfulMatches : 0,
+    failedMatches: typeof stats.failedMatches === 'number' ? stats.failedMatches : 0,
   };
 }
 
@@ -179,6 +214,7 @@ export async function importBackup(file: File): Promise<ImportSummary> {
       frontTitle: raw.frontTitle as string,
       backAnswer: typeof raw.backAnswer === 'string' ? raw.backAnswer : '',
       deckId: raw.deckId as string,
+      topicId: typeof raw.topicId === 'string' ? raw.topicId : undefined,
       tagIds: Array.isArray(raw.tagIds) ? (raw.tagIds as string[]) : [],
       ipa: typeof raw.ipa === 'string' ? raw.ipa : undefined,
       ttsEnabled: Boolean(raw.ttsEnabled),
@@ -192,14 +228,28 @@ export async function importBackup(file: File): Promise<ImportSummary> {
       reviewStatus: VALID_STATUSES.includes(raw.reviewStatus as ReviewStatus)
         ? (raw.reviewStatus as ReviewStatus)
         : 'new',
+      reviewStats: parseReviewStats(raw.reviewStats),
       createdAt: typeof raw.createdAt === 'number' ? raw.createdAt : Date.now(),
       updatedAt: typeof raw.updatedAt === 'number' ? raw.updatedAt : Date.now(),
     });
   }
 
+  const topics = Array.isArray(manifest.topics) ? manifest.topics : [];
+  const aiQuizResults = Array.isArray(manifest.aiQuizResults) ? manifest.aiQuizResults : [];
+  const dailyStats = Array.isArray(manifest.dailyStats) ? manifest.dailyStats : [];
+
   await deckRepository.bulkPut(manifest.decks);
+  await topicRepository.bulkPut(topics);
   await tagRepository.bulkPut(manifest.tags);
   await cardRepository.bulkPut(cards);
+  await aiQuizResultRepository.bulkPut(aiQuizResults);
+  await dailyStatRepository.bulkPut(dailyStats);
 
-  return { decks: manifest.decks.length, tags: manifest.tags.length, cards: cards.length };
+  return {
+    decks: manifest.decks.length,
+    topics: topics.length,
+    tags: manifest.tags.length,
+    cards: cards.length,
+    aiQuizResults: aiQuizResults.length,
+  };
 }

@@ -59,6 +59,7 @@ export interface CardFormState {
   frontTitle: string;
   backAnswer: string;
   deckId: string;
+  topicId: string;
   tagIds: string[];
   ipa: string;
   ttsEnabled: boolean;
@@ -77,6 +78,7 @@ export function blankCardFormState(): CardFormState {
     frontTitle: '',
     backAnswer: '',
     deckId: '',
+    topicId: '',
     tagIds: [],
     ipa: '',
     ttsEnabled: true,
@@ -96,6 +98,7 @@ export function cardFormStateFromCard(card: Card): CardFormState {
     frontTitle: card.frontTitle,
     backAnswer: card.backAnswer,
     deckId: card.deckId,
+    topicId: card.topicId ?? '',
     tagIds: [...card.tagIds],
     ipa: card.ipa ?? '',
     ttsEnabled: card.ttsEnabled,
@@ -193,6 +196,7 @@ export function cardFormStateToNewCard(state: CardFormState): NewCard {
     frontTitle,
     backAnswer,
     deckId: raw.deckId,
+    topicId: raw.topicId || undefined,
     tagIds: [...raw.tagIds],
     ipa: raw.ipa.trim() || undefined,
     ttsEnabled: raw.ttsEnabled,

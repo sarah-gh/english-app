@@ -31,13 +31,13 @@ function toggle() {
 </script>
 
 <template>
-  <BaseCard :class="hasErrors ? 'border-red-500/30 opacity-70' : ''">
+  <BaseCard :class="hasErrors ? 'border-danger/30 opacity-70' : ''">
     <div class="flex items-start gap-3">
       <input
         type="checkbox"
         :checked="selected"
         :disabled="hasErrors"
-        class="mt-1 h-4 w-4 shrink-0 accent-black disabled:cursor-not-allowed disabled:opacity-40"
+        class="mt-1 h-4 w-4 shrink-0 accent-primary disabled:cursor-not-allowed disabled:opacity-40"
         :aria-label="`Include “${row.frontTitle || 'row ' + row.rowNumber}” in the import`"
         @change="toggle"
       />
@@ -45,22 +45,22 @@ function toggle() {
       <div class="min-w-0 flex-1">
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">
-            <p class="truncate font-medium text-black">
+            <p class="truncate font-medium text-text">
               {{ row.frontTitle || `Row ${row.rowNumber}` }}
             </p>
-            <p class="mt-0.5 text-xs text-gray-500">
+            <p class="mt-0.5 text-xs text-text/50">
               {{ row.deckName || 'No deck' }} · Row {{ row.rowNumber }}
             </p>
           </div>
           <span
             v-if="!hasErrors"
-            class="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600 uppercase"
+            class="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary uppercase"
           >
             Ready
           </span>
           <span
             v-else
-            class="shrink-0 rounded-full bg-black px-2 py-0.5 text-[10px] font-medium text-white uppercase"
+            class="shrink-0 rounded-full bg-danger px-2 py-0.5 text-[10px] font-medium text-background uppercase"
           >
             Needs fixing
           </span>
@@ -80,7 +80,7 @@ function toggle() {
 
         <p
           v-if="row.backAnswer"
-          class="mt-2 text-sm text-black"
+          class="mt-2 text-sm text-text"
         >
           {{ row.backAnswer }}
         </p>
@@ -92,7 +92,7 @@ function toggle() {
           <li
             v-for="(example, index) in row.examples"
             :key="index"
-            class="text-xs text-gray-500"
+            class="text-xs text-text/50"
           >
             “{{ example }}”
           </li>
@@ -100,15 +100,15 @@ function toggle() {
 
         <p
           v-if="row.hint || row.ipa"
-          class="mt-2 flex flex-wrap gap-x-3 text-xs text-gray-500"
+          class="mt-2 flex flex-wrap gap-x-3 text-xs text-text/50"
         >
-          <span v-if="row.hint"><span class="font-medium text-gray-700">Hint:</span> {{ row.hint }}</span>
+          <span v-if="row.hint"><span class="font-medium text-text/70">Hint:</span> {{ row.hint }}</span>
           <span v-if="row.ipa">{{ row.ipa }}</span>
         </p>
 
         <div
           v-if="hasErrors"
-          class="mt-3 flex items-start gap-1.5 rounded border border-red-500/30 bg-red-50/60 px-2.5 py-2 text-xs text-gray-800"
+          class="mt-3 flex items-start gap-1.5 rounded border border-danger/30 bg-danger/10 px-2.5 py-2 text-xs text-text"
         >
           <WarningIcon class="mt-0.5 shrink-0" />
           <span>{{ row.errors.join(' ') }}</span>

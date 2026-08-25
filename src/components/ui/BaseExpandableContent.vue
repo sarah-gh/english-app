@@ -64,7 +64,7 @@ const currentMaxHeight = computed(() => {
         v-if="isOverflowing && !isExpanded"
         type="button"
         aria-label="Show more of this card"
-        class="absolute inset-x-0 bottom-0 flex h-16 items-end justify-center gap-1 bg-linear-to-t from-white via-white/80 to-transparent pb-1.5 text-xs font-medium text-gray-600 hover:text-black"
+        class="absolute inset-x-0 bottom-0 flex h-16 items-end justify-center gap-1 bg-linear-to-t from-white via-white/80 to-transparent pb-1.5 text-xs font-medium text-text/60 hover:text-primary"
         @pointerdown.stop
         @click.stop="isExpanded = true"
       >
@@ -76,7 +76,7 @@ const currentMaxHeight = computed(() => {
       v-if="isOverflowing && isExpanded"
       type="button"
       aria-label="Show less of this card"
-      class="mt-2 w-full text-center text-xs font-medium text-gray-600 hover:text-black"
+      class="mt-2 w-full text-center text-xs font-medium text-text/60 hover:text-primary"
       @pointerdown.stop
       @click.stop="isExpanded = false"
     >

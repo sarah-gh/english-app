@@ -1,5 +1,5 @@
 import { db } from '@/db';
-import type { Card, CardUpdate, NewCard, ReviewStatus } from '@/types/card';
+import { DEFAULT_REVIEW_STATS, type Card, type CardUpdate, type NewCard, type ReviewStatus } from '@/types/card';
 
 /** Newest-first — matches the default sort shown across the app's card list/browsing views. */
 function byCreatedAtDesc(cards: Card[]): Card[] {
@@ -19,6 +19,10 @@ export const cardRepository = {
     return byCreatedAtDesc(await db.cards.where('deckId').equals(deckId).toArray());
   },
 
+  async getByTopic(topicId: string): Promise<Card[]> {
+    return byCreatedAtDesc(await db.cards.where('topicId').equals(topicId).toArray());
+  },
+
   async getByTag(tagId: string): Promise<Card[]> {
     return byCreatedAtDesc(await db.cards.where('tagIds').equals(tagId).toArray());
   },
@@ -33,6 +37,7 @@ export const cardRepository = {
       ...card,
       id: crypto.randomUUID(),
       reviewStatus: 'new',
+      reviewStats: { ...DEFAULT_REVIEW_STATS },
       createdAt: timestamp,
       updatedAt: timestamp,
     };
@@ -47,6 +52,7 @@ export const cardRepository = {
       ...card,
       id: crypto.randomUUID(),
       reviewStatus: 'new',
+      reviewStats: { ...DEFAULT_REVIEW_STATS },
       createdAt: timestamp,
       updatedAt: timestamp,
     }));
@@ -60,6 +66,24 @@ export const cardRepository = {
 
   async setReviewStatus(id: string, status: ReviewStatus): Promise<void> {
     await db.cards.update(id, { reviewStatus: status, updatedAt: Date.now() });
+  },
+
+  /** Records the outcome of one card's mini matching-quiz attempt: bumps `timesReviewed`,
+   *  the relevant success/fail counter, and `lastReviewedAt`. */
+  async recordMatchResult(id: string, success: boolean): Promise<void> {
+    const card = await db.cards.get(id);
+    if (!card) return;
+
+    const stats = card.reviewStats ?? { ...DEFAULT_REVIEW_STATS };
+    await db.cards.update(id, {
+      reviewStats: {
+        timesReviewed: stats.timesReviewed + 1,
+        lastReviewedAt: Date.now(),
+        successfulMatches: stats.successfulMatches + (success ? 1 : 0),
+        failedMatches: stats.failedMatches + (success ? 0 : 1),
+      },
+      updatedAt: Date.now(),
+    });
   },
 
   async delete(id: string): Promise<void> {

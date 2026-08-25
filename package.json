@@ -27,6 +27,7 @@
     "swiper": "^14.1.0",
     "vee-validate": "^4.15.1",
     "vue": "rc",
+    "vue-iconsax": "^2.0.0",
     "vue-router": "^5.2.0",
     "write-excel-file": "^4.1.1",
     "zod": "^3.25.76"

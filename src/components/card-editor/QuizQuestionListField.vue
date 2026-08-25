@@ -18,13 +18,17 @@ function removeQuestion(id: string) {
 <template>
   <div>
     <div class="mb-1 flex items-center justify-between">
-      <span class="text-xs font-medium text-gray-600">Personal Quiz Questions</span>
+      <span class="text-xs font-medium text-text/60">Personal Quiz Questions</span>
       <button
         type="button"
-        class="text-xs font-medium text-black underline underline-offset-2 hover:no-underline"
+        class="inline-flex items-center gap-1 text-xs font-medium text-primary underline underline-offset-2 hover:no-underline"
         @click="addQuestion"
       >
-        + Add question
+        <AppIcon
+          icon-name="Add"
+          :size="12"
+        />
+        Add question
       </button>
     </div>
 
@@ -32,20 +36,24 @@ function removeQuestion(id: string) {
       <div
         v-for="question in quizQuestions"
         :key="question.id"
-        class="space-y-2 rounded border border-gray-200 p-3"
+        class="space-y-2 rounded border border-text/10 p-3"
       >
         <div class="flex gap-2">
           <input
             v-model="question.question"
             type="text"
             placeholder="Question"
-            class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-black focus:outline-none"
+            class="w-full rounded border border-text/20 px-3 py-2 text-sm focus:border-primary focus:outline-none"
           />
           <button
             type="button"
-            class="shrink-0 rounded border border-gray-300 px-2 text-xs text-gray-500 hover:border-black hover:text-black"
+            class="inline-flex shrink-0 items-center gap-1 rounded border border-text/20 px-2 text-xs text-text/50 hover:border-primary hover:text-primary"
             @click="removeQuestion(question.id)"
           >
+            <AppIcon
+              icon-name="Trash"
+              :size="12"
+            />
             Remove
           </button>
         </div>
@@ -53,12 +61,12 @@ function removeQuestion(id: string) {
           v-model="question.correctAnswer"
           type="text"
           placeholder="Correct answer"
-          class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-black focus:outline-none"
+          class="w-full rounded border border-text/20 px-3 py-2 text-sm focus:border-primary focus:outline-none"
         />
       </div>
       <p
         v-if="quizQuestions.length === 0"
-        class="text-xs text-gray-400"
+        class="text-xs text-text/35"
       >
         No practice questions added.
       </p>

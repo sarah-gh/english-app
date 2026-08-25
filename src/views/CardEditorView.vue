@@ -12,12 +12,14 @@ import { useCardStore } from '@/stores/card-store';
 import { useDeckStore } from '@/stores/deck-store';
 import { useSettingsStore } from '@/stores/settings-store';
 import { useTagStore } from '@/stores/tag-store';
+import { useTopicStore } from '@/stores/topic-store';
 
 const route = useRoute();
 const router = useRouter();
 const cardStore = useCardStore();
 const deckStore = useDeckStore();
 const tagStore = useTagStore();
+const topicStore = useTopicStore();
 const settingsStore = useSettingsStore();
 
 const cardId = route.params.id as string | undefined;
@@ -38,8 +40,14 @@ onMounted(async () => {
     cardStore.ensureLoaded(),
     deckStore.ensureLoaded(),
     tagStore.ensureLoaded(),
+    topicStore.ensureLoaded(),
     settingsStore.ensureLoaded(),
   ]);
+
+  const deckIdParam = route.query.deckId;
+  const topicIdParam = route.query.topicId;
+  if (typeof deckIdParam === 'string') draft.deckId = deckIdParam;
+  if (typeof topicIdParam === 'string') draft.topicId = topicIdParam;
 
   if (cardId) {
     const existing = cardStore.getById(cardId);
@@ -85,8 +93,10 @@ async function handleSubmit(mode: 'add-another' | 'exit') {
     await cardStore.add(payload);
     if (mode === 'add-another') {
       const keepDeckId = draft.deckId;
+      const keepTopicId = draft.topicId;
       Object.assign(draft, blankCardFormState());
       draft.deckId = keepDeckId;
+      draft.topicId = keepTopicId;
       isDirty.value = false;
       formRef.value?.resetValidation();
       showToast('Card saved successfully!');
@@ -113,13 +123,13 @@ function confirmDiscardChanges() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-white px-4 py-6">
-    <h1 class="mb-2 text-lg font-semibold text-black">
+  <div class="min-h-screen bg-background px-4 py-6">
+    <h1 class="mb-2 text-lg font-semibold text-text">
       {{ isEditing ? 'Edit Card' : 'New Card' }}
     </h1>
     <p
       v-if="!isReady"
-      class="text-sm text-gray-500"
+      class="text-sm text-text/50"
     >
       Loading…
     </p>
@@ -135,7 +145,7 @@ function confirmDiscardChanges() {
     <Transition name="fade">
       <div
         v-if="toastMessage"
-        class="fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded bg-black px-4 py-2 text-sm font-medium text-white shadow-lg"
+        class="fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded bg-primary px-4 py-2 text-sm font-medium text-background shadow-lg"
         role="status"
       >
         {{ toastMessage }}

@@ -132,18 +132,22 @@ async function handleGenerate() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-white px-4 py-6">
+  <div class="min-h-screen bg-background px-4 py-6">
     <RouterLink
       to="/"
-      class="mb-4 inline-block text-sm text-gray-500 hover:text-black"
+      class="mb-4 inline-flex items-center gap-1 text-sm text-text/50 hover:text-primary"
     >
-      ← Dashboard
+      <AppIcon
+        icon-name="ArrowLeft"
+        :size="14"
+      />
+      Dashboard
     </RouterLink>
-    <h1 class="mb-6 text-xl font-semibold text-black">AI Quiz Generator</h1>
+    <h1 class="mb-6 text-xl font-semibold text-text">AI Quiz Generator</h1>
 
     <p
       v-if="!isReady"
-      class="text-sm text-gray-500"
+      class="text-sm text-text/50"
     >
       Loading…
     </p>
@@ -151,10 +155,10 @@ async function handleGenerate() {
     <template v-else>
       <div
         v-if="!hasApiKey"
-        class="mb-6 rounded-lg border-2 border-black p-4"
+        class="mb-6 rounded-lg border-2 border-primary/30 p-4"
       >
-        <p class="mb-1 text-sm font-semibold text-black">An AI provider API key is required</p>
-        <p class="mb-3 text-xs text-gray-600">
+        <p class="mb-1 text-sm font-semibold text-text">An AI provider API key is required</p>
+        <p class="mb-3 text-xs text-text/60">
           The AI Quiz Generator sends your selected cards to your configured AI provider (Gemini
           and/or AIHubMix) using your own key. Add one in Settings to continue.
         </p>
@@ -194,8 +198,8 @@ async function handleGenerate() {
           class="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors"
           :class="
             selectedTagIds.includes(tag.id)
-              ? 'border-black bg-black text-white'
-              : 'border-gray-300 text-gray-700 hover:border-black'
+              ? 'border-primary bg-primary text-background'
+              : 'border-text/15 text-text/70 hover:border-primary'
           "
           @click="toggleTagFilter(tag.id)"
         >
@@ -208,7 +212,7 @@ async function handleGenerate() {
       </div>
 
       <div class="mb-3 flex items-center justify-between">
-        <p class="text-xs text-gray-500">{{ selectedCount }} of {{ filteredCards.length }} selected</p>
+        <p class="text-xs text-text/50">{{ selectedCount }} of {{ filteredCards.length }} selected</p>
         <div class="flex gap-3">
           <BaseButton
             variant="link"
@@ -232,27 +236,27 @@ async function handleGenerate() {
         padding="none"
         class="mb-6"
       >
-        <ul class="divide-y divide-gray-200">
+        <ul class="divide-y divide-text/10">
           <li
             v-for="card in filteredCards"
             :key="card.id"
           >
-            <label class="flex cursor-pointer items-center gap-3 px-4 py-3 hover:bg-gray-50">
+            <label class="flex cursor-pointer items-center gap-3 px-4 py-3 hover:bg-primary/5">
               <input
                 type="checkbox"
-                class="h-4 w-4 accent-black"
+                class="h-4 w-4 accent-primary"
                 :checked="selectedCardIds.has(card.id)"
                 @change="toggleCardSelection(card.id)"
               />
-              <span class="min-w-0 flex-1 truncate text-sm text-black">{{ card.frontTitle }}</span>
-              <span class="shrink-0 text-xs text-gray-500">
+              <span class="min-w-0 flex-1 truncate text-sm text-text">{{ card.frontTitle }}</span>
+              <span class="shrink-0 text-xs text-text/50">
                 {{ deckStore.getById(card.deckId)?.name }}
               </span>
             </label>
           </li>
           <li
             v-if="filteredCards.length === 0"
-            class="px-4 py-3 text-sm text-gray-400"
+            class="px-4 py-3 text-sm text-text/35"
           >
             No cards match these filters.
           </li>
@@ -271,7 +275,7 @@ async function handleGenerate() {
 
       <p
         v-if="generationError"
-        class="mt-3 flex items-center gap-1.5 text-xs font-medium text-gray-800"
+        class="mt-3 flex items-center gap-1.5 text-xs font-medium text-danger"
       >
         <WarningIcon />
         {{ generationError }}

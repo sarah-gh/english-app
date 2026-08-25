@@ -63,7 +63,7 @@ function moveExample(index: number, direction: -1 | 1) {
 <template>
   <div>
     <div class="mb-1 flex items-center justify-between gap-2">
-      <span class="flex items-center gap-1 text-xs font-medium text-gray-600">
+      <span class="flex items-center gap-1 text-xs font-medium text-text/60">
         {{ label }}
         <AiFieldButton
           v-if="aiWord !== undefined"
@@ -75,15 +75,19 @@ function moveExample(index: number, direction: -1 | 1) {
       </span>
       <button
         type="button"
-        class="text-xs font-medium text-black underline underline-offset-2 hover:no-underline"
+        class="inline-flex items-center gap-1 text-xs font-medium text-primary underline underline-offset-2 hover:no-underline"
         @click="addExample"
       >
-        + Add example
+        <AppIcon
+          icon-name="Add"
+          :size="12"
+        />
+        Add example
       </button>
     </div>
     <p
       v-if="generateErrorMessage"
-      class="mb-1 flex items-center gap-1.5 text-xs font-medium text-gray-800"
+      class="mb-1 flex items-center gap-1.5 text-xs font-medium text-danger"
     >
       <WarningIcon />
       {{ generateErrorMessage }}
@@ -99,7 +103,7 @@ function moveExample(index: number, direction: -1 | 1) {
           <button
             type="button"
             aria-label="Move example up"
-            class="rounded border border-gray-300 px-1.5 text-xs leading-4 text-gray-500 hover:border-black hover:text-black disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-gray-300 disabled:hover:text-gray-500"
+            class="rounded border border-text/20 px-1.5 text-xs leading-4 text-text/50 hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-text/20 disabled:hover:text-text/50"
             :disabled="index === 0"
             @click="moveExample(index, -1)"
           >
@@ -108,7 +112,7 @@ function moveExample(index: number, direction: -1 | 1) {
           <button
             type="button"
             aria-label="Move example down"
-            class="rounded border border-gray-300 px-1.5 text-xs leading-4 text-gray-500 hover:border-black hover:text-black disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-gray-300 disabled:hover:text-gray-500"
+            class="rounded border border-text/20 px-1.5 text-xs leading-4 text-text/50 hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-text/20 disabled:hover:text-text/50"
             :disabled="index === examples.length - 1"
             @click="moveExample(index, 1)"
           >
@@ -119,19 +123,23 @@ function moveExample(index: number, direction: -1 | 1) {
           v-model="examples[index]"
           type="text"
           placeholder="Write a sentence using this word…"
-          class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-black focus:outline-none"
+          class="w-full rounded border border-text/20 px-3 py-2 text-sm focus:border-primary focus:outline-none"
         />
         <button
           type="button"
-          class="shrink-0 rounded border border-gray-300 px-2 text-xs text-gray-500 hover:border-black hover:text-black"
+          class="inline-flex shrink-0 items-center gap-1 rounded border border-text/20 px-2 text-xs text-text/50 hover:border-primary hover:text-primary"
           @click="removeExample(index)"
         >
+          <AppIcon
+            icon-name="Trash"
+            :size="12"
+          />
           Remove
         </button>
       </div>
       <p
         v-if="examples.length === 0"
-        class="text-xs text-gray-400"
+        class="text-xs text-text/35"
       >
         No examples added.
       </p>

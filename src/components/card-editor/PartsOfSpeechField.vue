@@ -76,7 +76,7 @@ function removeEntry(id: string) {
 <template>
   <div>
     <div class="mb-1 flex items-center justify-between gap-2">
-      <span class="flex items-center gap-1 text-xs font-medium text-gray-600">
+      <span class="flex items-center gap-1 text-xs font-medium text-text/60">
         Parts of Speech (Optional)
         <AiFieldButton
           :loading="isGenerating"
@@ -90,12 +90,16 @@ function removeEntry(id: string) {
         size="sm"
         @click="addEntry"
       >
-        + Add Part of Speech
+        <AppIcon
+          icon-name="Add"
+          :size="12"
+        />
+        Add Part of Speech
       </BaseButton>
     </div>
     <p
       v-if="generateErrorMessage"
-      class="mb-2 flex items-center gap-1.5 text-xs font-medium text-gray-800"
+      class="mb-2 flex items-center gap-1.5 text-xs font-medium text-danger"
     >
       <WarningIcon />
       {{ generateErrorMessage }}
@@ -105,7 +109,7 @@ function removeEntry(id: string) {
       <div
         v-for="entry in entries"
         :key="entry.id"
-        class="space-y-2 rounded border border-gray-200 p-3"
+        class="space-y-2 rounded border border-text/10 p-3"
       >
         <div class="flex items-end gap-2">
           <BaseSelect
@@ -144,6 +148,10 @@ function removeEntry(id: string) {
             class="shrink-0"
             @click="removeEntry(entry.id)"
           >
+            <AppIcon
+              icon-name="Trash"
+              :size="12"
+            />
             Remove
           </BaseButton>
         </div>
@@ -162,7 +170,7 @@ function removeEntry(id: string) {
 
       <p
         v-if="entries.length === 0"
-        class="text-xs text-gray-400"
+        class="text-xs text-text/35"
       >
         No parts of speech added.
       </p>

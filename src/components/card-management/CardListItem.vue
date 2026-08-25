@@ -42,6 +42,13 @@ const STATUS_LABELS: Record<ReviewStatus, string> = {
   hard: 'Hard',
 };
 
+const STATUS_BADGE_CLASSES: Record<ReviewStatus, string> = {
+  new: 'bg-text/8 text-text/50',
+  easy: 'bg-primary/15 text-primary',
+  medium: 'bg-secondary text-text',
+  hard: 'bg-accent/15 text-accent',
+};
+
 async function handleDelete() {
   await cardStore.remove(props.card.id);
   isConfirmingDelete.value = false;
@@ -52,43 +59,50 @@ async function handleDelete() {
   <BaseCard>
     <div class="flex items-start justify-between gap-3">
       <div class="min-w-0">
-        <p class="truncate font-medium text-black">{{ card.frontTitle }}</p>
-        <p class="mt-0.5 text-xs text-gray-500">
-          {{ deckName }} · <span class="font-medium">{{ STATUS_LABELS[card.reviewStatus] }}</span>
+        <p class="truncate font-medium text-text">{{ card.frontTitle }}</p>
+        <p class="mt-0.5 flex items-center gap-1.5 text-xs text-text/50">
+          {{ deckName }}
+          <span
+            class="rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase"
+            :class="STATUS_BADGE_CLASSES[card.reviewStatus]"
+          >
+            {{ STATUS_LABELS[card.reviewStatus] }}
+          </span>
         </p>
       </div>
       <div class="flex shrink-0 items-center gap-1">
         <button
           type="button"
           aria-label="Play audio"
-          class="rounded-full border border-gray-300 p-2 text-gray-600 hover:border-black hover:text-black"
+          class="rounded-full border border-text/20 p-2 text-text/60 hover:border-primary hover:text-primary"
           @click="playCardAudio(card)"
         >
-          <svg
-            viewBox="0 0 24 24"
-            width="16"
-            height="16"
-            fill="currentColor"
-            aria-hidden="true"
-          >
-            <path
-              d="M4 9v6h4l5 5V4L8 9H4zm11.5 3a3.5 3.5 0 0 0-2-3.16v6.32a3.5 3.5 0 0 0 2-3.16z"
-            />
-          </svg>
+          <AppIcon
+            icon-name="VolumeHigh"
+            :size="16"
+          />
         </button>
         <BaseButton
           variant="ghost"
           size="sm"
           :to="`/cards/${card.id}/edit`"
         >
+          <AppIcon
+            icon-name="Edit2"
+            :size="14"
+          />
           Edit
         </BaseButton>
         <BaseButton
           variant="ghost"
           size="sm"
-          muted
+          danger
           @click="isConfirmingDelete = true"
         >
+          <AppIcon
+            icon-name="Trash"
+            :size="14"
+          />
           Delete
         </BaseButton>
       </div>
@@ -124,7 +138,7 @@ async function handleDelete() {
         <button
           v-else
           type="button"
-          class="mt-3 w-full rounded border border-dashed border-gray-300 py-2 text-xs font-medium text-gray-500 hover:border-black hover:text-black"
+          class="mt-3 w-full rounded border border-dashed border-text/20 py-2 text-xs font-medium text-text/50 hover:border-primary hover:text-primary"
           @click="isRevealed = true"
         >
           Show Word Family
@@ -132,7 +146,7 @@ async function handleDelete() {
       </template>
       <template v-else>
         <template v-if="showAnswer">
-          <p class="mt-3 text-sm text-black">{{ card.backAnswer }}</p>
+          <p class="mt-3 text-sm text-text">{{ card.backAnswer }}</p>
           <ul
             v-if="card.examples.length > 0"
             class="mt-2 space-y-0.5"
@@ -140,7 +154,7 @@ async function handleDelete() {
             <li
               v-for="(example, index) in card.examples"
               :key="index"
-              class="text-xs text-gray-500"
+              class="text-xs text-text/50"
             >
               “{{ example }}”
             </li>
@@ -149,7 +163,7 @@ async function handleDelete() {
         <button
           v-else
           type="button"
-          class="mt-3 w-full rounded border border-dashed border-gray-300 py-2 text-xs font-medium text-gray-500 hover:border-black hover:text-black"
+          class="mt-3 w-full rounded border border-dashed border-text/20 py-2 text-xs font-medium text-text/50 hover:border-primary hover:text-primary"
           @click="isRevealed = true"
         >
           Show Answer
@@ -162,6 +176,7 @@ async function handleDelete() {
       title="Delete this card?"
       :message="`“${card.frontTitle}” will be permanently deleted. This can't be undone.`"
       confirm-label="Delete"
+      variant="danger"
       @confirm="handleDelete"
       @cancel="isConfirmingDelete = false"
     />

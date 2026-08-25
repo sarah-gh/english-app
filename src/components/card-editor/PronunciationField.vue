@@ -87,14 +87,14 @@ function removeCachedAudio() {
 </script>
 
 <template>
-  <div class="space-y-3 rounded-lg border border-gray-300 p-4">
+  <div class="space-y-3 rounded-lg border border-text/20 p-4">
     <div class="flex items-center justify-between">
-      <h3 class="text-sm font-semibold text-black">Pronunciation</h3>
-      <label class="flex items-center gap-2 text-xs text-gray-600">
+      <h3 class="text-sm font-semibold text-text">Pronunciation</h3>
+      <label class="flex items-center gap-2 text-xs text-text/60">
         <input
           v-model="ttsEnabled"
           type="checkbox"
-          class="h-4 w-4 accent-black"
+          class="h-4 w-4 accent-primary"
         />
         Enable TTS playback
       </label>
@@ -104,7 +104,7 @@ function removeCachedAudio() {
       <div class="mb-1 flex items-center justify-between gap-2">
         <label
           for="ipa"
-          class="block text-xs font-medium text-gray-600"
+          class="block text-xs font-medium text-text/60"
           >IPA (optional)</label
         >
         <AiFieldButton
@@ -119,7 +119,7 @@ function removeCachedAudio() {
         v-model="ipa"
         type="text"
         placeholder="/wɜːrd/"
-        class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-black focus:outline-none"
+        class="w-full rounded border border-text/20 px-3 py-2 text-sm focus:border-primary focus:outline-none"
       />
     </div>
 
@@ -127,66 +127,73 @@ function removeCachedAudio() {
       <button
         type="button"
         :disabled="!isTtsSupported || !word.trim()"
-        class="rounded border border-black px-3 py-1.5 text-xs font-medium text-black transition-colors hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:border-gray-300 disabled:text-gray-400 disabled:hover:bg-transparent"
+        class="inline-flex items-center gap-1.5 rounded border border-primary px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary hover:text-background disabled:cursor-not-allowed disabled:border-text/20 disabled:text-text/30 disabled:hover:bg-transparent"
         @click="speakWord"
       >
+        <AppIcon
+          icon-name="VolumeHigh"
+          :size="12"
+        />
         Speak (TTS)
       </button>
 
       <button
         type="button"
         :disabled="isFetchingAudio || !word.trim()"
-        class="rounded border border-black px-3 py-1.5 text-xs font-medium text-black transition-colors hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:border-gray-300 disabled:text-gray-400 disabled:hover:bg-transparent"
+        class="inline-flex items-center gap-1.5 rounded border border-primary px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary hover:text-background disabled:cursor-not-allowed disabled:border-text/20 disabled:text-text/30 disabled:hover:bg-transparent"
         @click="fetchAudio"
       >
+        <AppIcon
+          icon-name="DocumentDownload"
+          :size="12"
+        />
         {{ isFetchingAudio ? 'Fetching…' : 'Fetch Human Audio' }}
       </button>
 
       <button
         v-if="audioBlob"
         type="button"
-        class="inline-flex items-center gap-1.5 rounded border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:border-black hover:text-black"
+        class="inline-flex items-center gap-1.5 rounded border border-text/20 px-3 py-1.5 text-xs font-medium text-text/70 hover:border-primary hover:text-primary"
         @click="playCachedAudio"
       >
-        <svg
-          viewBox="0 0 24 24"
-          width="12"
-          height="12"
-          fill="currentColor"
-          aria-hidden="true"
-        >
-          <path d="M8 5v14l11-7z" />
-        </svg>
+        <AppIcon
+          icon-name="Play"
+          :size="12"
+        />
         Play Cached Audio
       </button>
 
       <button
         v-if="audioBlob"
         type="button"
-        class="rounded border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-500 hover:border-black hover:text-black"
+        class="inline-flex items-center gap-1.5 rounded border border-text/20 px-3 py-1.5 text-xs font-medium text-text/50 hover:border-primary hover:text-primary"
         @click="removeCachedAudio"
       >
+        <AppIcon
+          icon-name="Trash"
+          :size="12"
+        />
         Remove Audio
       </button>
     </div>
 
     <p
       v-if="!isTtsSupported"
-      class="flex items-center gap-1.5 text-xs font-medium text-gray-600"
+      class="flex items-center gap-1.5 text-xs font-medium text-text/60"
     >
       <WarningIcon />
       Speech synthesis isn't supported in this browser.
     </p>
     <p
       v-if="fetchError"
-      class="flex items-center gap-1.5 text-xs font-medium text-gray-800"
+      class="flex items-center gap-1.5 text-xs font-medium text-danger"
     >
       <WarningIcon />
       {{ fetchError }}
     </p>
     <p
       v-if="generateIpaErrorMessage"
-      class="flex items-center gap-1.5 text-xs font-medium text-gray-800"
+      class="flex items-center gap-1.5 text-xs font-medium text-danger"
     >
       <WarningIcon />
       {{ generateIpaErrorMessage }}

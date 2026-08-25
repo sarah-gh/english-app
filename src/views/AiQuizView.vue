@@ -33,20 +33,24 @@ function startNewQuiz() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-white px-4 py-6">
+  <div class="min-h-screen bg-background px-4 py-6">
     <RouterLink
       to="/ai-quiz"
-      class="mb-4 inline-block text-sm text-gray-500 hover:text-black"
+      class="mb-4 inline-flex items-center gap-1 text-sm text-text/50 hover:text-primary"
     >
-      ← Card Selection
+      <AppIcon
+        icon-name="ArrowLeft"
+        :size="14"
+      />
+      Card Selection
     </RouterLink>
-    <h1 class="mb-6 text-xl font-semibold text-black">AI Quiz</h1>
+    <h1 class="mb-6 text-xl font-semibold text-text">AI Quiz</h1>
 
     <div
       v-if="!hasQuestions"
       class="flex flex-col items-center gap-4 py-16 text-center"
     >
-      <p class="text-sm text-gray-500">No quiz is loaded yet.</p>
+      <p class="text-sm text-text/50">No quiz is loaded yet.</p>
       <BaseButton
         variant="primary"
         @click="startNewQuiz"
@@ -58,12 +62,12 @@ function startNewQuiz() {
     <template v-else>
       <p
         v-if="quizSessionStore.isSubmitted"
-        class="mb-6 rounded-lg border-2 border-black p-4 text-center"
+        class="mb-6 rounded-lg border-2 border-primary/30 p-4 text-center"
       >
-        <span class="text-2xl font-semibold text-black"
+        <span class="text-2xl font-semibold text-primary"
           >{{ quizSessionStore.score }} / {{ quizSessionStore.questions.length }}</span
         >
-        <span class="ml-2 text-sm text-gray-600">correct</span>
+        <span class="ml-2 text-sm text-text/60">correct</span>
       </p>
 
       <div class="space-y-5">
@@ -72,19 +76,23 @@ function startNewQuiz() {
           :key="question.id"
         >
           <div class="mb-2 flex items-center justify-between">
-            <p class="text-xs font-medium text-gray-500">
+            <p class="text-xs font-medium text-text/50">
               Question {{ index + 1 }} · from “{{ question.cardTitle }}”
             </p>
             <span
               v-if="quizSessionStore.isSubmitted"
-              class="text-xs font-semibold"
-              :class="quizSessionStore.isCorrect(question) ? 'text-black' : 'text-gray-400'"
+              class="inline-flex items-center gap-1 text-xs font-semibold"
+              :class="quizSessionStore.isCorrect(question) ? 'text-primary' : 'text-danger'"
             >
-              {{ quizSessionStore.isCorrect(question) ? '✓ Correct' : '✕ Incorrect' }}
+              <AppIcon
+                :icon-name="quizSessionStore.isCorrect(question) ? 'TickCircle' : 'CloseCircle'"
+                :size="14"
+              />
+              {{ quizSessionStore.isCorrect(question) ? 'Correct' : 'Incorrect' }}
             </span>
           </div>
 
-          <p class="mb-3 text-sm font-medium text-black">{{ question.question }}</p>
+          <p class="mb-3 text-sm font-medium text-text">{{ question.question }}</p>
 
           <div
             v-if="question.type === 'multiple-choice' && question.options"
@@ -96,8 +104,8 @@ function startNewQuiz() {
               class="flex cursor-pointer items-center gap-2 rounded border px-3 py-2 text-sm"
               :class="[
                 quizSessionStore.answers[question.id] === option
-                  ? 'border-black bg-gray-50'
-                  : 'border-gray-300',
+                  ? 'border-primary bg-primary/5'
+                  : 'border-text/20',
                 quizSessionStore.isSubmitted &&
                 option.trim().toLowerCase() === question.correctAnswer.trim().toLowerCase()
                   ? 'font-semibold'
@@ -106,7 +114,7 @@ function startNewQuiz() {
             >
               <input
                 type="radio"
-                class="accent-black"
+                class="accent-primary"
                 :name="question.id"
                 :value="option"
                 :checked="quizSessionStore.answers[question.id] === option"
@@ -127,9 +135,9 @@ function startNewQuiz() {
 
           <p
             v-if="quizSessionStore.isSubmitted && !quizSessionStore.isCorrect(question)"
-            class="mt-2 text-xs text-gray-600"
+            class="mt-2 text-xs text-text/60"
           >
-            Correct answer: <span class="font-medium text-black">{{ question.correctAnswer }}</span>
+            Correct answer: <span class="font-medium text-text">{{ question.correctAnswer }}</span>
           </p>
 
           <BaseButton

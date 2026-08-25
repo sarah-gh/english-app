@@ -8,11 +8,14 @@ withDefaults(
     message?: string;
     confirmLabel?: string;
     cancelLabel?: string;
+    /** 'danger' colors the confirm button red — use for irreversible/destructive actions. */
+    variant?: 'primary' | 'danger';
   }>(),
   {
     message: undefined,
     confirmLabel: 'Confirm',
     cancelLabel: 'Cancel',
+    variant: 'primary',
   },
 );
 
@@ -24,10 +27,10 @@ const emit = defineEmits<{
 
 <template>
   <BaseModal @close="emit('cancel')">
-    <h2 class="text-base font-semibold text-black">{{ title }}</h2>
+    <h2 class="text-base font-semibold text-text">{{ title }}</h2>
     <p
       v-if="message"
-      class="mt-2 text-sm text-gray-600"
+      class="mt-2 text-sm text-text/60"
     >
       {{ message }}
     </p>
@@ -41,6 +44,7 @@ const emit = defineEmits<{
       </BaseButton>
       <BaseButton
         variant="primary"
+        :danger="variant === 'danger'"
         block
         @click="emit('confirm')"
       >

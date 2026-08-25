@@ -13,6 +13,8 @@ withDefaults(
     required?: boolean;
     /** Renders a <textarea> with this many rows instead of a single-line <input>. */
     rows?: number;
+    /** Iconsax icon name shown as a leading glyph inside the field (e.g. "SearchNormal1"). */
+    icon?: string;
   }>(),
   {
     label: undefined,
@@ -22,6 +24,7 @@ withDefaults(
     disabled: false,
     required: false,
     rows: undefined,
+    icon: undefined,
   },
 );
 
@@ -35,11 +38,11 @@ const inputId = useId();
     <label
       v-if="label"
       :for="inputId"
-      class="mb-1 block text-xs font-medium text-gray-600"
+      class="mb-1 block text-xs font-medium text-text/60"
     >
       {{ label }}<span
         v-if="required"
-        class="text-gray-400"
+        class="text-danger"
       >
         *</span
       >
@@ -52,23 +55,34 @@ const inputId = useId();
       :disabled="disabled"
       :required="required"
       :rows="rows"
-      class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-black focus:outline-none disabled:bg-gray-50"
+      class="w-full rounded border border-text/20 px-3 py-2 text-sm focus:border-primary focus:outline-none disabled:bg-text/5"
       @input="$emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)"
     />
-    <input
+    <div
       v-else
-      :id="inputId"
-      :type="type"
-      :value="modelValue"
-      :placeholder="placeholder"
-      :disabled="disabled"
-      :required="required"
-      class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-black focus:outline-none disabled:bg-gray-50"
-      @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
-    />
+      class="relative"
+    >
+      <AppIcon
+        v-if="icon"
+        :icon-name="icon"
+        :size="16"
+        class="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-text/40"
+      />
+      <input
+        :id="inputId"
+        :type="type"
+        :value="modelValue"
+        :placeholder="placeholder"
+        :disabled="disabled"
+        :required="required"
+        class="w-full rounded border border-text/20 py-2 text-sm focus:border-primary focus:outline-none disabled:bg-text/5"
+        :class="icon ? 'pl-8 pr-3' : 'px-3'"
+        @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+      />
+    </div>
     <p
       v-if="error"
-      class="mt-1 flex items-center gap-1.5 text-xs font-medium text-gray-800"
+      class="mt-1 flex items-center gap-1.5 text-xs font-medium text-danger"
     >
       <WarningIcon />
       {{ error }}
