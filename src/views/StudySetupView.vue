@@ -39,6 +39,16 @@ const topicsForSelectedDeck = computed(() =>
   selectedDeckId.value ? topicStore.byDeck(selectedDeckId.value) : [],
 );
 
+const deckOptions = computed(() => [
+  { value: '', label: 'All decks' },
+  ...deckStore.decks.map((deck) => ({ value: deck.id, label: deck.name })),
+]);
+
+const topicOptions = computed(() => [
+  { value: '', label: 'All topics' },
+  ...topicsForSelectedDeck.value.map((topic) => ({ value: topic.id, label: topic.name })),
+]);
+
 const matchingCount = computed(
   () =>
     cardStore.cards.filter((card) => {
@@ -116,32 +126,16 @@ function startSession() {
           v-model="selectedDeckId"
           label="Deck"
           class="mb-3"
-        >
-          <option value="">All decks</option>
-          <option
-            v-for="deck in deckStore.decks"
-            :key="deck.id"
-            :value="deck.id"
-          >
-            {{ deck.name }}
-          </option>
-        </BaseSelect>
+          :options="deckOptions"
+        />
 
         <BaseSelect
           v-model="selectedTopicId"
           label="Topic"
           class="mb-4"
           :disabled="!selectedDeckId"
-        >
-          <option value="">All topics</option>
-          <option
-            v-for="topic in topicsForSelectedDeck"
-            :key="topic.id"
-            :value="topic.id"
-          >
-            {{ topic.name }}
-          </option>
-        </BaseSelect>
+          :options="topicOptions"
+        />
 
         <p class="mb-3 text-xs text-text/50">
           Cards are prioritized automatically: never-studied first, then previously-missed cards,

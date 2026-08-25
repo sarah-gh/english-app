@@ -61,6 +61,11 @@ function toggleTagFilter(id: string) {
     : [...selectedTagIds.value, id];
 }
 
+const deckOptions = computed(() => [
+  { value: '', label: 'All decks' },
+  ...deckStore.decks.map((deck) => ({ value: deck.id, label: deck.name })),
+]);
+
 const filteredCards = computed(() =>
   cardStore.cards.filter((card) => {
     if (selectedDeckId.value && card.deckId !== selectedDeckId.value) return false;
@@ -175,16 +180,8 @@ async function handleGenerate() {
         <BaseSelect
           v-model="selectedDeckId"
           class="w-full"
-        >
-          <option value="">All decks</option>
-          <option
-            v-for="deck in deckStore.decks"
-            :key="deck.id"
-            :value="deck.id"
-          >
-            {{ deck.name }}
-          </option>
-        </BaseSelect>
+          :options="deckOptions"
+        />
       </div>
 
       <div

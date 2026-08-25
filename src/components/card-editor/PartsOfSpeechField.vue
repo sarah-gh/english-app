@@ -116,16 +116,9 @@ function removeEntry(id: string) {
             :model-value="entry.pos"
             label="Type"
             class="w-36 shrink-0"
+            :options="POS_OPTIONS"
             @update:model-value="(value) => (entry.pos = value as PosType)"
-          >
-            <option
-              v-for="option in POS_OPTIONS"
-              :key="option.value"
-              :value="option.value"
-            >
-              {{ option.label }}
-            </option>
-          </BaseSelect>
+          />
           <BaseInput
             v-model="entry.wordForm"
             label="Word Form"

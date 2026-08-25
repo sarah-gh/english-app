@@ -20,7 +20,7 @@ const showBottomNav = computed(() => !FOCUS_MODE_ROUTE_NAMES.has(route.name as s
 <template>
   <div
     class="max-w-lg mx-auto"
-    :class="showBottomNav ? 'pb-16' : ''"
+    :class="showBottomNav ? 'pb-0' : ''"
   >
     <RouterView v-slot="{ Component }">
       <transition
