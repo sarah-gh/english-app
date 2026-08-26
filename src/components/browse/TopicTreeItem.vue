@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
+import BaseCountBadge from '@/components/ui/BaseCountBadge.vue';
 
 const props = defineProps<{
   name: string;
@@ -20,16 +21,16 @@ function open() {
 
 <template>
   <div
-    class="group flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-left hover:bg-primary/5"
+    class="group flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-left hover:bg-card-surface"
     @click="open"
   >
     <AppIcon
       icon-name="DocumentText"
       :size="14"
-      class="shrink-0 text-text/30"
+      class="shrink-0 text-card-muted"
     />
     <span class="min-w-0 flex-1 truncate text-sm text-text">{{ name }}</span>
-    <span class="shrink-0 text-xs text-text/40">{{ cardCount }}</span>
+    <BaseCountBadge :count="cardCount" />
     <div
       v-if="editable"
       class="flex shrink-0 items-center gap-0.5"
@@ -37,7 +38,7 @@ function open() {
       <button
         type="button"
         aria-label="Rename topic"
-        class="rounded p-1 text-text/35 hover:text-primary"
+        class="rounded p-1 text-card-muted hover:text-primary"
         @click.stop="emit('edit')"
       >
         <AppIcon
@@ -48,7 +49,7 @@ function open() {
       <button
         type="button"
         aria-label="Delete topic"
-        class="rounded p-1 text-text/35 hover:text-danger"
+        class="rounded p-1 text-card-muted hover:text-danger"
         @click.stop="emit('delete')"
       >
         <AppIcon
@@ -60,7 +61,7 @@ function open() {
     <AppIcon
       icon-name="ArrowRight2"
       :size="12"
-      class="shrink-0 text-text/20"
+      class="shrink-0 text-card-muted/60"
     />
   </div>
 </template>

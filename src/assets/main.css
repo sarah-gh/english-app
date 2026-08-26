@@ -26,8 +26,9 @@
    * shows up (see the study session screen mock this was built from). */
   --color-page-editorial: #ffffff;
   --color-card-surface: #ffffff;
-  --color-card-definition: #f1f5f7;
-  --color-card-gold: #a8783a;
+  --color-card-definition: #f7f7f7;
+  --color-card-gold: #dba51f;
+  --color-card-primary: #25979f;
   --color-card-muted: #5b6b6d;
 }
 
@@ -41,15 +42,17 @@
   --color-background: #0b1719;
   --color-primary: #35B5BE;
   --color-secondary: #c89515;
+    --color-card-gold: #f7f7f7;
+
   --color-accent: #f38856;
   --color-danger: #f87171;
   --color-slate-600: #0f2e30;
   --color-slate-900: #242526;
-
   --color-page-editorial: #071518;
   --color-card-surface: #0d2125;
   --color-card-definition: #172a2e;
   --color-card-gold: #d4a359;
+  --color-card-primary: #81c7cc;
   --color-card-muted: #a1c1c5;
 }
 

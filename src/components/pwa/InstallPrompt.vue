@@ -30,7 +30,7 @@ async function handleInstall() {
   <Transition name="install-sheet">
     <div
       v-if="shouldShow"
-      class="fixed inset-x-0 bottom-0 z-40 border-t-2 border-primary/30 bg-background p-4"
+      class="fixed inset-x-0 bottom-18.75 z-50 border-t-2 border-primary/30 bg-background p-4"
     >
       <div class="mx-auto flex max-w-md items-center gap-3">
         <div class="min-w-0 flex-1">

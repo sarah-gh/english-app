@@ -84,12 +84,13 @@ async function confirmDeleteTopic() {
     </RouterLink>
 
     <div class="mb-4 flex items-center justify-between">
-      <h1 class="text-xl font-semibold text-text">Browse Cards</h1>
+      <h1 class="font-serif text-2xl font-bold text-card-primary">Browse Cards</h1>
       <div class="flex items-center gap-2">
         <BaseButton
           variant="secondary"
           size="sm"
           to="/cards/import"
+          class="bg-card-gold/90! text-background! hover:bg-card-gold!"
         >
           <AppIcon
             icon-name="DocumentUpload"

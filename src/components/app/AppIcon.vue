@@ -6,6 +6,7 @@ import ArrowDown2 from 'vue-iconsax/dist/components/icons/ArrowDown2.vue.js';
 import ArrowLeft from 'vue-iconsax/dist/components/icons/ArrowLeft.vue.js';
 import ArrowRight2 from 'vue-iconsax/dist/components/icons/ArrowRight2.vue.js';
 import CloseCircle from 'vue-iconsax/dist/components/icons/CloseCircle.vue.js';
+import Code from 'vue-iconsax/dist/components/icons/Code.vue.js';
 import Danger from 'vue-iconsax/dist/components/icons/Danger.vue.js';
 import DocumentDownload from 'vue-iconsax/dist/components/icons/DocumentDownload.vue.js';
 import DocumentText from 'vue-iconsax/dist/components/icons/DocumentText.vue.js';
@@ -13,8 +14,10 @@ import DocumentUpload from 'vue-iconsax/dist/components/icons/DocumentUpload.vue
 import Edit2 from 'vue-iconsax/dist/components/icons/Edit2.vue.js';
 import Eye from 'vue-iconsax/dist/components/icons/Eye.vue.js';
 import EyeSlash from 'vue-iconsax/dist/components/icons/EyeSlash.vue.js';
+import Flash from 'vue-iconsax/dist/components/icons/Flash.vue.js';
 import Folder2 from 'vue-iconsax/dist/components/icons/Folder2.vue.js';
 import Home2 from 'vue-iconsax/dist/components/icons/Home2.vue.js';
+import Import from 'vue-iconsax/dist/components/icons/Import.vue.js';
 import Play from 'vue-iconsax/dist/components/icons/Play.vue.js';
 import ProfileCircle from 'vue-iconsax/dist/components/icons/ProfileCircle.vue.js';
 import Refresh from 'vue-iconsax/dist/components/icons/Refresh.vue.js';
@@ -36,6 +39,7 @@ const ICONS = {
   ArrowLeft,
   ArrowRight2,
   CloseCircle,
+  Code,
   Danger,
   DocumentDownload,
   DocumentText,
@@ -43,8 +47,10 @@ const ICONS = {
   Edit2,
   Eye,
   EyeSlash,
+  Flash,
   Folder2,
   Home2,
+  Import,
   Play,
   ProfileCircle,
   Refresh,

@@ -3,9 +3,9 @@ import { computed, onMounted, ref } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
 import WarningIcon from '@/components/app/WarningIcon.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
-import BaseCard from '@/components/ui/BaseCard.vue';
 import BaseSegmentedToggle from '@/components/ui/BaseSegmentedToggle.vue';
 import BaseSelect from '@/components/ui/BaseSelect.vue';
+import BaseTag from '@/components/ui/BaseTag.vue';
 import { useGenerateDescriptiveQuiz, useGenerateMultipleChoiceQuiz } from '@/queries/use-generate-ai-quiz';
 import { hasRequiredAiCredentials } from '@/services/ai/ai-quiz-service';
 import { AiServiceError } from '@/services/ai/errors';
@@ -31,8 +31,8 @@ const quizMode = ref<QuizMode>('multiple-choice');
 const questionCount = ref(10);
 
 const QUIZ_MODE_OPTIONS = [
-  { value: 'multiple-choice' as const, label: 'Multiple Choice' },
-  { value: 'open-ended' as const, label: 'Open-Ended' },
+  { value: 'multiple-choice' as const, label: 'Multiple Choice', color: 'gold' as const },
+  { value: 'open-ended' as const, label: 'Open-Ended', color: 'gold' as const },
 ];
 
 const mcMutation = useGenerateMultipleChoiceQuiz();
@@ -190,28 +190,37 @@ async function handleGenerate() {
       <AppIcon icon-name="ArrowLeft" :size="14" />
       Dashboard
     </RouterLink>
-    <h1 class="mb-6 text-xl font-semibold text-text">AI Quiz Generator</h1>
+    <h1 class="mb-6 font-serif text-3xl font-bold text-card-gold">AI Quiz Generator</h1>
 
     <p v-if="!isReady" class="text-sm text-text/50">
       Loading…
     </p>
 
     <template v-else>
-      <div v-if="!hasApiKey" class="mb-6 rounded-lg border-2 border-primary/30 p-4">
+      <div
+        v-if="!hasApiKey"
+        class="relative mb-6 rounded-2xl border border-primary/30 bg-card-definition px-6 py-5"
+      >
+        <span class="pointer-events-none absolute top-3 left-3 h-4 w-4 rounded-tl border-t border-l border-primary/60" />
+        <span class="pointer-events-none absolute top-3 right-3 h-4 w-4 rounded-tr border-t border-r border-primary/60" />
+        <span class="pointer-events-none absolute bottom-3 left-3 h-4 w-4 rounded-bl border-b border-l border-primary/60" />
+        <span class="pointer-events-none absolute right-3 bottom-3 h-4 w-4 rounded-br border-r border-b border-primary/60" />
+
         <p class="mb-1 text-sm font-semibold text-text">An AI provider API key is required</p>
-        <p class="mb-3 text-xs text-text/60">
+        <p class="mb-3 text-xs text-card-muted">
           The AI Quiz Generator sends your selected cards to your configured AI provider (Gemini
           and/or AIHubMix) using your own key. Add one in Settings to continue.
         </p>
-        <BaseButton variant="primary" size="sm" to="/settings">
+        <BaseButton variant="primary" size="sm" class="rounded-full!" to="/settings">
+          <AppIcon icon-name="Setting2" :size="14" />
           Go to Settings
         </BaseButton>
       </div>
 
       <div class="mb-4">
-        <p class="mb-1.5 text-xs font-medium text-text/60">Quiz Mode</p>
-        <BaseSegmentedToggle v-model="quizMode" :options="QUIZ_MODE_OPTIONS" />
-        <p class="mt-1.5 text-xs text-text/50">
+        <p class="mb-1.5 font-serif text-sm font-bold text-card-gold">Quiz Mode</p>
+        <BaseSegmentedToggle v-model="quizMode" class="bg-card-definition" :options="QUIZ_MODE_OPTIONS" />
+        <p class="mt-1.5 text-xs text-card-muted">
           {{
             quizMode === 'multiple-choice'
               ? 'Instantly scored — pick from 4 options per question.'
@@ -220,38 +229,49 @@ async function handleGenerate() {
         </p>
       </div>
 
-      <div class="mb-4 flex items-center gap-2">
-        <label for="question-count" class="text-xs font-medium text-text/60">Number of questions</label>
-        <input
-          id="question-count"
-          type="number"
-          min="1"
-          max="30"
-          :value="questionCount"
-          class="w-20 rounded border border-text/20 px-2 py-1 text-sm focus:border-primary focus:outline-none"
-          @input="setQuestionCount(($event.target as HTMLInputElement).value)"
-        />
+      <div class="mb-4 grid grid-cols-2 gap-4">
+        <div>
+          <label for="question-count" class="mb-1.5 block font-serif text-sm font-bold text-card-gold">
+            Number of questions
+          </label>
+          <input
+            id="question-count"
+            type="number"
+            min="1"
+            max="30"
+            :value="questionCount"
+            class="w-full rounded border border-card-gold/30 bg-card-surface px-2 py-1.5 text-sm text-text focus:border-card-gold focus:outline-none"
+            @input="setQuestionCount(($event.target as HTMLInputElement).value)"
+          />
+        </div>
+        <div>
+          <p class="mb-1.5 font-serif text-sm font-bold text-card-gold">Decks</p>
+          <BaseSelect
+            v-model="selectedDeckId"
+            :options="deckOptions"
+            trigger-class="bg-card-surface border-card-gold/20"
+            chevron-class="text-card-gold"
+          />
+        </div>
       </div>
 
-      <div class="mb-3 flex gap-2">
-        <BaseSelect v-model="selectedDeckId" class="w-full" :options="deckOptions" />
-      </div>
-
-      <div v-if="tagStore.tags.length > 0" class="mb-4 flex flex-wrap gap-2">
-        <button
-v-for="tag in tagStore.tags" :key="tag.id" type="button"
-          class="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors"
-          :class="selectedTagIds.includes(tag.id)
-              ? 'border-primary bg-primary text-background'
-              : 'border-text/15 text-text/70 hover:border-primary'
-            " @click="toggleTagFilter(tag.id)">
-          <span class="h-2 w-2 rounded-full" :style="{ backgroundColor: tag.color }" />
-          {{ tag.name }}
-        </button>
+      <div v-if="tagStore.tags.length > 0" class="mb-4">
+        <p class="mb-1.5 font-serif text-sm font-bold text-card-gold">Tags</p>
+        <div class="flex flex-wrap gap-2">
+          <BaseTag
+            v-for="tag in tagStore.tags"
+            :key="tag.id"
+            :label="tag.name"
+            :color="tag.color"
+            selectable
+            :selected="selectedTagIds.includes(tag.id)"
+            @click="toggleTagFilter(tag.id)"
+          />
+        </div>
       </div>
 
       <div class="mb-3 flex items-center justify-between">
-        <p class="text-xs text-text/50">{{ selectedCount }} of {{ filteredCards.length }} selected</p>
+        <p class="text-xs text-card-muted">{{ selectedCount }} of {{ filteredCards.length }} selected</p>
         <div class="flex gap-3">
           <BaseButton variant="link" size="sm" @click="selectAllFiltered">
             Select All
@@ -262,28 +282,37 @@ v-for="tag in tagStore.tags" :key="tag.id" type="button"
         </div>
       </div>
 
-      <BaseCard padding="none" class="mb-6">
-        <ul class="divide-y divide-text/10">
+      <div class="mb-6 rounded-xl border border-card-gold/20 bg-card-surface">
+        <ul class="divide-y divide-card-gold/10">
           <li v-for="card in filteredCards" :key="card.id">
-            <label class="flex cursor-pointer items-center gap-3 px-4 py-3 hover:bg-primary/5">
+            <label class="flex cursor-pointer items-center gap-3 px-4 py-3 hover:bg-card-definition">
               <input
-type="checkbox" class="h-4 w-4 accent-primary" :checked="selectedCardIds.has(card.id)"
-                @change="toggleCardSelection(card.id)" />
+                type="checkbox"
+                class="h-4 w-4 rounded border-card-gold/40 bg-card-surface accent-card-gold"
+                :checked="selectedCardIds.has(card.id)"
+                @change="toggleCardSelection(card.id)"
+              />
               <span class="min-w-0 flex-1 truncate text-sm text-text">{{ card.frontTitle }}</span>
-              <span class="shrink-0 text-xs text-text/50">
+              <span class="shrink-0 text-xs text-card-muted">
                 {{ deckStore.getById(card.deckId)?.name }}
               </span>
             </label>
           </li>
-          <li v-if="filteredCards.length === 0" class="px-4 py-3 text-sm text-text/35">
+          <li v-if="filteredCards.length === 0" class="px-4 py-3 text-sm text-card-muted">
             No cards match these filters.
           </li>
         </ul>
-      </BaseCard>
+      </div>
 
       <BaseButton
-variant="primary" block :disabled="!hasApiKey || selectedCount === 0" :loading="isGenerating"
-        @click="handleGenerate">
+        variant="ghost"
+        block
+        class="relative rounded-full! border-primary/50! text-primary! hover:border-primary! hover:bg-primary/10!"
+        :disabled="!hasApiKey || selectedCount === 0"
+        :loading="isGenerating"
+        @click="handleGenerate"
+      >
+        <AppIcon v-if="!isGenerating" icon-name="Flash" :size="16" />
         {{ isGenerating ? 'Generating…' : `Generate Quiz (${selectedCount} card${selectedCount === 1 ? '' : 's'})` }}
       </BaseButton>
 

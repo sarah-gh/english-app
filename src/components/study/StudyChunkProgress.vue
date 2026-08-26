@@ -23,7 +23,7 @@ const progressPercent = computed(() =>
 </script>
 
 <template>
-  <div class="mx-auto mb-2 w-full max-w-sm">
+  <div class="mx-auto mb-4 w-full max-w-sm">
     <div class="mb-1 flex items-center justify-between text-xs text-text/50">
       <span>Chunk {{ chunkNumber }} · Card {{ Math.min(cardIndexInChunk + 1, chunkSize) }}/{{ chunkSize }}</span>
       <span>{{ safeTotalStudied }}/{{ safeTotalSlots }}</span>

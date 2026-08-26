@@ -262,7 +262,7 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
       <div class="mb-1 flex items-center justify-between gap-2">
         <label
           for="front-title"
-          class="block text-xs font-medium text-text/60"
+          class="block text-sm font-medium text-text/70"
           >{{ draft.cardMode === 'word-family' ? 'Root / Base Word *' : 'Front Title / Question *' }}</label
         >
         <BaseButton
@@ -336,7 +336,7 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
         <div class="mb-1 flex items-center justify-between gap-2">
           <label
             for="back-answer"
-            class="block text-xs font-medium text-text/60"
+            class="block text-sm font-medium text-text/70"
             >Back Answer / Explanation *</label
           >
           <AiFieldButton

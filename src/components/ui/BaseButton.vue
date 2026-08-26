@@ -63,7 +63,7 @@ const variantClasses = computed(() => {
         'disabled:cursor-not-allowed disabled:text-text/25 disabled:no-underline',
       ].join(' ');
     case 'tile':
-      return 'rounded-xl border border-primary/30 px-4 py-3 text-center text-text bg-slate-600 hover:bg-primary hover:text-background';
+      return 'rounded-xl border border-transparent bg-slate-600 px-4 py-3 text-center text-text hover:border-card-gold/40 hover:bg-card-definition dark:border-card-gold/20 dark:bg-card-surface dark:text-card-gold dark:hover:border-card-gold/50';
     default:
       return '';
   }

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router';
 import type { Topic } from '@/types/topic';
+import BaseCountBadge from '@/components/ui/BaseCountBadge.vue';
 import TopicTreeItem from './TopicTreeItem.vue';
 
 defineProps<{
@@ -22,15 +23,15 @@ defineEmits<{
 </script>
 
 <template>
-  <div class="rounded-xl border border-text/10 bg-white/80 dark:bg-slate-900/80">
+  <div class="rounded-2xl border border-card-gold/20 bg-card-surface">
     <div
-      class="flex cursor-pointer items-center gap-2 px-3 py-3"
+      class="flex cursor-pointer items-center gap-2 px-4 py-3"
       @click="$emit('toggle')"
     >
       <button
         type="button"
         aria-label="Toggle topics"
-        class="shrink-0 rounded p-0.5 text-text/40 hover:text-primary"
+        class="shrink-0 rounded p-0.5 text-card-muted hover:text-primary"
       >
         <AppIcon
           icon-name="ArrowRight2"
@@ -42,17 +43,19 @@ defineEmits<{
       <AppIcon
         icon-name="Folder2"
         :size="16"
-        class="shrink-0 text-text/30"
+        class="shrink-0 text-card-gold/60"
       />
-      <span class="min-w-0 flex-1 truncate text-sm font-medium text-text">{{ name }}</span>
-      <span class="shrink-0 text-xs text-text/50">
+      <span class="min-w-0 flex-1 truncate text-base font-semibold text-card-gold">{{
+        name
+      }}</span>
+      <span class="shrink-0 text-xs text-card-muted">
         {{ topics.length }} topic{{ topics.length === 1 ? '' : 's' }} · {{ cardCount }} card{{
           cardCount === 1 ? '' : 's'
         }}
       </span>
       <button
         type="button"
-        class="inline-flex shrink-0 items-center gap-1 rounded border border-text/15 px-2 py-1 text-xs text-text/60 hover:border-primary hover:text-primary"
+        class="inline-flex shrink-0 items-center gap-1 rounded-full bg-card-gold px-3 py-1.5 text-xs font-medium text-background hover:bg-card-gold/90"
         @click.stop="$emit('createTopic')"
       >
         <AppIcon
@@ -68,19 +71,25 @@ defineEmits<{
       :style="{ gridTemplateRows: expanded ? '1fr' : '0fr' }"
     >
       <div class="overflow-hidden">
-        <div class="border-t border-text/10 px-3 py-2 transition-opacity duration-150" :class="expanded ? 'opacity-100' : 'opacity-0'">
-          <div class="ml-2 space-y-0.5 border-l border-text/10 pl-2">
+        <div
+          class="border-t border-card-gold/10 px-3 pt-3 pb-3 transition-opacity duration-150"
+          :class="expanded ? 'opacity-100' : 'opacity-0'"
+        >
+          <div class="space-y-0.5 rounded-lg bg-card-definition p-2">
             <RouterLink
               :to="`/cards/${deckId}/all`"
-              class="flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium text-text hover:bg-primary/5"
+              class="flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium text-text hover:bg-card-surface"
             >
               <AppIcon
                 icon-name="Folder2"
                 :size="14"
-                class="shrink-0 text-text/30"
+                class="shrink-0 text-card-muted"
               />
               All Cards in this Deck
-              <span class="ml-auto shrink-0 text-xs font-normal text-text/40">{{ cardCount }}</span>
+              <BaseCountBadge
+                :count="cardCount"
+                class="ml-auto"
+              />
             </RouterLink>
 
             <TopicTreeItem
@@ -103,7 +112,7 @@ defineEmits<{
 
             <p
               v-if="topics.length === 0"
-              class="px-2.5 py-1.5 text-xs text-text/35"
+              class="px-2.5 py-1.5 text-xs text-card-muted"
             >
               No topics yet.
             </p>

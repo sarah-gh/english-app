@@ -7,11 +7,25 @@ import SessionSummaryReport from '@/components/study/SessionSummaryReport.vue';
 import StudyChunkProgress from '@/components/study/StudyChunkProgress.vue';
 import type { SwipeDirection } from '@/services/review/state-machine';
 import { useStudySessionStore, type MatchResult } from '@/stores/study-session-store';
+import { useThemeStore } from '@/stores/theme-store';
 
 const router = useRouter();
 const studySessionStore = useStudySessionStore();
+const themeStore = useThemeStore();
 
 const activeCardRef = ref<InstanceType<typeof ReviewCard>>();
+
+/** Dark theme gets the tiled leaf-pattern photo (blended so it only shows as a faint texture);
+ *  light theme just uses the plain `bg-page-editorial` surface color already on the page. */
+const backgroundImageStyle = computed(() =>
+  themeStore.isDark
+    ? {
+        backgroundImage: `url(${import.meta.env.BASE_URL}Picture1.jpg)`,
+        backgroundSize: '150px',
+        backgroundBlendMode: 'color-dodge',
+      }
+    : {},
+);
 
 const chunkNumber = computed(() => studySessionStore.completedChunkCount + 1);
 
@@ -62,7 +76,10 @@ function studyAnotherBatch() {
 </script>
 
 <template>
-  <div class="flex min-h-screen w-full max-w-full flex-col overflow-x-hidden bg-page-editorial px-4 py-6">
+  <div
+    class="flex min-h-screen w-full max-w-full flex-col overflow-x-hidden bg-card-definition bg-repeat px-4 py-6"
+    :style="backgroundImageStyle"
+  >
     <div class="mb-4 flex items-center justify-between">
       <button
         type="button"

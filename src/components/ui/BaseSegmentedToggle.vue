@@ -4,8 +4,9 @@ import { computed } from 'vue';
 /** Pill fill + label-on-pill text for each supported active color — kept as literal Tailwind
  *  class strings (rather than built from the key) so Tailwind's scanner picks them up. */
 const ACTIVE_COLOR_CLASSES = {
-  primary: { pill: 'bg-primary', label: 'text-background' },
-  secondary: { pill: 'bg-secondary', label: 'text-text' },
+  primary: { pill: 'bg-primary', label: 'text-background', hover: 'hover:bg-primary/10' },
+  secondary: { pill: 'bg-secondary', label: 'text-text', hover: 'hover:bg-secondary/10' },
+  gold: { pill: 'bg-card-gold', label: 'text-[#071518]', hover: 'hover:bg-card-gold/10' },
 } as const;
 
 const props = withDefaults(
@@ -45,7 +46,7 @@ const buttonSizeClasses = computed(() => (props.size === 'sm' ? 'py-1.5 text-xs'
         :key="option.value"
         type="button"
         class="relative z-10 flex-1 rounded font-medium transition-colors duration-150"
-        :class="[buttonSizeClasses, modelValue === option.value ? activeColor.label : 'text-text hover:bg-primary/10']"
+        :class="[buttonSizeClasses, modelValue === option.value ? activeColor.label : ['text-text', activeColor.hover]]"
         @click="$emit('update:modelValue', option.value)"
       >
         {{ option.label }}

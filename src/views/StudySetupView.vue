@@ -77,58 +77,84 @@ function startSession() {
       <AppIcon icon-name="ArrowLeft" :size="14" />
       Dashboard
     </RouterLink>
-    <h1 class="mb-6 text-xl font-semibold text-text">Study Session</h1>
+    <h1 class="mb-6 text-2xl font-bold font-serif text-text">Study Session</h1>
 
     <p v-if="!isReady" class="text-sm text-text/50">
       Loading…
     </p>
 
     <template v-else>
-      <section class="mb-6">
-        <h2 class="mb-2 text-sm font-semibold text-text">View Mode</h2>
-        <BaseSegmentedToggle
-v-model="selectedViewMode" :options="[
-          { value: 'study', label: 'Study' },
-          { value: 'practice', label: 'Practice', color: 'secondary' },
-        ]" />
-        <p class="mt-2 text-xs text-text/50">
-          {{
-            selectedViewMode === 'study'
-              ? 'Answers are shown upfront so you can read and study.'
-              : 'Answers are hidden until you tap "Show Answer" or start swiping.'
-          }}
-        </p>
-      </section>
+      <section class="relative rounded-2xl border border-card-gold/30 bg-card-surface px-6 p-5">
+        <span class="pointer-events-none absolute top-3 left-3 h-4 w-4 rounded-tl border-t border-l border-card-gold/60" />
+        <span class="pointer-events-none absolute top-3 right-3 h-4 w-4 rounded-tr border-t border-r border-card-gold/60" />
+        <span class="pointer-events-none absolute bottom-3 left-3 h-4 w-4 rounded-bl border-b border-l border-card-gold/60" />
+        <span class="pointer-events-none absolute right-3 bottom-3 h-4 w-4 rounded-br border-r border-b border-card-gold/60" />
 
-      <section class="mb-6">
-        <h2 class="mb-2 text-sm font-semibold text-text">Cards per batch</h2>
-        <SessionSizeSelector v-model="sessionSize" />
-        <p class="mt-2 text-xs text-text/50">
-          Studied in chunks of 5, each followed by a quick matching quiz.
-        </p>
-      </section>
+        <section class="mb-6">
+          <h2 class="mb-2 text-base font-semibold text-text">View Mode</h2>
+          <BaseSegmentedToggle
+            v-model="selectedViewMode"
+            class="bg-card-definition"
+            :options="[
+              { value: 'study', label: 'Study', color: 'gold' },
+              { value: 'practice', label: 'Practice', color: 'gold' },
+            ]"
+          />
+          <p class="mt-2 text-xs text-card-muted">
+            {{
+              selectedViewMode === 'study'
+                ? 'Answers are shown upfront so you can read and study.'
+                : 'Answers are hidden until you tap "Show Answer" or start swiping.'
+            }}
+          </p>
+        </section>
 
-      <section class="mb-6 rounded-lg border border-text/20 p-4">
-        <h2 class="mb-3 text-sm font-semibold text-text">Deck &amp; Topic</h2>
+        <section class="mb-6">
+          <h2 class="mb-2 text-base font-semibold text-text">Cards per batch</h2>
+          <SessionSizeSelector v-model="sessionSize" />
+          <p class="mt-2 text-xs text-card-muted">
+            Studied in chunks of 5, each followed by a quick matching quiz.
+          </p>
+        </section>
 
-        <BaseSelect v-model="selectedDeckId" label="Deck" class="mb-3" :options="deckOptions" />
+        <section class="rounded-xl border border-card-gold/10 bg-card-definition p-4 dark:bg-[#0f282c]">
+          <h2 class="mb-3 text-base font-semibold text-card-gold">Deck &amp; Topic</h2>
 
-        <BaseSelect
-v-model="selectedTopicId" label="Topic" class="mb-4" :disabled="!selectedDeckId"
-          :options="topicOptions" />
+          <BaseSelect
+            v-model="selectedDeckId"
+            label="Deck"
+            class="mb-3"
+            :options="deckOptions"
+            trigger-class="bg-card-surface border-card-gold/20"
+            chevron-class="text-card-gold"
+          />
 
-        <p class="mb-3 text-xs text-text/50">
-          Cards are prioritized automatically: never-studied first, then previously-missed cards,
-          then Hard → Medium → Easy.
-        </p>
+          <BaseSelect
+            v-model="selectedTopicId"
+            label="Topic"
+            class="mb-5"
+            :disabled="!selectedDeckId"
+            :options="topicOptions"
+            trigger-class="bg-card-surface border-card-gold/20"
+            chevron-class="text-card-gold"
+          />
 
-        <button
-type="button" :disabled="matchingCount === 0"
-          class="w-full rounded bg-primary py-2.5 text-sm font-medium text-background hover:bg-primary/90 disabled:bg-primary/30"
-          @click="startSession">
-          Start ({{ Math.min(matchingCount, sessionSize) }} card{{ Math.min(matchingCount, sessionSize) === 1 ? '' : 's'
-          }})
-        </button>
+          <!-- <p class="mb-3 text-xs text-card-muted">
+            Cards are prioritized automatically: never-studied first, then previously-missed cards,
+            then Hard → Medium → Easy.
+          </p> -->
+
+          <button
+            type="button"
+            :disabled="matchingCount === 0"
+            class="relative w-full rounded-lg bg-primary py-2.5 text-sm font-medium text-background hover:bg-primary/90 disabled:bg-primary/30"
+            @click="startSession"
+          >
+            Start ({{ Math.min(matchingCount, sessionSize) }} card{{
+              Math.min(matchingCount, sessionSize) === 1 ? '' : 's'
+            }})
+          </button>
+        </section>
       </section>
     </template>
   </div>

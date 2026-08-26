@@ -4,7 +4,6 @@ import { RouterLink } from 'vue-router';
 import AiProviderSettings from '@/components/settings/AiProviderSettings.vue';
 import AppearanceSettings from '@/components/settings/AppearanceSettings.vue';
 import DailyGoalSettings from '@/components/settings/DailyGoalSettings.vue';
-import DataManagementSettings from '@/components/settings/DataManagementSettings.vue';
 import InstallAppSettings from '@/components/settings/InstallAppSettings.vue';
 import PronunciationSettings from '@/components/settings/PronunciationSettings.vue';
 import { useSettingsStore } from '@/stores/settings-store';
@@ -36,7 +35,6 @@ onMounted(async () => {
       <DailyGoalSettings />
       <AiProviderSettings />
       <InstallAppSettings />
-      <DataManagementSettings />
     </template>
   </div>
 </template>

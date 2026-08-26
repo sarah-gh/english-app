@@ -13,6 +13,10 @@ const props = withDefaults(
     disabled?: boolean;
     error?: string;
     required?: boolean;
+    /** Overrides the trigger's background/border classes (default: `bg-background border-text/20`). */
+    triggerClass?: string;
+    /** Overrides the chevron icon's color class (default: `text-text/50`). */
+    chevronClass?: string;
   }>(),
   {
     label: undefined,
@@ -20,6 +24,8 @@ const props = withDefaults(
     disabled: false,
     error: undefined,
     required: false,
+    triggerClass: undefined,
+    chevronClass: undefined,
   },
 );
 
@@ -52,8 +58,8 @@ const selectedLabel = computed(() => props.options.find((option) => option.value
       <div class="relative">
         <ListboxButton
           :id="selectId"
-          class="flex w-full items-center justify-between gap-2 rounded border bg-background px-3 py-2 text-left text-sm text-text focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-text/5 disabled:text-text/40"
-          :class="error ? 'border-danger/80' : 'border-text/20'"
+          class="flex w-full items-center justify-between gap-2 rounded border px-3 py-2 text-left text-sm text-text focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-text/5 disabled:text-text/40"
+          :class="error ? 'border-danger/80 bg-background' : (triggerClass ?? 'border-text/20 bg-background')"
           @blur="emit('blur')"
         >
           <span
@@ -65,7 +71,8 @@ const selectedLabel = computed(() => props.options.find((option) => option.value
           <AppIcon
             icon-name="ArrowDown2"
             :size="16"
-            class="shrink-0 text-text/50"
+            class="shrink-0"
+            :class="chevronClass ?? 'text-text/50'"
           />
         </ListboxButton>
 

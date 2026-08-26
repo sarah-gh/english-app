@@ -3,8 +3,8 @@ import { ref, shallowRef } from 'vue';
 import ConfirmDialog from '@/components/app/ConfirmDialog.vue';
 import WarningIcon from '@/components/app/WarningIcon.vue';
 import JsonImportPreviewModal from '@/components/import/JsonImportPreviewModal.vue';
+import JsonTextImportModal from '@/components/import/JsonTextImportModal.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
-import BaseCard from '@/components/ui/BaseCard.vue';
 import { exportBackup } from '@/services/backup/exporter';
 import { BackupImportError, importBackup, type ImportSummary } from '@/services/backup/importer';
 import { clearAllData } from '@/services/data/reset-data';
@@ -94,6 +94,28 @@ function triggerJsonImportPicker() {
   jsonFileInput.value?.click();
 }
 
+/** Shared by the file-upload flow and the paste/edit-JSON modal — both need the same up-to-date
+ *  deck/topic/tag names to tell new names apart from reused ones. */
+async function parseJsonCardImportText(text: string): Promise<JsonImportValidationResult> {
+  await Promise.all([
+    cardStore.ensureLoaded(),
+    deckStore.ensureLoaded(),
+    topicStore.ensureLoaded(),
+    tagStore.ensureLoaded(),
+  ]);
+
+  const topicNamesByDeck: Record<string, string[]> = {};
+  for (const deck of deckStore.decks) {
+    topicNamesByDeck[deck.name] = topicStore.byDeck(deck.id).map((topic) => topic.name);
+  }
+
+  return parseJsonCardImport(text, {
+    deckNames: deckStore.decks.map((deck) => deck.name),
+    tagNames: tagStore.tags.map((tag) => tag.name),
+    topicNamesByDeck,
+  });
+}
+
 async function handleJsonFileSelected(event: Event) {
   const file = (event.target as HTMLInputElement).files?.[0];
   if (!file) return;
@@ -102,24 +124,8 @@ async function handleJsonFileSelected(event: Event) {
   jsonImportResult.value = null;
   isParsingJson.value = true;
   try {
-    await Promise.all([
-      cardStore.ensureLoaded(),
-      deckStore.ensureLoaded(),
-      topicStore.ensureLoaded(),
-      tagStore.ensureLoaded(),
-    ]);
-
-    const topicNamesByDeck: Record<string, string[]> = {};
-    for (const deck of deckStore.decks) {
-      topicNamesByDeck[deck.name] = topicStore.byDeck(deck.id).map((topic) => topic.name);
-    }
-
     const text = await file.text();
-    const result = parseJsonCardImport(text, {
-      deckNames: deckStore.decks.map((deck) => deck.name),
-      tagNames: tagStore.tags.map((tag) => tag.name),
-      topicNamesByDeck,
-    });
+    const result = await parseJsonCardImportText(text);
 
     if (result.validCardsCount === 0) {
       jsonImportError.value = result.errors[0] ?? 'No valid cards were found in this file.';
@@ -131,6 +137,38 @@ async function handleJsonFileSelected(event: Event) {
   } finally {
     isParsingJson.value = false;
     if (jsonFileInput.value) jsonFileInput.value.value = '';
+  }
+}
+
+// --- JSON text/paste import ---
+const isTextImportModalOpen = ref(false);
+const isValidatingJsonText = ref(false);
+const jsonTextStructureError = ref('');
+
+function openJsonTextImport() {
+  jsonTextStructureError.value = '';
+  isTextImportModalOpen.value = true;
+}
+
+function cancelJsonTextImport() {
+  isTextImportModalOpen.value = false;
+}
+
+async function handleJsonTextValidate(text: string) {
+  jsonTextStructureError.value = '';
+  isValidatingJsonText.value = true;
+  try {
+    const result = await parseJsonCardImportText(text);
+    if (result.validCardsCount === 0) {
+      jsonTextStructureError.value = result.errors[0] ?? 'No valid cards were found in this JSON.';
+    } else {
+      isTextImportModalOpen.value = false;
+      jsonImportResult.value = result;
+    }
+  } catch {
+    jsonTextStructureError.value = 'Could not process this JSON.';
+  } finally {
+    isValidatingJsonText.value = false;
   }
 }
 
@@ -237,9 +275,14 @@ async function handleClearAll() {
 </script>
 
 <template>
-  <BaseCard class="mb-6">
-    <h2 class="mb-1 text-sm font-semibold text-text">Backup &amp; Data</h2>
-    <p class="mb-4 text-xs text-text/50">
+  <section class="relative mb-6 rounded-2xl border border-card-gold/20 bg-card-surface px-6 p-5">
+    <span class="pointer-events-none absolute top-3 left-3 h-4 w-4 rounded-tl border-t border-l border-card-gold/60" />
+    <span class="pointer-events-none absolute top-3 right-3 h-4 w-4 rounded-tr border-t border-r border-card-gold/60" />
+    <span class="pointer-events-none absolute bottom-3 left-3 h-4 w-4 rounded-bl border-b border-l border-card-gold/60" />
+    <span class="pointer-events-none absolute right-3 bottom-3 h-4 w-4 rounded-br border-r border-b border-card-gold/60" />
+
+    <h2 class="mb-1 font-serif text-lg font-bold text-card-gold">Backup &amp; Data</h2>
+    <p class="mb-4 text-xs text-card-muted">
       Export everything into a single .zip file, or import one to restore or merge data on this or
       another device.
     </p>
@@ -248,6 +291,7 @@ async function handleClearAll() {
       <BaseButton
         variant="secondary"
         size="sm"
+        class="rounded-full! bg-card-gold/90! text-background! hover:bg-card-gold!"
         :loading="isExporting"
         @click="handleExport"
       >
@@ -261,6 +305,7 @@ async function handleClearAll() {
       <BaseButton
         variant="secondary"
         size="sm"
+        class="rounded-full! bg-card-gold/90! text-background! hover:bg-card-gold!"
         :loading="isImporting"
         @click="triggerImportPicker"
       >
@@ -295,9 +340,9 @@ async function handleClearAll() {
       {{ importError }}
     </p>
 
-    <hr class="my-4 border-text/10" />
+    <hr class="my-4 border-card-gold/10" />
 
-    <p class="mb-3 text-xs text-text/50">
+    <p class="mb-3 text-xs text-card-muted">
       Bulk-create new cards from a spreadsheet instead of a backup file — useful for adding a
       batch of vocabulary, grammar, or idiom cards at once.
     </p>
@@ -305,6 +350,7 @@ async function handleClearAll() {
       <BaseButton
         variant="secondary"
         size="sm"
+        class="rounded-full! bg-card-gold/90! text-background! hover:bg-card-gold!"
         to="/cards/import"
       >
         Import Cards (Excel)
@@ -312,6 +358,7 @@ async function handleClearAll() {
       <BaseButton
         variant="secondary"
         size="sm"
+        class="rounded-full! bg-card-gold/90! text-background! hover:bg-card-gold!"
         :loading="isParsingJson"
         @click="triggerJsonImportPicker"
       >
@@ -329,6 +376,15 @@ async function handleClearAll() {
         class="hidden"
         @change="handleJsonFileSelected"
       />
+      <BaseButton
+        variant="secondary"
+        size="sm"
+        class="rounded-full! bg-card-gold/90! text-background! hover:bg-card-gold!"
+        @click="openJsonTextImport"
+      >
+        <AppIcon icon-name="Code" :size="14" />
+        Paste / Edit Raw JSON
+      </BaseButton>
     </div>
 
     <p
@@ -338,18 +394,24 @@ async function handleClearAll() {
       <WarningIcon />
       {{ jsonImportError }}
     </p>
-  </BaseCard>
+  </section>
 
-  <BaseCard>
-    <h2 class="mb-1 text-sm font-semibold text-text">Danger Zone</h2>
-    <p class="mb-3 text-xs text-text/50">
+  <section class="relative rounded-2xl border border-card-gold/20 bg-card-surface px-6 p-5">
+    <span class="pointer-events-none absolute top-3 left-3 h-4 w-4 rounded-tl border-t border-l border-card-gold/60" />
+    <span class="pointer-events-none absolute top-3 right-3 h-4 w-4 rounded-tr border-t border-r border-card-gold/60" />
+    <span class="pointer-events-none absolute bottom-3 left-3 h-4 w-4 rounded-bl border-b border-l border-card-gold/60" />
+    <span class="pointer-events-none absolute right-3 bottom-3 h-4 w-4 rounded-br border-r border-b border-card-gold/60" />
+
+    <h2 class="mb-1 font-serif text-lg font-bold text-card-gold">Danger Zone</h2>
+    <p class="mb-3 text-xs text-card-muted">
       Permanently deletes every deck, card, and tag on this device, and resets your settings. This
       can't be undone.
     </p>
     <BaseButton
-      variant="primary"
+      variant="ghost"
       danger
       size="sm"
+      class="rounded-full!"
       @click="isConfirmingClear = true"
     >
       <AppIcon
@@ -358,7 +420,7 @@ async function handleClearAll() {
       />
       Clear All Data
     </BaseButton>
-  </BaseCard>
+  </section>
 
   <ConfirmDialog
     v-if="isConfirmingClear"
@@ -368,6 +430,14 @@ async function handleClearAll() {
     variant="danger"
     @confirm="handleClearAll"
     @cancel="isConfirmingClear = false"
+  />
+
+  <JsonTextImportModal
+    v-if="isTextImportModalOpen"
+    :is-validating="isValidatingJsonText"
+    :structure-error="jsonTextStructureError"
+    @validate="handleJsonTextValidate"
+    @close="cancelJsonTextImport"
   />
 
   <JsonImportPreviewModal
