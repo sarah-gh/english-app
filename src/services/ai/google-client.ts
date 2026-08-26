@@ -5,7 +5,6 @@ import {
   type GeneratedCardDetails,
 } from './card-autofill-schema';
 import { AiProviderError } from './errors';
-import { parseQuizResponseText, QUIZ_RESPONSE_SCHEMA, type GeneratedQuizQuestion } from './quiz-schema';
 import { parseWordFamilyResponseText, WORD_FAMILY_RESPONSE_SCHEMA, type GeneratedWordFamily } from './word-family-schema';
 
 const MODEL = 'gemini-flash-latest';
@@ -42,16 +41,6 @@ export async function callGoogleStructured(
     }
     throw error;
   }
-}
-
-/** Calls Gemini Flash (via Google AI Studio) with Structured JSON Output mode enabled, using the
- *  user's own API key. */
-export async function generateQuizViaGoogle(
-  apiKey: string,
-  prompt: string,
-): Promise<GeneratedQuizQuestion[]> {
-  const text = await callGoogleStructured(apiKey, prompt, QUIZ_RESPONSE_SCHEMA);
-  return parseQuizResponseText(text, (message) => new AiProviderError('google', message, false));
 }
 
 export async function autoFillCardViaGoogle(

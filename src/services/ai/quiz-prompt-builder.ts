@@ -1,12 +1,7 @@
 import type { Card } from '@/types/card';
 
-/**
- * Builds a prompt asking Gemini for exactly one question per flashcard, numbered to match the
- * `sourceIndex` field in the response schema, so each generated question can be traced back to
- * the specific card it should be optionally saved onto.
- */
-export function buildQuizPrompt(cards: Card[]): string {
-  const cardSummaries = cards
+function summarizeCards(cards: Card[]): string {
+  return cards
     .map((card, index) => {
       const lines = [
         `${index + 1}. Term/Question: "${card.frontTitle}"`,
@@ -18,11 +13,50 @@ export function buildQuizPrompt(cards: Card[]): string {
       return lines.join('\n');
     })
     .join('\n\n');
+}
 
-  return `You are creating a short practice quiz for an English-language learner based on their personal flashcards below.
+/**
+ * Builds a prompt asking for `questionCount` multiple-choice questions grounded in the given
+ * flashcards. "sourceIndex" ties each question back to the flashcard (1-based) that inspired it,
+ * so it can optionally be saved onto that card afterward.
+ */
+export function buildMultipleChoiceQuizPrompt(cards: Card[], questionCount: number): string {
+  return `You are creating a multiple-choice practice quiz for an English-language learner based on their personal flashcards below.
 
-For EACH flashcard, generate exactly one quiz question that tests whether the learner understands and can recall that specific card's content. Set "sourceIndex" to the flashcard's number (1-based) shown below. Mix multiple-choice questions (type "multiple-choice", with exactly 4 plausible options in "options", one of which exactly matches "correctAnswer") and fill-in-the-blank questions (type "fill-blank", "question" contains a sentence with a blank such as "___", "correctAnswer" is the missing word or short phrase, no "options") roughly evenly. Keep questions concise and grounded only in the flashcard content provided — do not invent unrelated facts.
+Generate exactly ${questionCount} multiple-choice questions that test whether the learner understands and can recall this flashcard content. Distribute the questions across the flashcards provided, favoring cards not yet covered before repeating one. Set "sourceIndex" to the flashcard's number (1-based) shown below that a question was drawn from. Each question must have exactly 4 plausible options in "options", with "correctOptionIndex" as the 0-based index of the correct one. Keep questions concise and grounded only in the flashcard content provided — do not invent unrelated facts.
 
 Flashcards:
-${cardSummaries}`;
+${summarizeCards(cards)}`;
+}
+
+/**
+ * Builds a prompt asking for `questionCount` open-ended, conceptual/situational questions
+ * grounded in the given flashcards — deeper than simple recall, since these are graded by a
+ * follow-up AI call rather than exact-matched against a fixed answer.
+ */
+export function buildDescriptiveQuizPrompt(cards: Card[], questionCount: number): string {
+  return `You are creating an open-ended practice quiz for an English-language learner based on their personal flashcards below.
+
+Generate exactly ${questionCount} open-ended questions that go beyond simple recall — ask the learner to construct an original sentence using the term correctly, explain a subtle nuance or common mistake, analyze how the term applies in a short scenario, or compare it with a closely related term. Distribute the questions across the flashcards provided, favoring cards not yet covered before repeating one. Set "sourceIndex" to the flashcard's number (1-based) shown below that a question was drawn from. Ground every question only in the flashcard content provided — do not invent unrelated facts. Do not include a correct answer; these will be graded separately.
+
+Flashcards:
+${summarizeCards(cards)}`;
+}
+
+/**
+ * Builds a prompt asking the AI to grade a batch of free-text answers to open-ended quiz
+ * questions. "sourceIndex" ties each evaluation back to the item (1-based) it graded.
+ */
+export function buildDescriptiveEvaluationPrompt(items: { question: string; userAnswer: string }[]): string {
+  const itemSummaries = items
+    .map((item, index) => {
+      const answer = item.userAnswer.trim() || '(no answer given)';
+      return `${index + 1}. Question: "${item.question}"\n   Learner's answer: "${answer}"`;
+    })
+    .join('\n\n');
+
+  return `You are grading an English-language learner's answers to an open-ended practice quiz. For EACH item below, evaluate how well the learner's answer demonstrates correct understanding and usage — score generously for genuine understanding even with minor grammar slips, but score low for answers that are off-topic, incorrect, or blank. Set "sourceIndex" to the item's number (1-based) shown below. Give a "score" from 0 to 100, "feedback" that is a short (1-3 sentence) explanation directed at the learner, and a "sampleAnswer" showing what a strong answer would look like.
+
+Items to grade:
+${itemSummaries}`;
 }

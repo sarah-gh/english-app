@@ -5,7 +5,6 @@ import {
   type GeneratedCardDetails,
 } from './card-autofill-schema';
 import { AiProviderError } from './errors';
-import { parseQuizResponseText, QUIZ_RESPONSE_SCHEMA, type GeneratedQuizQuestion } from './quiz-schema';
 import { parseWordFamilyResponseText, WORD_FAMILY_RESPONSE_SCHEMA, type GeneratedWordFamily } from './word-family-schema';
 
 const MODEL = 'gemini-flash-latest';
@@ -74,15 +73,6 @@ export async function callAihubmixStructured(
   }
 
   return data.candidates?.[0]?.content?.parts?.[0]?.text;
-}
-
-export async function generateQuizViaAihubmix(
-  apiKey: string,
-  baseUrl: string,
-  prompt: string,
-): Promise<GeneratedQuizQuestion[]> {
-  const text = await callAihubmixStructured(apiKey, baseUrl, prompt, QUIZ_RESPONSE_SCHEMA);
-  return parseQuizResponseText(text, (message) => new AiProviderError('aihubmix', message, false));
 }
 
 export async function autoFillCardViaAihubmix(

@@ -4,7 +4,8 @@
 export const queryKeys = {
   aiQuiz: {
     all: ['ai-quiz'] as const,
-    generate: () => [...queryKeys.aiQuiz.all, 'generate'] as const,
+    generateMultipleChoice: () => [...queryKeys.aiQuiz.all, 'generate-multiple-choice'] as const,
+    generateDescriptive: () => [...queryKeys.aiQuiz.all, 'generate-descriptive'] as const,
   },
   pronunciation: {
     all: ['pronunciation'] as const,

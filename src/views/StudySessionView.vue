@@ -130,7 +130,7 @@ function studyAnotherBatch() {
         :card-index-in-chunk="studySessionStore.chunkCardIndex"
         :chunk-size="studySessionStore.currentChunk.length"
         :total-studied="studySessionStore.totalStudied"
-        :total-slots="studySessionStore.totalSlots"
+        :total-slots="studySessionStore.totalSessionCards"
       />
 
       <div class="relative mx-auto w-full max-w-sm flex-1">

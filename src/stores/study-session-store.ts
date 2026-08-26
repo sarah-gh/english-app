@@ -47,6 +47,12 @@ export const useStudySessionStore = defineStore('study-session', () => {
   const viewMode = ref<CardViewMode>('practice');
 
   const totalSlots = ref(0);
+  /** How many cards this session's progress header should count against — the actual queue size
+   *  (which can be smaller than `totalSlots` when the deck/topic has fewer cards than the
+   *  selected session-size cap), not the raw cap itself. `totalSlots` stays the uncapped budget
+   *  so a mismatched card can still be requeued for another attempt up to that cap; only the
+   *  displayed "X/Y" counter and progress bar need the actual-size version. */
+  const totalSessionCards = ref(0);
   const slotsUsed = ref(0);
   const completedChunkCount = ref(0);
   const totalStudied = ref(0);
@@ -74,6 +80,7 @@ export const useStudySessionStore = defineStore('study-session', () => {
 
     lastConfig.value = config;
     totalSlots.value = config.sessionSize;
+    totalSessionCards.value = initialQueue.length;
     slotsUsed.value = initialQueue.length;
     queue.value = initialQueue;
     currentChunk.value = queue.value.splice(0, Math.min(5, queue.value.length));
@@ -194,6 +201,7 @@ export const useStudySessionStore = defineStore('study-session', () => {
     matchingQuizChunk,
     viewMode,
     totalSlots,
+    totalSessionCards,
     slotsUsed,
     completedChunkCount,
     totalStudied,
