@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
 /* Makes `dark:` utilities respond to a `.dark` class on <html> (toggled by the theme store),
@@ -13,6 +14,21 @@
   --color-accent: #f38856;
   --color-danger: #dc2626;
   --color-slate-600: #9ad4d849;
+
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  /* Editorial serif, used only for the study/practice card's word title. */
+  --font-serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
+
+  /* Study/Practice "Editorial" card theme — scoped to the review card and its page background
+   * rather than the shared --color-background/--color-secondary tokens, so this redesign doesn't
+   * ripple into buttons, toggles, and badges elsewhere in the app. Light-mode values just match
+   * the app's existing look; the .dark overrides below are where the editorial theme actually
+   * shows up (see the study session screen mock this was built from). */
+  --color-page-editorial: #ffffff;
+  --color-card-surface: #ffffff;
+  --color-card-definition: #f1f5f7;
+  --color-card-gold: #a8783a;
+  --color-card-muted: #5b6b6d;
 }
 
 /* Dark theme token overrides — every `bg-background`/`text-text`/`border-text/*` utility across
@@ -29,10 +45,20 @@
   --color-danger: #f87171;
   --color-slate-600: #0f2e30;
   --color-slate-900: #242526;
+
+  --color-page-editorial: #071518;
+  --color-card-surface: #0d2125;
+  --color-card-definition: #172a2e;
+  --color-card-gold: #d4a359;
+  --color-card-muted: #a1c1c5;
 }
 
 body {
-  @apply bg-background text-text antialiased transition-colors duration-150;
+  /* `overflow-x-hidden` only ever clips horizontal overflow — never vertical scrolling on any
+   * page — so it's safe as a global safety net against a stray transform (e.g. the study/practice
+   * card's swipe-away translateX) briefly widening the document and popping a horizontal
+   * scrollbar. */
+  @apply bg-background text-text antialiased transition-colors duration-150 overflow-x-hidden;
 }
 
 /* Global Custom Scrollbar Style */

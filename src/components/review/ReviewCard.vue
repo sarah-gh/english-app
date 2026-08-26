@@ -182,7 +182,7 @@ onBeforeUnmount(() => {
 <template>
   <div
     ref="rootEl"
-    class="relative flex h-full w-full touch-none flex-col overflow-y-auto rounded-xl border-2 border-text/10 bg-background py-10 p-7 select-none"
+    class="relative flex h-full w-full touch-none flex-col overflow-hidden rounded-2xl border border-card-gold/30 bg-card-surface select-none"
     :style="cardStyle"
     @pointerdown="onPointerDown"
     @pointermove="onPointerMove"
@@ -190,8 +190,17 @@ onBeforeUnmount(() => {
     @pointercancel="endDrag"
     @transitionend="onTransitionEnd"
   >
+    <!-- Vintage double-line frame: an inset hairline plus four corner accents. Pinned directly to
+         the non-scrolling root, above the scrollable body (z-20), so it never shifts, clips, or
+         gets crossed by the body's own scrollbar as it scrolls. -->
+    <div class="pointer-events-none absolute inset-2 z-20 rounded-xl border border-card-gold/20" />
+    <span class="pointer-events-none absolute top-3 left-3 z-20 h-4 w-4 rounded-tl border-t border-l border-card-gold/60" />
+    <span class="pointer-events-none absolute top-3 right-3 z-20 h-4 w-4 rounded-tr border-t border-r border-card-gold/60" />
+    <span class="pointer-events-none absolute bottom-3 left-3 z-20 h-4 w-4 rounded-bl border-b border-l border-card-gold/60" />
+    <span class="pointer-events-none absolute right-3 bottom-3 z-20 h-4 w-4 rounded-br border-r border-b border-card-gold/60" />
+
     <div
-      class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
+      class="pointer-events-none absolute inset-0 z-30 flex items-center justify-center"
       :style="overlayStyle(leftOverlayProgress)"
     >
       <div class="flex h-24 w-24 items-center justify-center rounded-full bg-rose-500/20 text-rose-500">
@@ -203,7 +212,7 @@ onBeforeUnmount(() => {
       </div>
     </div>
     <div
-      class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
+      class="pointer-events-none absolute inset-0 z-30 flex items-center justify-center"
       :style="overlayStyle(rightOverlayProgress)"
     >
       <div class="flex h-24 w-24 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-500">
@@ -215,138 +224,174 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <div class="flex items-start justify-between gap-2">
-      <h2 class="text-2xl font-semibold text-text">{{ card.frontTitle }}</h2>
-      <button
-        type="button"
-        aria-label="Play pronunciation"
-        class="shrink-0 rounded-full border border-primary p-2 text-primary hover:bg-primary hover:text-background"
-        @pointerdown.stop
-        @click.stop="playAudio"
+    <!-- Scrollable body, decoupled from the frame/corner accents above so long content scrolls
+         underneath them instead of dragging them along or clipping them. Inset by `mx-1 my-3`
+         (on top of its own padding) so the body's own edge — and its scrollbar — never sits flush
+         against the gold inset line, which is what let content/scrollbar visually cross it. -->
+    <div class="card-scroll relative z-10 mx-3 my-3 min-h-0 flex-1 overflow-y-auto px-3 py-4">
+      <div class="flex items-start justify-between gap-3">
+        <h2 class="font-serif text-3xl font-semibold text-card-gold">{{ card.frontTitle }}</h2>
+        <button
+          type="button"
+          aria-label="Play pronunciation"
+          class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-card-gold/40 bg-linear-to-b from-card-definition to-card-surface text-primary shadow-[0_2px_6px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.15)] transition hover:brightness-110"
+          @pointerdown.stop
+          @click.stop="playAudio"
+        >
+          <AppIcon
+            icon-name="VolumeHigh"
+            :size="18"
+          />
+        </button>
+      </div>
+      <p
+        v-if="card.ipa"
+        class="text-sm text-card-muted"
       >
-        <AppIcon
-          icon-name="VolumeHigh"
-          :size="18"
+        {{ card.ipa }}
+      </p>
+
+      <div class="mt-3 border-t border-card-gold/20" />
+
+      <BaseExpandableContent
+        :max-height="280"
+        fade-class="from-card-surface via-card-surface/80"
+      >
+        <template v-if="card.wordFamily">
+          <WordFamilyDisplay
+            v-if="showAnswer"
+            :data="card.wordFamily"
+            :highlight="wordFamilyChallengeForm ?? undefined"
+            class="mt-4"
+          />
+          <button
+            v-else
+            type="button"
+            class="mt-4 rounded border-2 border-dashed border-card-gold/30 py-3 text-sm font-medium text-card-muted hover:border-primary hover:text-primary"
+            @pointerdown.stop
+            @click.stop="revealAnswer"
+          >
+            <template v-if="wordFamilyChallengeForm">
+              What is the {{ WORD_FAMILY_POS_LABELS[wordFamilyChallengeForm] }} form of
+              “{{ card.wordFamily.rootWord }}”?
+            </template>
+            <template v-else>Show Word Family</template>
+          </button>
+        </template>
+        <template v-else>
+          <template v-if="showAnswer">
+            <div class="mt-4 rounded-xl bg-card-definition p-4">
+              <p class="text-base leading-relaxed text-text">{{ card.backAnswer }}</p>
+            </div>
+
+            <ul
+              v-if="card.examples.length > 0"
+              class="mt-4 space-y-2"
+            >
+              <li
+                v-for="(example, index) in card.examples"
+                :key="index"
+                class="text-base text-text/90"
+              >
+                {{ example }}
+              </li>
+            </ul>
+
+            <p
+              v-if="card.synonyms.length > 0"
+              class="mt-4 text-sm text-text/80"
+            >
+              <span class="font-semibold text-card-gold">Synonyms:</span> {{ card.synonyms.join(', ') }}
+            </p>
+            <p
+              v-if="card.antonyms.length > 0"
+              class="mt-1 text-sm text-text/80"
+            >
+              <span class="font-semibold text-card-gold">Antonyms:</span> {{ card.antonyms.join(', ') }}
+            </p>
+          </template>
+          <button
+            v-else
+            type="button"
+            class="mt-4 rounded border-2 border-dashed border-card-gold/30 py-3 text-sm font-medium text-card-muted hover:border-primary hover:text-primary"
+            @pointerdown.stop
+            @click.stop="revealAnswer"
+          >
+            Show Answer
+          </button>
+
+          <PartsOfSpeechDisplay
+            v-if="card.partsOfSpeech && card.partsOfSpeech.length > 0"
+            :entries="card.partsOfSpeech"
+            :view-mode="viewMode"
+            :front-title="card.frontTitle"
+            :interactive="interactive"
+            class="mt-4"
+          />
+        </template>
+      </BaseExpandableContent>
+
+      <div
+        v-if="cardTags.length > 0"
+        class="mt-4 flex flex-wrap gap-2"
+      >
+        <BaseTag
+          v-for="tag in cardTags"
+          :key="tag.id"
+          :label="tag.name"
+          :color="tag.color"
+        />
+      </div>
+
+      <button
+        v-if="card.hint"
+        type="button"
+        class="mt-4 rounded border border-card-gold/30 px-3 py-2 text-left text-sm text-card-muted hover:border-primary"
+        @pointerdown.stop
+        @click.stop="toggleHint"
+      >
+        <span class="font-medium text-card-gold">Hint:</span>
+        {{ isHintRevealed ? card.hint : 'Tap to reveal' }}
+      </button>
+
+      <button
+        v-if="imageUrl"
+        type="button"
+        class="mt-4 overflow-hidden rounded border border-card-gold/30 transition-[height]"
+        :class="isImageExpanded ? 'h-56' : 'h-24'"
+        @pointerdown.stop
+        @click.stop="toggleImage"
+      >
+        <img
+          :src="imageUrl"
+          alt="Card image"
+          draggable="false"
+          class="h-full w-full object-cover"
         />
       </button>
     </div>
-    <p
-      v-if="card.ipa"
-      class="mt-1 text-sm text-text/50"
-    >
-      {{ card.ipa }}
-    </p>
-
-    <BaseExpandableContent :max-height="280">
-      <template v-if="card.wordFamily">
-        <WordFamilyDisplay
-          v-if="showAnswer"
-          :data="card.wordFamily"
-          :highlight="wordFamilyChallengeForm ?? undefined"
-          class="mt-4"
-        />
-        <button
-          v-else
-          type="button"
-          class="mt-4 rounded border-2 border-dashed border-text/20 py-3 text-sm font-medium text-text/50 hover:border-primary hover:text-primary"
-          @pointerdown.stop
-          @click.stop="revealAnswer"
-        >
-          <template v-if="wordFamilyChallengeForm">
-            What is the {{ WORD_FAMILY_POS_LABELS[wordFamilyChallengeForm] }} form of
-            “{{ card.wordFamily.rootWord }}”?
-          </template>
-          <template v-else>Show Word Family</template>
-        </button>
-      </template>
-      <template v-else>
-        <template v-if="showAnswer">
-          <p class="mt-4 text-base text-text">{{ card.backAnswer }}</p>
-
-          <ul
-            v-if="card.examples.length > 0"
-            class="mt-4 space-y-1"
-          >
-            <li
-              v-for="(example, index) in card.examples"
-              :key="index"
-              class="text-sm text-text/60"
-            >
-              “{{ example }}”
-            </li>
-          </ul>
-
-          <p
-            v-if="card.synonyms.length > 0"
-            class="mt-4 text-sm text-text/60"
-          >
-            <span class="font-medium text-text">Synonyms:</span> {{ card.synonyms.join(', ') }}
-          </p>
-          <p
-            v-if="card.antonyms.length > 0"
-            class="mt-1 text-sm text-text/60"
-          >
-            <span class="font-medium text-text">Antonyms:</span> {{ card.antonyms.join(', ') }}
-          </p>
-        </template>
-        <button
-          v-else
-          type="button"
-          class="mt-4 rounded border-2 border-dashed border-text/20 py-3 text-sm font-medium text-text/50 hover:border-primary hover:text-primary"
-          @pointerdown.stop
-          @click.stop="revealAnswer"
-        >
-          Show Answer
-        </button>
-
-        <PartsOfSpeechDisplay
-          v-if="card.partsOfSpeech && card.partsOfSpeech.length > 0"
-          :entries="card.partsOfSpeech"
-          :view-mode="viewMode"
-          :front-title="card.frontTitle"
-          :interactive="interactive"
-          class="mt-4"
-        />
-      </template>
-    </BaseExpandableContent>
-
-    <div
-      v-if="cardTags.length > 0"
-      class="mt-4 flex flex-wrap gap-2"
-    >
-      <BaseTag
-        v-for="tag in cardTags"
-        :key="tag.id"
-        :label="tag.name"
-        :color="tag.color"
-      />
-    </div>
-
-    <button
-      v-if="card.hint"
-      type="button"
-      class="mt-4 rounded border border-text/20 px-3 py-2 text-left text-sm text-text/60 hover:border-primary"
-      @pointerdown.stop
-      @click.stop="toggleHint"
-    >
-      <span class="font-medium text-text">Hint:</span>
-      {{ isHintRevealed ? card.hint : 'Tap to reveal' }}
-    </button>
-
-    <button
-      v-if="imageUrl"
-      type="button"
-      class="mt-4 overflow-hidden rounded border border-text/20 transition-[height]"
-      :class="isImageExpanded ? 'h-56' : 'h-24'"
-      @pointerdown.stop
-      @click.stop="toggleImage"
-    >
-      <img
-        :src="imageUrl"
-        alt="Card image"
-        draggable="false"
-        class="h-full w-full object-cover"
-      />
-    </button>
   </div>
 </template>
+
+<style scoped>
+/* Keeps the scrollable body's own scrollbar slender and inset within the gold frame instead of
+ * the app-wide 10px scrollbar (see main.css), which was wide/flush enough to visually cross the
+ * frame's inset border line. */
+.card-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-card-gold) 55%, transparent) transparent;
+}
+
+.card-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.card-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.card-scroll::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--color-card-gold) 55%, transparent);
+  border-radius: 999px;
+}
+</style>

@@ -62,7 +62,7 @@ function studyAnotherBatch() {
 </script>
 
 <template>
-  <div class="flex min-h-screen flex-col bg-background px-4 py-6">
+  <div class="flex min-h-screen w-full max-w-full flex-col overflow-x-hidden bg-page-editorial px-4 py-6">
     <div class="mb-4 flex items-center justify-between">
       <button
         type="button"

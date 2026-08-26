@@ -46,7 +46,7 @@ function startNewQuiz() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-background px-4 py-6 pb-18.75">
+  <div class="min-h-screen bg-background px-4 py-6">
     <RouterLink to="/ai-quiz" class="mb-4 inline-flex items-center gap-1 text-sm text-text/50 hover:text-primary">
       <AppIcon icon-name="ArrowLeft" :size="14" />
       Card Selection

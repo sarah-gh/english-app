@@ -123,7 +123,7 @@ function confirmDiscardChanges() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-background px-4 py-6 pb-18.75">
+  <div class="min-h-screen bg-background px-4 py-6">
     <h1 class="mb-2 text-lg font-semibold text-text">
       {{ isEditing ? 'Edit Card' : 'New Card' }}
     </h1>
