@@ -158,6 +158,8 @@ async function handleImport() {
         ttsEnabled: true,
         hint: row.hint,
         examples: [...row.examples],
+        synonyms: [],
+        antonyms: [],
         quizQuestions: [],
       });
     }

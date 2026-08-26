@@ -64,6 +64,8 @@ export interface Card {
   audioBlob?: Blob;
   hint?: string;
   examples: string[];
+  synonyms: string[];
+  antonyms: string[];
   quizQuestions: QuizQuestion[];
   /** Optional — a word can have multiple parts of speech, each with its own definition/IPA/examples. */
   partsOfSpeech?: PartOfSpeechEntry[];

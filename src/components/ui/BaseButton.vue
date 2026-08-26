@@ -63,14 +63,14 @@ const variantClasses = computed(() => {
         'disabled:cursor-not-allowed disabled:text-text/25 disabled:no-underline',
       ].join(' ');
     case 'tile':
-      return 'rounded-xl border border-primary/30 px-4 py-3 text-center text-text hover:bg-primary hover:text-background';
+      return 'rounded-xl border border-primary/30 px-4 py-3 text-center text-text bg-slate-600 hover:bg-primary hover:text-background';
     default:
       return '';
   }
 });
 
 const sizeClasses = computed(() => {
-  if (props.variant === 'tile') return '';
+  if (props.variant === 'tile') return 'text-[14px]';
   if (props.variant === 'link') return props.size === 'sm' ? 'text-xs' : 'text-sm';
   return props.size === 'sm' ? 'px-3 py-1.5 text-xs' : 'px-4 py-2.5 text-sm';
 });

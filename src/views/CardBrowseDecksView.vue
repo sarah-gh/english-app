@@ -1,29 +1,72 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
-import { RouterLink } from 'vue-router';
-import DeckGrid from '@/components/browse/DeckGrid.vue';
+import { nextTick, onMounted, ref } from 'vue';
+import { RouterLink, useRoute } from 'vue-router';
+import ConfirmDialog from '@/components/app/ConfirmDialog.vue';
+import DeckTree from '@/components/browse/DeckTree.vue';
+import TopicFormModal from '@/components/browse/TopicFormModal.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
+import { useBrowseTreeStore } from '@/stores/browse-tree-store';
 import { useCardStore } from '@/stores/card-store';
 import { useDeckStore } from '@/stores/deck-store';
 import { useTopicStore } from '@/stores/topic-store';
+import type { Topic } from '@/types/topic';
 
+const route = useRoute();
 const cardStore = useCardStore();
 const deckStore = useDeckStore();
 const topicStore = useTopicStore();
+const browseTreeStore = useBrowseTreeStore();
 
 const isReady = ref(false);
 
 onMounted(async () => {
   await Promise.all([cardStore.ensureLoaded(), deckStore.ensureLoaded(), topicStore.ensureLoaded()]);
   isReady.value = true;
+
+  // Arriving from a "deck" link elsewhere (e.g. the dashboard) expands and scrolls to that deck.
+  const targetDeckId = route.query.deck;
+  if (typeof targetDeckId === 'string' && deckStore.getById(targetDeckId)) {
+    browseTreeStore.expand(targetDeckId);
+    await nextTick();
+    document.getElementById(`deck-${targetDeckId}`)?.scrollIntoView({ block: 'center' });
+  }
 });
 
 function cardCountFor(deckId: string): number {
   return cardStore.byDeck(deckId).length;
 }
 
-function topicCountFor(deckId: string): number {
-  return topicStore.byDeck(deckId).length;
+function topicsFor(deckId: string): Topic[] {
+  return topicStore.byDeck(deckId);
+}
+
+function cardCountForTopic(topicId: string): number {
+  return cardStore.byTopic(topicId).length;
+}
+
+function uncategorizedCountFor(deckId: string): number {
+  return cardStore.byDeck(deckId).filter((card) => !card.topicId).length;
+}
+
+const creatingTopicForDeckId = ref<string | null>(null);
+const editingTopic = ref<Topic | null>(null);
+const deletingTopic = ref<Topic | null>(null);
+
+async function saveTopic(values: { name: string; description?: string }) {
+  if (editingTopic.value) {
+    await topicStore.edit(editingTopic.value.id, values);
+    editingTopic.value = null;
+  } else if (creatingTopicForDeckId.value) {
+    await topicStore.add({ deckId: creatingTopicForDeckId.value, ...values });
+    creatingTopicForDeckId.value = null;
+  }
+}
+
+async function confirmDeleteTopic() {
+  if (deletingTopic.value) {
+    await topicStore.remove(deletingTopic.value.id);
+    deletingTopic.value = null;
+  }
 }
 </script>
 
@@ -75,11 +118,16 @@ function topicCountFor(deckId: string): number {
       Loading…
     </p>
     <template v-else>
-      <p class="mb-3 text-xs text-text/50">Choose a deck to browse its topics.</p>
-      <DeckGrid
+      <p class="mb-3 text-xs text-text/50">Expand a deck to browse its topics.</p>
+      <DeckTree
         :decks="deckStore.decks"
         :card-count-for="cardCountFor"
-        :topic-count-for="topicCountFor"
+        :topics-for="topicsFor"
+        :card-count-for-topic="cardCountForTopic"
+        :uncategorized-count-for="uncategorizedCountFor"
+        @create-topic="creatingTopicForDeckId = $event"
+        @edit-topic="editingTopic = $event"
+        @delete-topic="deletingTopic = $event"
       />
       <p
         v-if="deckStore.decks.length === 0"
@@ -88,5 +136,25 @@ function topicCountFor(deckId: string): number {
         No decks yet. Create a card to get started.
       </p>
     </template>
+
+    <TopicFormModal
+      v-if="creatingTopicForDeckId || editingTopic"
+      :topic="editingTopic"
+      @save="saveTopic"
+      @cancel="
+        creatingTopicForDeckId = null;
+        editingTopic = null;
+      "
+    />
+
+    <ConfirmDialog
+      v-if="deletingTopic"
+      title="Delete this topic?"
+      :message="`Deleting “${deletingTopic.name}” won't delete its ${cardCountForTopic(deletingTopic.id)} card(s) — they'll move to Uncategorized.`"
+      confirm-label="Delete"
+      variant="danger"
+      @confirm="confirmDeleteTopic"
+      @cancel="deletingTopic = null"
+    />
   </div>
 </template>

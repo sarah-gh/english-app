@@ -159,6 +159,19 @@ async function handleDelete() {
               “{{ example }}”
             </li>
           </ul>
+
+          <p
+            v-if="card.synonyms.length > 0"
+            class="mt-2 text-xs text-text/50"
+          >
+            <span class="font-medium text-text/70">Synonyms:</span> {{ card.synonyms.join(', ') }}
+          </p>
+          <p
+            v-if="card.antonyms.length > 0"
+            class="mt-0.5 text-xs text-text/50"
+          >
+            <span class="font-medium text-text/70">Antonyms:</span> {{ card.antonyms.join(', ') }}
+          </p>
         </template>
         <button
           v-else

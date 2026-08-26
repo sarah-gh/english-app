@@ -12,6 +12,7 @@
   --color-secondary: #FEBD17;
   --color-accent: #f38856;
   --color-danger: #dc2626;
+  --color-slate-600: #9ad4d849;
 }
 
 /* Dark theme token overrides — every `bg-background`/`text-text`/`border-text/*` utility across
@@ -23,9 +24,11 @@
   --color-text: #f0fdfd;
   --color-background: #0b1719;
   --color-primary: #35B5BE;
-  --color-secondary: #FEBD17;
+  --color-secondary: #c89515;
   --color-accent: #f38856;
   --color-danger: #f87171;
+  --color-slate-600: #0f2e30;
+  --color-slate-900: #242526;
 }
 
 body {

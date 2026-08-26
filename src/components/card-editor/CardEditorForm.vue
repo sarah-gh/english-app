@@ -30,6 +30,7 @@ import PronunciationField from './PronunciationField.vue';
 import QuizQuestionListField from './QuizQuestionListField.vue';
 import TagMultiSelectField from './TagMultiSelectField.vue';
 import TopicSelectField from './TopicSelectField.vue';
+import WordChipListField from './WordChipListField.vue';
 import WordFamilyField from './WordFamilyField.vue';
 
 const draft = defineModel<CardFormState>('draft', { required: true });
@@ -413,6 +414,18 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
       v-model:examples="draft.examples"
       :ai-word="draft.frontTitle"
     />
+
+    <div class="grid grid-cols-2 gap-3">
+      <WordChipListField
+        v-model:words="draft.synonyms"
+        label="Synonyms (optional)"
+      />
+      <WordChipListField
+        v-model:words="draft.antonyms"
+        label="Antonyms (optional)"
+      />
+    </div>
+
     <QuizQuestionListField v-model:quiz-questions="draft.quizQuestions" />
     <ImageUploadField v-model:image-blob="draft.imageBlob" />
 

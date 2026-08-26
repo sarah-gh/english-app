@@ -48,7 +48,7 @@ function deckCardCount(deckId: string): number {
           <ul class="divide-y divide-text/10">
             <li v-for="deck in deckStore.decks" :key="deck.id">
               <RouterLink
-                :to="`/cards/${deck.id}`"
+                :to="`/cards?deck=${deck.id}`"
                 class="flex items-center justify-between px-4 py-3 hover:bg-primary/5">
                 <span class="text-sm text-text">{{ deck.name }}</span>
                 <span class="text-xs text-text/50">{{ deckCardCount(deck.id) }} cards</span>
@@ -66,25 +66,25 @@ function deckCardCount(deckId: string): number {
         <div class="grid grid-cols-2 gap-3">
           <BaseButton variant="tile" to="/cards">
             <span class="flex flex-row items-center gap-1.5">
-              <AppIcon icon-name="DocumentText" :size="20" :viewBox="'0 0 23 23'" />
+              <AppIcon icon-name="DocumentText" :size="18" :viewBox="'0 0 23 23'" />
               Browse Cards
             </span>
           </BaseButton>
           <BaseButton variant="tile" to="/cards/new">
             <span class="flex flex-row items-center gap-1.5">
-              <AppIcon icon-name="AddSquare" :size="20" :viewBox="'0 0 23 23'"  />
+              <AppIcon icon-name="AddSquare" :size="18" :viewBox="'0 0 23 23'"  />
               Card Creator
             </span>
           </BaseButton>
           <BaseButton variant="tile" to="/decks">
             <span class="flex flex-row items-center gap-1.5">
-              <AppIcon icon-name="Folder2" :size="20" :viewBox="'0 0 23 23'"  />
+              <AppIcon icon-name="Folder2" :size="18" :viewBox="'0 0 23 23'"  />
               Deck Management
             </span>
           </BaseButton>
           <BaseButton variant="tile" to="/study">
             <span class="flex flex-row items-center gap-1.5 ">
-              <AppIcon icon-name="RefreshCircle" :size="20" :viewBox="'0 0 23 23'"  />
+              <AppIcon icon-name="RefreshCircle" :size="18" :viewBox="'0 0 23 23'"  />
               Study
             </span>
           </BaseButton>

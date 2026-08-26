@@ -66,6 +66,8 @@ export interface CardFormState {
   audioBlob?: Blob;
   hint: string;
   examples: string[];
+  synonyms: string[];
+  antonyms: string[];
   quizQuestions: QuizQuestion[];
   partsOfSpeech: PosEntryFormState[];
   wordFamily: WordFamilyFormState;
@@ -85,6 +87,8 @@ export function blankCardFormState(): CardFormState {
     audioBlob: undefined,
     hint: '',
     examples: [],
+    synonyms: [],
+    antonyms: [],
     quizQuestions: [],
     partsOfSpeech: [],
     wordFamily: blankWordFamilyFormState(),
@@ -105,6 +109,8 @@ export function cardFormStateFromCard(card: Card): CardFormState {
     audioBlob: card.audioBlob,
     hint: card.hint ?? '',
     examples: [...card.examples],
+    synonyms: [...card.synonyms],
+    antonyms: [...card.antonyms],
     quizQuestions: card.quizQuestions.map((question) => ({ ...question })),
     partsOfSpeech: (card.partsOfSpeech ?? []).map((entry) => ({
       id: entry.id,
@@ -203,6 +209,8 @@ export function cardFormStateToNewCard(state: CardFormState): NewCard {
     audioBlob: raw.audioBlob,
     hint: raw.hint.trim() || undefined,
     examples: raw.examples.map((example) => example.trim()).filter(Boolean),
+    synonyms: raw.synonyms.map((word) => word.trim()).filter(Boolean),
+    antonyms: raw.antonyms.map((word) => word.trim()).filter(Boolean),
     quizQuestions: raw.quizQuestions
       .filter((question) => question.question.trim() && question.correctAnswer.trim())
       .map((question) => ({ ...question })),

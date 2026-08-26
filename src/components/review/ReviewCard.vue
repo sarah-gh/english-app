@@ -130,12 +130,19 @@ const cardStyle = computed(() => ({
   transition: isDragging.value ? 'none' : 'transform 0.35s ease',
 }));
 
-const rightLabelOpacity = computed(() =>
+const rightOverlayProgress = computed(() =>
   Math.min(Math.max(offsetX.value / SWIPE_THRESHOLD, 0), 1),
 );
-const leftLabelOpacity = computed(() =>
+const leftOverlayProgress = computed(() =>
   Math.min(Math.max(-offsetX.value / SWIPE_THRESHOLD, 0), 1),
 );
+
+function overlayStyle(progress: number) {
+  return {
+    opacity: progress,
+    transform: `scale(${0.7 + progress * 0.3})`,
+  };
+}
 
 const cardTags = computed<Tag[]>(() =>
   props.card.tagIds
@@ -175,7 +182,7 @@ onBeforeUnmount(() => {
 <template>
   <div
     ref="rootEl"
-    class="relative flex h-full w-full touch-none flex-col overflow-y-auto rounded-xl border-2 border-text/10 bg-background p-5 select-none"
+    class="relative flex h-full w-full touch-none flex-col overflow-y-auto rounded-xl border-2 border-text/10 bg-background py-10 p-7 select-none"
     :style="cardStyle"
     @pointerdown="onPointerDown"
     @pointermove="onPointerMove"
@@ -184,20 +191,32 @@ onBeforeUnmount(() => {
     @transitionend="onTransitionEnd"
   >
     <div
-      class="pointer-events-none absolute top-4 left-4 rounded border-2 border-text/20 bg-danger px-3 py-1 text-sm font-bold text-white uppercase shadow-md"
-      :style="{ opacity: leftLabelOpacity }"
+      class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
+      :style="overlayStyle(leftOverlayProgress)"
     >
-      Not Known
+      <div class="flex h-24 w-24 items-center justify-center rounded-full bg-rose-500/20 text-rose-500">
+        <AppIcon
+          icon-name="CloseCircle"
+          :size="64"
+          type="bold"
+        />
+      </div>
     </div>
     <div
-      class="pointer-events-none absolute top-4 right-4 rounded border-2 border-text/20 bg-green-500 px-3 py-1 text-sm font-bold text-white uppercase shadow-md"
-      :style="{ opacity: rightLabelOpacity }"
+      class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
+      :style="overlayStyle(rightOverlayProgress)"
     >
-      Known
+      <div class="flex h-24 w-24 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-500">
+        <AppIcon
+          icon-name="TickCircle"
+          :size="64"
+          type="bold"
+        />
+      </div>
     </div>
 
     <div class="flex items-start justify-between gap-2">
-      <h2 class="text-xl font-semibold text-text">{{ card.frontTitle }}</h2>
+      <h2 class="text-2xl font-semibold text-text">{{ card.frontTitle }}</h2>
       <button
         type="button"
         aria-label="Play pronunciation"
@@ -256,6 +275,19 @@ onBeforeUnmount(() => {
               “{{ example }}”
             </li>
           </ul>
+
+          <p
+            v-if="card.synonyms.length > 0"
+            class="mt-4 text-sm text-text/60"
+          >
+            <span class="font-medium text-text">Synonyms:</span> {{ card.synonyms.join(', ') }}
+          </p>
+          <p
+            v-if="card.antonyms.length > 0"
+            class="mt-1 text-sm text-text/60"
+          >
+            <span class="font-medium text-text">Antonyms:</span> {{ card.antonyms.join(', ') }}
+          </p>
         </template>
         <button
           v-else

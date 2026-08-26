@@ -221,6 +221,8 @@ export async function importBackup(file: File): Promise<ImportSummary> {
       audioBlob,
       hint: typeof raw.hint === 'string' ? raw.hint : undefined,
       examples: Array.isArray(raw.examples) ? (raw.examples as string[]) : [],
+      synonyms: Array.isArray(raw.synonyms) ? (raw.synonyms as string[]) : [],
+      antonyms: Array.isArray(raw.antonyms) ? (raw.antonyms as string[]) : [],
       quizQuestions: Array.isArray(raw.quizQuestions) ? (raw.quizQuestions as QuizQuestion[]) : [],
       partsOfSpeech: parsePartsOfSpeech(raw.partsOfSpeech),
       wordFamily: parseWordFamily(raw.wordFamily),

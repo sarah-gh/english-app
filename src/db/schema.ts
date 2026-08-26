@@ -65,5 +65,26 @@ export class AppDatabase extends Dexie {
           }
         });
       });
+
+    // v3: adds Synonyms/Antonyms inputs to cards; existing cards are back-filled with empty arrays.
+    this.version(3)
+      .stores({
+        cards: 'id, deckId, topicId, reviewStatus, *tagIds, createdAt',
+        decks: 'id, name, createdAt',
+        tags: 'id, name',
+        topics: 'id, deckId, name, createdAt',
+        aiQuizResults: 'id, createdAt',
+        dailyStats: 'date',
+        settings: 'id',
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table<Card, string>('cards')
+          .toCollection()
+          .modify((card) => {
+            if (!card.synonyms) card.synonyms = [];
+            if (!card.antonyms) card.antonyms = [];
+          });
+      });
   }
 }

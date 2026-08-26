@@ -5,12 +5,16 @@ import InstallPrompt from '@/components/pwa/InstallPrompt.vue';
 import BottomNav from '@/components/ui/BottomNav.vue';
 
 /** Study/quiz session routes go into "focus mode": the bottom nav hides so nothing but the
- *  session itself competes for attention, on both their setup and in-progress screens. */
+ *  session itself competes for attention, on both their setup and in-progress screens. The card
+ *  creator/editor are here too — their own fixed bottom action bar (Save/Cancel) would otherwise
+ *  overlap the nav. */
 const FOCUS_MODE_ROUTE_NAMES = new Set([
   'study-setup',
   'study-session',
   'ai-quiz-setup',
   'ai-quiz-session',
+  'card-create',
+  'card-edit',
 ]);
 
 const route = useRoute();
