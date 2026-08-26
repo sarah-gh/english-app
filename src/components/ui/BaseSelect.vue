@@ -1,6 +1,7 @@
 <script setup lang="ts" generic="T extends string">
 import { Listbox, ListboxButton, ListboxOptions, ListboxOption } from '@headlessui/vue';
 import { computed, useId } from 'vue';
+import WarningIcon from '@/components/app/WarningIcon.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -10,15 +11,19 @@ const props = withDefaults(
     /** Shown in the trigger when `modelValue` doesn't match any option. */
     placeholder?: string;
     disabled?: boolean;
+    error?: string;
+    required?: boolean;
   }>(),
   {
     label: undefined,
     placeholder: undefined,
     disabled: false,
+    error: undefined,
+    required: false,
   },
 );
 
-const emit = defineEmits<{ 'update:modelValue': [value: T] }>();
+const emit = defineEmits<{ 'update:modelValue': [value: T]; blur: [] }>();
 
 const selectId = useId();
 
@@ -32,7 +37,12 @@ const selectedLabel = computed(() => props.options.find((option) => option.value
       :for="selectId"
       class="mb-1 block text-xs font-medium text-text/60"
     >
-      {{ label }}
+      {{ label }}<span
+        v-if="required"
+        class="text-danger"
+      >
+        *</span
+      >
     </label>
     <Listbox
       :model-value="modelValue"
@@ -42,13 +52,15 @@ const selectedLabel = computed(() => props.options.find((option) => option.value
       <div class="relative">
         <ListboxButton
           :id="selectId"
-          class="flex w-full items-center justify-between gap-2 rounded border border-text/20 bg-background px-3 py-2 text-left text-sm text-text focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-text/5 disabled:text-text/40"
+          class="flex w-full items-center justify-between gap-2 rounded border bg-background px-3 py-2 text-left text-sm text-text focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-text/5 disabled:text-text/40"
+          :class="error ? 'border-danger/80' : 'border-text/20'"
+          @blur="emit('blur')"
         >
           <span
             class="truncate"
             :class="selectedLabel ? '' : 'text-text/40'"
           >
-            {{ selectedLabel ?? placeholder ?? ' ' }}
+            {{ selectedLabel ?? placeholder ?? ' ' }}
           </span>
           <AppIcon
             icon-name="ArrowDown2"
@@ -83,5 +95,12 @@ const selectedLabel = computed(() => props.options.find((option) => option.value
         </transition>
       </div>
     </Listbox>
+    <p
+      v-if="error"
+      class="mt-1 flex items-center gap-1.5 text-xs font-medium text-danger"
+    >
+      <WarningIcon />
+      {{ error }}
+    </p>
   </div>
 </template>

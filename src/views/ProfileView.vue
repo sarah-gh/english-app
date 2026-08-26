@@ -26,14 +26,11 @@ const statusCounts = computed(() => ({
 </script>
 
 <template>
-  <div class="min-h-screen bg-background px-4 py-6">
+  <div class="min-h-screen bg-background px-4 py-6 pb-18.75">
     <h1 class="mb-1 text-xl font-semibold text-text">Profile</h1>
     <p class="mb-6 text-sm text-text/50">Your progress and history</p>
 
-    <p
-      v-if="!isReady"
-      class="text-sm text-text/50"
-    >
+    <p v-if="!isReady" class="text-sm text-text/50">
       Loading…
     </p>
 

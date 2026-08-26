@@ -7,9 +7,13 @@ const props = withDefaults(
     /** Collapsed-height threshold in pixels — content taller than this gets clipped with a
      *  "Show More" gradient until expanded. */
     maxHeight?: number;
+    /** Tailwind `from-*`/`via-*` classes for the fade-out gradient behind "Show More" — must
+     *  match the container's own background so the fade blends in instead of showing a seam. */
+    fadeClass?: string;
   }>(),
   {
     maxHeight: 120,
+    fadeClass: 'from-background via-background/80',
   },
 );
 
@@ -64,7 +68,8 @@ const currentMaxHeight = computed(() => {
         v-if="isOverflowing && !isExpanded"
         type="button"
         aria-label="Show more of this card"
-        class="absolute inset-x-0 bottom-0 flex h-16 items-end justify-center gap-1 bg-linear-to-t from-white via-white/80 to-transparent pb-1.5 text-xs font-medium text-text/60 hover:text-primary"
+        class="absolute inset-x-0 bottom-0 flex h-16 items-end justify-center gap-1 bg-linear-to-t to-transparent pb-1.5 text-xs font-medium text-text/60 hover:text-primary"
+        :class="fadeClass"
         @pointerdown.stop
         @click.stop="isExpanded = true"
       >

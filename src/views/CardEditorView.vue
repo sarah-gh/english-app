@@ -123,43 +123,29 @@ function confirmDiscardChanges() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-background px-4 py-6">
+  <div class="min-h-screen bg-background px-4 py-6 pb-18.75">
     <h1 class="mb-2 text-lg font-semibold text-text">
       {{ isEditing ? 'Edit Card' : 'New Card' }}
     </h1>
-    <p
-      v-if="!isReady"
-      class="text-sm text-text/50"
-    >
+    <p v-if="!isReady" class="text-sm text-text/50">
       Loading…
     </p>
     <CardEditorForm
-      v-else
-      ref="formRef"
-      v-model:draft="draft"
-      :is-saving="isSaving"
-      :is-editing="isEditing"
-      @submit="handleSubmit"
-      @cancel="handleCancel"
-    />
+v-else ref="formRef" v-model:draft="draft" :is-saving="isSaving" :is-editing="isEditing"
+      @submit="handleSubmit" @cancel="handleCancel" />
     <Transition name="fade">
       <div
-        v-if="toastMessage"
+v-if="toastMessage"
         class="fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded bg-primary px-4 py-2 text-sm font-medium text-background shadow-lg"
-        role="status"
-      >
+        role="status">
         {{ toastMessage }}
       </div>
     </Transition>
 
     <ConfirmDialog
-      v-if="isConfirmingCancel"
-      title="Discard unsaved changes?"
-      message="You have unsaved changes that will be lost."
-      confirm-label="Discard"
-      @confirm="confirmDiscardChanges"
-      @cancel="isConfirmingCancel = false"
-    />
+v-if="isConfirmingCancel" title="Discard unsaved changes?"
+      message="You have unsaved changes that will be lost." confirm-label="Discard" @confirm="confirmDiscardChanges"
+      @cancel="isConfirmingCancel = false" />
   </div>
 </template>
 
@@ -168,6 +154,7 @@ function confirmDiscardChanges() {
 .fade-leave-active {
   transition: opacity 0.2s ease;
 }
+
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;

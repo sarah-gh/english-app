@@ -16,18 +16,12 @@ function labelFor(date: string): string {
       <p class="text-xs text-text/50">{{ analyticsStore.activeDaysThisWeek }}/7 active days</p>
     </div>
     <div class="flex justify-between gap-1">
-      <div
-        v-for="day in analyticsStore.weekStreak"
-        :key="day.date"
-        class="flex flex-col items-center gap-1"
-      >
+      <div v-for="day in analyticsStore.weekStreak" :key="day.date" class="flex flex-col items-center gap-1">
         <div
-          class="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold"
-          :class="[
-            day.cardsStudied > 0 ? 'bg-primary text-background' : 'bg-text/8 text-text/30',
-            day.isToday ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : '',
-          ]"
-        >
+class="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold" :class="[
+          day.cardsStudied > 0 ? 'bg-primary text-background' : 'bg-text/8 text-text/30',
+          day.isToday ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : '',
+        ]">
           {{ day.cardsStudied > 0 ? day.cardsStudied : '' }}
         </div>
         <span class="text-[10px] text-text/40">{{ labelFor(day.date) }}</span>

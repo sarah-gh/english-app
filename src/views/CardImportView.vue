@@ -188,15 +188,9 @@ function goToCards() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-background px-4 py-6">
-    <RouterLink
-      to="/cards"
-      class="mb-4 inline-flex items-center gap-1 text-sm text-text/50 hover:text-primary"
-    >
-      <AppIcon
-        icon-name="ArrowLeft"
-        :size="14"
-      />
+  <div class="min-h-screen bg-background px-4 py-6 pb-18.75">
+    <RouterLink to="/cards" class="mb-4 inline-flex items-center gap-1 text-sm text-text/50 hover:text-primary">
+      <AppIcon icon-name="ArrowLeft" :size="14" />
       Cards
     </RouterLink>
 
@@ -207,15 +201,8 @@ function goToCards() {
     </p>
 
     <div class="mb-6 flex flex-wrap items-center gap-3 rounded-lg border border-text/10 p-4">
-      <BaseButton
-        variant="secondary"
-        size="sm"
-        @click="downloadImportTemplate"
-      >
-        <AppIcon
-          icon-name="DocumentDownload"
-          :size="14"
-        />
+      <BaseButton variant="secondary" size="sm" @click="downloadImportTemplate">
+        <AppIcon icon-name="DocumentDownload" :size="14" />
         Download template
       </BaseButton>
       <span class="text-xs text-text/50">
@@ -227,38 +214,24 @@ function goToCards() {
     <div class="mb-6">
       <label class="mb-1 block text-xs font-medium text-text/60">Excel file (.xlsx)</label>
       <input
-        ref="fileInput"
-        type="file"
-        accept=".xlsx"
+ref="fileInput" type="file" accept=".xlsx"
         class="block w-full text-sm text-text/70 file:mr-3 file:rounded file:border file:border-primary file:bg-background file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-primary hover:file:bg-primary hover:file:text-background"
-        @change="handleFileChange"
-      />
+        @change="handleFileChange" />
     </div>
 
-    <p
-      v-if="isParsing"
-      class="text-sm text-text/50"
-    >
+    <p v-if="isParsing" class="text-sm text-text/50">
       Reading {{ fileName }}…
     </p>
 
-    <p
-      v-if="parseError"
-      class="rounded-lg border border-text/20 bg-text/5 px-4 py-3 text-sm text-text"
-    >
+    <p v-if="parseError" class="rounded-lg border border-text/20 bg-text/5 px-4 py-3 text-sm text-text">
       {{ parseError }}
     </p>
 
     <p
-      v-if="importSummary"
-      class="rounded-lg border border-primary bg-primary px-4 py-3 text-sm font-medium text-background"
-    >
+v-if="importSummary"
+      class="rounded-lg border border-primary bg-primary px-4 py-3 text-sm font-medium text-background">
       {{ importSummary }}
-      <button
-        type="button"
-        class="ml-2 underline underline-offset-2"
-        @click="goToCards"
-      >
+      <button type="button" class="ml-2 underline underline-offset-2" @click="goToCards">
         View cards
       </button>
     </p>
@@ -275,12 +248,8 @@ function goToCards() {
       <div class="mb-4 flex items-center justify-between rounded-lg border border-text/10 px-3 py-2.5">
         <label class="flex items-center gap-2 text-sm text-text/70">
           <input
-            type="checkbox"
-            :checked="allSelected"
-            :disabled="validRows.length === 0"
-            class="h-4 w-4 accent-primary disabled:cursor-not-allowed"
-            @change="toggleSelectAll"
-          />
+type="checkbox" :checked="allSelected" :disabled="validRows.length === 0"
+            class="h-4 w-4 accent-primary disabled:cursor-not-allowed" @change="toggleSelectAll" />
           {{ allSelected ? 'Deselect All' : 'Select All' }}
         </label>
         <span class="text-xs font-medium text-text/60">
@@ -290,27 +259,17 @@ function goToCards() {
 
       <div class="mb-4 max-h-125 space-y-3 overflow-y-auto">
         <ImportPreviewCard
-          v-for="row in parsedRows"
-          :key="row.rowNumber"
-          :row="row"
-          :selected="isRowSelected(row.rowNumber)"
-          @update:selected="(value) => setRowSelected(row.rowNumber, value)"
-        />
+v-for="row in parsedRows" :key="row.rowNumber" :row="row"
+          :selected="isRowSelected(row.rowNumber)" @update:selected="(value) => setRowSelected(row.rowNumber, value)" />
       </div>
 
       <div class="flex flex-wrap gap-3">
-        <BaseButton
-          variant="ghost"
-          @click="handleCancel"
-        >
+        <BaseButton variant="ghost" @click="handleCancel">
           Cancel Upload
         </BaseButton>
         <BaseButton
-          variant="primary"
-          :disabled="selectedRows.length === 0"
-          :loading="isImporting"
-          @click="handleImport"
-        >
+variant="primary" :disabled="selectedRows.length === 0" :loading="isImporting"
+          @click="handleImport">
           Import Selected Cards ({{ selectedRows.length }}/{{ validRows.length }})
         </BaseButton>
       </div>

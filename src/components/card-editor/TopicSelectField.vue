@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
+import BaseSelect from '@/components/ui/BaseSelect.vue';
 import { useTopicStore } from '@/stores/topic-store';
 
 const topicId = defineModel<string>('topicId', { required: true });
@@ -12,6 +13,11 @@ const topicStore = useTopicStore();
 
 const isCreating = ref(false);
 const newTopicName = ref('');
+
+const topicOptions = computed(() => [
+  { value: '', label: 'No topic' },
+  ...topicStore.byDeck(props.deckId).map((topic) => ({ value: topic.id, label: topic.name })),
+]);
 
 /** Clears the selection when the deck changes out from under it, so the field never shows a
  *  topic that belongs to a different deck. */
@@ -37,27 +43,15 @@ async function createTopic() {
 
 <template>
   <div>
-    <label
-      for="topic"
-      class="mb-1 block text-xs font-medium text-text/60"
-      >Topic (optional)</label
-    >
-    <div class="flex gap-2">
-      <select
-        id="topic"
+    <div class="flex items-end gap-2">
+      <BaseSelect
         v-model="topicId"
+        label="Topic (optional)"
+        placeholder="No topic"
         :disabled="!deckId"
-        class="w-full rounded border border-text/20 px-3 py-2 text-sm focus:border-primary focus:outline-none disabled:bg-text/5"
-      >
-        <option value="">No topic</option>
-        <option
-          v-for="topic in topicStore.byDeck(deckId)"
-          :key="topic.id"
-          :value="topic.id"
-        >
-          {{ topic.name }}
-        </option>
-      </select>
+        class="w-full"
+        :options="topicOptions"
+      />
       <button
         type="button"
         :disabled="!deckId"

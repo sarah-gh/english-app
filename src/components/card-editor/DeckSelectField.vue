@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import WarningIcon from '@/components/app/WarningIcon.vue';
+import { computed, ref } from 'vue';
+import BaseSelect from '@/components/ui/BaseSelect.vue';
 import { useDeckStore } from '@/stores/deck-store';
 
 const deckId = defineModel<string>('deckId', { required: true });
@@ -18,6 +18,8 @@ const deckStore = useDeckStore();
 const isCreating = ref(false);
 const newDeckName = ref('');
 
+const deckOptions = computed(() => deckStore.decks.map((deck) => ({ value: deck.id, label: deck.name })));
+
 async function createDeck() {
   const name = newDeckName.value.trim();
   if (!name) return;
@@ -31,33 +33,17 @@ async function createDeck() {
 
 <template>
   <div>
-    <label
-      for="deck"
-      class="mb-1 block text-xs font-medium text-text/60"
-      >Deck / Category *</label
-    >
-    <div class="flex gap-2">
-      <select
-        id="deck"
+    <div class="flex items-end gap-2">
+      <BaseSelect
         v-model="deckId"
-        class="w-full rounded border px-3 py-2 text-sm focus:border-primary focus:outline-none"
-        :class="error ? 'border-danger/80' : 'border-text/20'"
+        label="Deck / Category"
+        required
+        placeholder="Select a deck"
+        class="w-full"
+        :options="deckOptions"
+        :error="error"
         @blur="emit('blur')"
-      >
-        <option
-          value=""
-          disabled
-        >
-          Select a deck
-        </option>
-        <option
-          v-for="deck in deckStore.decks"
-          :key="deck.id"
-          :value="deck.id"
-        >
-          {{ deck.name }}
-        </option>
-      </select>
+      />
       <button
         type="button"
         class="inline-flex shrink-0 items-center gap-1 rounded border border-primary px-3 py-2 text-xs font-medium text-primary hover:bg-primary hover:text-background"
@@ -70,13 +56,6 @@ async function createDeck() {
         New
       </button>
     </div>
-    <p
-      v-if="error"
-      class="mt-1 flex items-center gap-1.5 text-xs font-medium text-danger"
-    >
-      <WarningIcon />
-      {{ error }}
-    </p>
 
     <div
       v-if="isCreating"

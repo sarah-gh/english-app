@@ -72,23 +72,14 @@ function startSession() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-background px-4 py-6">
-    <RouterLink
-      to="/"
-      class="mb-4 inline-flex items-center gap-1 text-sm text-text/50 hover:text-primary"
-    >
-      <AppIcon
-        icon-name="ArrowLeft"
-        :size="14"
-      />
+  <div class="min-h-screen bg-background px-4 py-6 pb-18.75">
+    <RouterLink to="/" class="mb-4 inline-flex items-center gap-1 text-sm text-text/50 hover:text-primary">
+      <AppIcon icon-name="ArrowLeft" :size="14" />
       Dashboard
     </RouterLink>
     <h1 class="mb-6 text-xl font-semibold text-text">Study Session</h1>
 
-    <p
-      v-if="!isReady"
-      class="text-sm text-text/50"
-    >
+    <p v-if="!isReady" class="text-sm text-text/50">
       Loading…
     </p>
 
@@ -96,12 +87,10 @@ function startSession() {
       <section class="mb-6">
         <h2 class="mb-2 text-sm font-semibold text-text">View Mode</h2>
         <BaseSegmentedToggle
-          v-model="selectedViewMode"
-          :options="[
-            { value: 'study', label: 'Study' },
-            { value: 'practice', label: 'Practice', color: 'secondary' },
-          ]"
-        />
+v-model="selectedViewMode" :options="[
+          { value: 'study', label: 'Study' },
+          { value: 'practice', label: 'Practice', color: 'secondary' },
+        ]" />
         <p class="mt-2 text-xs text-text/50">
           {{
             selectedViewMode === 'study'
@@ -122,20 +111,11 @@ function startSession() {
       <section class="mb-6 rounded-lg border border-text/20 p-4">
         <h2 class="mb-3 text-sm font-semibold text-text">Deck &amp; Topic</h2>
 
-        <BaseSelect
-          v-model="selectedDeckId"
-          label="Deck"
-          class="mb-3"
-          :options="deckOptions"
-        />
+        <BaseSelect v-model="selectedDeckId" label="Deck" class="mb-3" :options="deckOptions" />
 
         <BaseSelect
-          v-model="selectedTopicId"
-          label="Topic"
-          class="mb-4"
-          :disabled="!selectedDeckId"
-          :options="topicOptions"
-        />
+v-model="selectedTopicId" label="Topic" class="mb-4" :disabled="!selectedDeckId"
+          :options="topicOptions" />
 
         <p class="mb-3 text-xs text-text/50">
           Cards are prioritized automatically: never-studied first, then previously-missed cards,
@@ -143,12 +123,11 @@ function startSession() {
         </p>
 
         <button
-          type="button"
-          :disabled="matchingCount === 0"
+type="button" :disabled="matchingCount === 0"
           class="w-full rounded bg-primary py-2.5 text-sm font-medium text-background hover:bg-primary/90 disabled:bg-primary/30"
-          @click="startSession"
-        >
-          Start ({{ Math.min(matchingCount, sessionSize) }} card{{ Math.min(matchingCount, sessionSize) === 1 ? '' : 's' }})
+          @click="startSession">
+          Start ({{ Math.min(matchingCount, sessionSize) }} card{{ Math.min(matchingCount, sessionSize) === 1 ? '' : 's'
+          }})
         </button>
       </section>
     </template>
