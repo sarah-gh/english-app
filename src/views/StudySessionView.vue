@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import CardEditorModal from '@/components/card-editor/CardEditorModal.vue';
 import ReviewCard from '@/components/review/ReviewCard.vue';
 import MatchingQuiz from '@/components/study/MatchingQuiz.vue';
 import SessionSummaryReport from '@/components/study/SessionSummaryReport.vue';
@@ -8,12 +9,44 @@ import StudyChunkProgress from '@/components/study/StudyChunkProgress.vue';
 import type { SwipeDirection } from '@/services/review/state-machine';
 import { useStudySessionStore, type MatchResult } from '@/stores/study-session-store';
 import { useThemeStore } from '@/stores/theme-store';
+import type { Card } from '@/types/card';
 
 const router = useRouter();
 const studySessionStore = useStudySessionStore();
 const themeStore = useThemeStore();
 
 const activeCardRef = ref<InstanceType<typeof ReviewCard>>();
+
+/** Editing happens in-place, as an overlay above the current session — the route and the
+ *  session store never change, so the same card index/queue state is exactly where the user
+ *  left it once the overlay closes. `cardStore.edit` mutates the card object in place, and this
+ *  session's queue holds that same object reference, so the card underneath updates for free. */
+const editingCard = ref<Card | null>(null);
+
+function openCardEditor(card: Card) {
+  editingCard.value = card;
+}
+
+function closeCardEditor() {
+  editingCard.value = null;
+}
+
+/** Mirrors the front card's live drag progress (0 idle, 1 fully committed) onto the back card's
+ *  scale/opacity/offset, using the exact same transition timing the front card is animating with,
+ *  so the two cards move as one interleaved motion instead of the back card only reacting once the
+ *  front card's own animation has fully finished. */
+const backCardStyle = computed(() => {
+  const progress = activeCardRef.value?.dragProgress ?? 0;
+  const timing = activeCardRef.value?.dragTransitionTiming ?? 'none';
+  const scale = 0.95 + progress * 0.05;
+  const opacity = 0.6 + progress * 0.4;
+  const translateY = -12 + progress * 12;
+  return {
+    transform: `scale(${scale}) translateY(${translateY}px)`,
+    opacity,
+    transition: timing === 'none' ? 'none' : `transform ${timing}, opacity ${timing}`,
+  };
+});
 
 /** Dark theme gets the tiled leaf-pattern photo (blended so it only shows as a faint texture);
  *  light theme just uses the plain `bg-page-editorial` surface color already on the page. */
@@ -154,7 +187,8 @@ function studyAnotherBatch() {
         <div
           v-if="studySessionStore.nextCard"
           inert
-          class="absolute inset-0 scale-95 opacity-50"
+          class="absolute inset-0"
+          :style="backCardStyle"
         >
           <ReviewCard
             :card="studySessionStore.nextCard"
@@ -174,6 +208,7 @@ function studyAnotherBatch() {
             :swipe-enabled="studySessionStore.viewMode === 'practice'"
             :view-mode="studySessionStore.viewMode"
             @swipe="handleSwipe"
+            @edit="openCardEditor"
           />
         </div>
       </div>
@@ -235,5 +270,13 @@ function studyAnotherBatch() {
         </button>
       </div>
     </template>
+
+    <CardEditorModal
+      v-if="editingCard"
+      :key="editingCard.id"
+      :card="editingCard"
+      @close="closeCardEditor"
+      @saved="closeCardEditor"
+    />
   </div>
 </template>

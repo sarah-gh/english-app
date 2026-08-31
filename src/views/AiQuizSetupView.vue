@@ -2,10 +2,11 @@
 import { computed, onMounted, ref } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
 import WarningIcon from '@/components/app/WarningIcon.vue';
+import QuizCardSelectionList from '@/components/quiz-setup/QuizCardSelectionList.vue';
+import QuizFilterControls from '@/components/quiz-setup/QuizFilterControls.vue';
+import QuizTagFilter from '@/components/quiz-setup/QuizTagFilter.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseSegmentedToggle from '@/components/ui/BaseSegmentedToggle.vue';
-import BaseSelect from '@/components/ui/BaseSelect.vue';
-import BaseTag from '@/components/ui/BaseTag.vue';
 import { useGenerateDescriptiveQuiz, useGenerateMultipleChoiceQuiz } from '@/queries/use-generate-ai-quiz';
 import { hasRequiredAiCredentials } from '@/services/ai/ai-quiz-service';
 import { AiServiceError } from '@/services/ai/errors';
@@ -13,18 +14,19 @@ import { useCardStore } from '@/stores/card-store';
 import { useDeckStore } from '@/stores/deck-store';
 import { useQuizSessionStore, type QuizSessionQuestion } from '@/stores/quiz-session-store';
 import { useSettingsStore } from '@/stores/settings-store';
-import { useTagStore } from '@/stores/tag-store';
+import { useTopicStore } from '@/stores/topic-store';
 import type { QuizMode } from '@/types/ai-quiz-result';
 
 const router = useRouter();
 const cardStore = useCardStore();
 const deckStore = useDeckStore();
-const tagStore = useTagStore();
+const topicStore = useTopicStore();
 const settingsStore = useSettingsStore();
 const quizSessionStore = useQuizSessionStore();
 
 const isReady = ref(false);
 const selectedDeckId = ref('');
+const selectedTopicId = ref('');
 const selectedTagIds = ref<string[]>([]);
 const selectedCardIds = ref<Set<string>>(new Set());
 const quizMode = ref<QuizMode>('multiple-choice');
@@ -59,7 +61,7 @@ onMounted(async () => {
   await Promise.all([
     cardStore.ensureLoaded(),
     deckStore.ensureLoaded(),
-    tagStore.ensureLoaded(),
+    topicStore.ensureLoaded(),
     settingsStore.ensureLoaded(),
   ]);
   isReady.value = true;
@@ -67,20 +69,10 @@ onMounted(async () => {
 
 const hasApiKey = computed(() => hasRequiredAiCredentials(settingsStore.settings));
 
-function toggleTagFilter(id: string) {
-  selectedTagIds.value = selectedTagIds.value.includes(id)
-    ? selectedTagIds.value.filter((tagId) => tagId !== id)
-    : [...selectedTagIds.value, id];
-}
-
-const deckOptions = computed(() => [
-  { value: '', label: 'All decks' },
-  ...deckStore.decks.map((deck) => ({ value: deck.id, label: deck.name })),
-]);
-
 const filteredCards = computed(() =>
   cardStore.cards.filter((card) => {
     if (selectedDeckId.value && card.deckId !== selectedDeckId.value) return false;
+    if (selectedTopicId.value && card.topicId !== selectedTopicId.value) return false;
     if (
       selectedTagIds.value.length > 0 &&
       !selectedTagIds.value.some((id) => card.tagIds.includes(id))
@@ -91,27 +83,7 @@ const filteredCards = computed(() =>
   }),
 );
 
-function toggleCardSelection(id: string) {
-  const next = new Set(selectedCardIds.value);
-  if (next.has(id)) next.delete(id);
-  else next.add(id);
-  selectedCardIds.value = next;
-}
-
-function selectAllFiltered() {
-  selectedCardIds.value = new Set(filteredCards.value.map((card) => card.id));
-}
-
-function clearSelection() {
-  selectedCardIds.value = new Set();
-}
-
 const selectedCount = computed(() => selectedCardIds.value.size);
-
-function setQuestionCount(rawValue: string) {
-  const parsed = Math.round(Number(rawValue));
-  questionCount.value = Number.isFinite(parsed) ? Math.min(30, Math.max(1, parsed)) : 1;
-}
 
 async function handleGenerate() {
   if (!hasApiKey.value) return;
@@ -229,79 +201,20 @@ async function handleGenerate() {
         </p>
       </div>
 
-      <div class="mb-4 grid grid-cols-2 gap-4">
-        <div>
-          <label for="question-count" class="mb-1.5 block font-serif text-sm font-bold text-card-gold">
-            Number of questions
-          </label>
-          <input
-            id="question-count"
-            type="number"
-            min="1"
-            max="30"
-            :value="questionCount"
-            class="w-full rounded border border-card-gold/30 bg-card-surface px-2 py-1.5 text-sm text-text focus:border-card-gold focus:outline-none"
-            @input="setQuestionCount(($event.target as HTMLInputElement).value)"
-          />
-        </div>
-        <div>
-          <p class="mb-1.5 font-serif text-sm font-bold text-card-gold">Decks</p>
-          <BaseSelect
-            v-model="selectedDeckId"
-            :options="deckOptions"
-            trigger-class="bg-card-surface border-card-gold/20"
-            chevron-class="text-card-gold"
-          />
-        </div>
+      <div class="mb-4">
+        <QuizFilterControls
+          v-model:question-count="questionCount"
+          v-model:deck-id="selectedDeckId"
+          v-model:topic-id="selectedTopicId"
+        />
       </div>
 
-      <div v-if="tagStore.tags.length > 0" class="mb-4">
-        <p class="mb-1.5 font-serif text-sm font-bold text-card-gold">Tags</p>
-        <div class="flex flex-wrap gap-2">
-          <BaseTag
-            v-for="tag in tagStore.tags"
-            :key="tag.id"
-            :label="tag.name"
-            :color="tag.color"
-            selectable
-            :selected="selectedTagIds.includes(tag.id)"
-            @click="toggleTagFilter(tag.id)"
-          />
-        </div>
+      <div class="mb-4">
+        <QuizTagFilter v-model="selectedTagIds" />
       </div>
 
-      <div class="mb-3 flex items-center justify-between">
-        <p class="text-xs text-card-muted">{{ selectedCount }} of {{ filteredCards.length }} selected</p>
-        <div class="flex gap-3">
-          <BaseButton variant="link" size="sm" @click="selectAllFiltered">
-            Select All
-          </BaseButton>
-          <BaseButton variant="link" size="sm" muted @click="clearSelection">
-            Clear
-          </BaseButton>
-        </div>
-      </div>
-
-      <div class="mb-6 rounded-xl border border-card-gold/20 bg-card-surface">
-        <ul class="divide-y divide-card-gold/10">
-          <li v-for="card in filteredCards" :key="card.id">
-            <label class="flex cursor-pointer items-center gap-3 px-4 py-3 hover:bg-card-definition">
-              <input
-                type="checkbox"
-                class="h-4 w-4 rounded border-card-gold/40 bg-card-surface accent-card-gold"
-                :checked="selectedCardIds.has(card.id)"
-                @change="toggleCardSelection(card.id)"
-              />
-              <span class="min-w-0 flex-1 truncate text-sm text-text">{{ card.frontTitle }}</span>
-              <span class="shrink-0 text-xs text-card-muted">
-                {{ deckStore.getById(card.deckId)?.name }}
-              </span>
-            </label>
-          </li>
-          <li v-if="filteredCards.length === 0" class="px-4 py-3 text-sm text-card-muted">
-            No cards match these filters.
-          </li>
-        </ul>
+      <div class="mb-6">
+        <QuizCardSelectionList v-model="selectedCardIds" :cards="filteredCards" />
       </div>
 
       <BaseButton

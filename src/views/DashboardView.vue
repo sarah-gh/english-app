@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue';
 import { RouterLink } from 'vue-router';
 import AiSparkleIcon from '@/components/app/AiSparkleIcon.vue';
+import StudyCtaBanner from '@/components/dashboard/StudyCtaBanner.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import { useCardStore } from '@/stores/card-store';
 import { useDeckStore } from '@/stores/deck-store';
@@ -31,13 +32,7 @@ function deckCardCount(deckId: string): number {
     </p>
 
     <template v-else>
-      <BaseButton variant="primary" block class="relative mb-8" to="/study">
-        <span class="pointer-events-none absolute top-1 left-1 h-3 w-3 rounded-tl border-t border-l border-card-gold/60" />
-        <span class="pointer-events-none absolute top-1 right-1 h-3 w-3 rounded-tr border-t border-r border-card-gold/60" />
-        <span class="pointer-events-none absolute bottom-1 left-1 h-3 w-3 rounded-bl border-b border-l border-card-gold/60" />
-        <span class="pointer-events-none absolute right-1 bottom-1 h-3 w-3 rounded-br border-r border-b border-card-gold/60" />
-        Start Studying
-      </BaseButton>
+      <StudyCtaBanner />
 
       <section class="relative mb-8 rounded-2xl border border-card-gold/20 bg-card-surface p-6 py-5">
         <span class="pointer-events-none absolute top-3 left-3 h-4 w-4 rounded-tl border-t border-l border-card-gold/60" />

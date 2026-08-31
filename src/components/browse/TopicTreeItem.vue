@@ -29,7 +29,7 @@ function open() {
       :size="14"
       class="shrink-0 text-card-muted"
     />
-    <span class="min-w-0 flex-1 truncate text-sm text-text">{{ name }}</span>
+    <span class="min-w-fit flex-1 truncate text-sm text-text">{{ name }}</span>
     <BaseCountBadge :count="cardCount" />
     <div
       v-if="editable"

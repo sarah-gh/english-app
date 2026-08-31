@@ -5,6 +5,7 @@ import AddSquare from 'vue-iconsax/dist/components/icons/AddSquare.vue.js';
 import ArrowDown2 from 'vue-iconsax/dist/components/icons/ArrowDown2.vue.js';
 import ArrowLeft from 'vue-iconsax/dist/components/icons/ArrowLeft.vue.js';
 import ArrowRight2 from 'vue-iconsax/dist/components/icons/ArrowRight2.vue.js';
+import Book1 from 'vue-iconsax/dist/components/icons/Book1.vue.js';
 import CloseCircle from 'vue-iconsax/dist/components/icons/CloseCircle.vue.js';
 import Code from 'vue-iconsax/dist/components/icons/Code.vue.js';
 import Danger from 'vue-iconsax/dist/components/icons/Danger.vue.js';
@@ -38,6 +39,7 @@ const ICONS = {
   ArrowDown2,
   ArrowLeft,
   ArrowRight2,
+  Book1,
   CloseCircle,
   Code,
   Danger,

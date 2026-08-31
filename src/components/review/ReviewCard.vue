@@ -29,6 +29,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   swipe: [direction: SwipeDirection];
+  edit: [card: Card];
 }>();
 
 const tagStore = useTagStore();
@@ -38,16 +39,18 @@ const SWIPE_THRESHOLD = 100;
 const FLY_DISTANCE = 640;
 /** Drag-released fly-aways inherit the finger's momentum, so a quick transition still reads as
  *  continuous motion. A button click starts from a dead stop, so it gets a slower, eased release
- *  to keep the card's exit visually trackable. */
-const DRAG_FLY_TRANSITION = 'transform 0.35s ease';
-const BUTTON_FLY_TRANSITION = 'transform 0.55s cubic-bezier(0.25, 1, 0.5, 1)';
+ *  to keep the card's exit visually trackable. Both share one easing curve (and the back card in
+ *  the stack, see `dragTransitionTiming` below, reuses the exact same string) so the front card's
+ *  exit and the back card's scale-up read as a single synchronized motion instead of two. */
+const DRAG_FLY_TIMING = '0.32s cubic-bezier(0.2, 0.8, 0.2, 1)';
+const BUTTON_FLY_TIMING = '0.4s cubic-bezier(0.2, 0.8, 0.2, 1)';
 
 const rootEl = ref<HTMLDivElement>();
 const offsetX = ref(0);
 const isDragging = ref(false);
 const isFlying = ref(false);
 const flyDirection = ref<SwipeDirection | null>(null);
-const flyTransition = ref(DRAG_FLY_TRANSITION);
+const flyTiming = ref(DRAG_FLY_TIMING);
 
 const isHintRevealed = ref(false);
 const isImageExpanded = ref(false);
@@ -113,16 +116,16 @@ function endDrag(event: PointerEvent) {
   }
 }
 
-function commitSwipe(direction: SwipeDirection, transition: string = DRAG_FLY_TRANSITION) {
+function commitSwipe(direction: SwipeDirection, timing: string = DRAG_FLY_TIMING) {
   if (!props.swipeEnabled || isFlying.value) return;
   isFlying.value = true;
   flyDirection.value = direction;
-  flyTransition.value = transition;
+  flyTiming.value = timing;
   offsetX.value = direction === 'right' ? FLY_DISTANCE : -FLY_DISTANCE;
 }
 
 function triggerButtonSwipe(direction: SwipeDirection) {
-  commitSwipe(direction, BUTTON_FLY_TRANSITION);
+  commitSwipe(direction, BUTTON_FLY_TIMING);
 }
 
 function onTransitionEnd(event: TransitionEvent) {
@@ -132,13 +135,25 @@ function onTransitionEnd(event: TransitionEvent) {
   }
 }
 
+/** How far the front card has traveled toward committing a swipe, 0 to 1 — driven straight off
+ *  `offsetX` so it tracks drag, snap-back, and the button/threshold fly-out with the same formula.
+ *  The card stack (`StudySessionView`) reads this to drive the back card's scale/opacity/offset in
+ *  lockstep with the front card instead of waiting for it to finish animating first. */
+const dragProgress = computed(() => Math.min(Math.abs(offsetX.value) / SWIPE_THRESHOLD, 1));
+/** The transition the front card is currently animating `transform` with — 'none' while actively
+ *  dragging (so it tracks the pointer 1:1), otherwise the fly/snap-back timing. Exposed so the back
+ *  card can apply the identical timing to its own transform/opacity and move in perfect sync. */
+const dragTransitionTiming = computed(() => (isDragging.value ? 'none' : flyTiming.value));
+
 defineExpose({
   triggerSwipe: triggerButtonSwipe,
+  dragProgress,
+  dragTransitionTiming,
 });
 
 const cardStyle = computed(() => ({
   transform: `translateX(${offsetX.value}px) rotate(${offsetX.value / 20}deg)`,
-  transition: isDragging.value ? 'none' : flyTransition.value,
+  transition: dragTransitionTiming.value === 'none' ? 'none' : `transform ${dragTransitionTiming.value}`,
 }));
 
 const rightOverlayProgress = computed(() =>
@@ -164,6 +179,11 @@ const cardTags = computed<Tag[]>(() =>
 function playAudio() {
   if (!props.interactive) return;
   playCardAudio(props.card);
+}
+
+function requestEdit() {
+  if (!props.interactive) return;
+  emit('edit', props.card);
 }
 
 function toggleHint() {
@@ -242,18 +262,33 @@ onBeforeUnmount(() => {
     <div class="card-scroll relative z-10 mx-3 my-3 min-h-0 flex-1 touch-pan-y overflow-y-auto px-3 py-4">
       <div class="flex items-start justify-between gap-3">
         <h2 class="font-serif text-3xl font-semibold text-card-gold">{{ card.frontTitle }}</h2>
-        <button
-          type="button"
-          aria-label="Play pronunciation"
-          class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-card-gold/40 bg-linear-to-b from-card-definition to-card-surface text-primary shadow-[0_2px_6px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.15)] transition hover:brightness-110"
-          @pointerdown.stop
-          @click.stop="playAudio"
-        >
-          <AppIcon
-            icon-name="VolumeHigh"
-            :size="18"
-          />
-        </button>
+        <div class="flex shrink-0 items-center gap-2">
+          <button
+            v-if="interactive"
+            type="button"
+            aria-label="Edit card"
+            class="flex h-8 w-8 items-center justify-center rounded-full text-card-muted transition-colors hover:text-primary"
+            @pointerdown.stop
+            @click.stop="requestEdit"
+          >
+            <AppIcon
+              icon-name="Edit2"
+              :size="16"
+            />
+          </button>
+          <button
+            type="button"
+            aria-label="Play pronunciation"
+            class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-card-gold/40 bg-linear-to-b from-card-definition to-card-surface text-primary shadow-[0_2px_6px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.15)] transition hover:brightness-110"
+            @pointerdown.stop
+            @click.stop="playAudio"
+          >
+            <AppIcon
+              icon-name="VolumeHigh"
+              :size="18"
+            />
+          </button>
+        </div>
       </div>
       <p
         v-if="card.ipa"
@@ -263,6 +298,18 @@ onBeforeUnmount(() => {
       </p>
 
       <div class="mt-3 border-t border-card-gold/20" />
+
+      <div
+        v-if="cardTags.length > 0"
+        class="mt-4 flex flex-wrap gap-2"
+      >
+        <BaseTag
+          v-for="tag in cardTags"
+          :key="tag.id"
+          :label="tag.name"
+          :color="tag.color"
+        />
+      </div>
 
       <BaseExpandableContent
         :max-height="280"
@@ -342,17 +389,7 @@ onBeforeUnmount(() => {
         </template>
       </BaseExpandableContent>
 
-      <div
-        v-if="cardTags.length > 0"
-        class="mt-4 flex flex-wrap gap-2"
-      >
-        <BaseTag
-          v-for="tag in cardTags"
-          :key="tag.id"
-          :label="tag.name"
-          :color="tag.color"
-        />
-      </div>
+      
 
       <button
         v-if="card.hint"
