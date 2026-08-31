@@ -84,7 +84,7 @@ const SECTIONS: { key: keyof Omit<WordFamilyFormState, 'usageNotes'>; label: str
       <div
         v-for="section in SECTIONS"
         :key="section.key"
-        class="space-y-2 rounded border border-text/10 p-3"
+        class="space-y-2 rounded border bg-card-surface border-text/10 p-3"
       >
         <div class="flex items-center gap-2">
           <span class="rounded bg-secondary px-1.5 py-0.5 text-[10px] font-bold text-text uppercase">

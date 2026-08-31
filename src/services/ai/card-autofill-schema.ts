@@ -2,8 +2,12 @@ import type { PosType } from '@/types/card';
 
 export interface GeneratedPosEntry {
   pos: PosType;
-  /** The specific spelling for this part of speech, only when it differs from the card's title
-   *  (e.g. "Decision" for the noun form of "Decide"). */
+  /** The specific spelling for this part of speech — the card's title itself when the spelling
+   *  doesn't change for this part of speech (e.g. "Book" for both noun and verb), or the distinct
+   *  form when it does (e.g. "Decision" for the noun form of "Decide"). The prompt and schema ask
+   *  every provider to always include this, but it's typed optional since providers without real
+   *  schema enforcement (Groq/OpenRouter) aren't guaranteed to comply — callers mapping this onto
+   *  form state should fall back to the card's title when it's missing. */
   wordForm?: string;
   definition: string;
   ipa?: string;
@@ -41,7 +45,7 @@ export const POS_ENTRY_SCHEMA = {
     ipa: { type: 'STRING' },
     examples: { type: 'ARRAY', items: { type: 'STRING' } },
   },
-  required: ['pos', 'definition'],
+  required: ['pos', 'wordForm', 'definition'],
 };
 
 export const CARD_AUTOFILL_RESPONSE_SCHEMA = {
@@ -64,7 +68,7 @@ export const CARD_AUTOFILL_RESPONSE_SCHEMA = {
 export const CARD_AUTOFILL_JSON_SHAPE_HINT = `
 
 Respond with ONLY a JSON object of this exact shape, no other text:
-{"backAnswer": string, "ipa": string (optional), "hint": string (optional), "personalExamples": string[], "partsOfSpeech": [{"pos": "noun" | "verb" | "adjective" | "adverb" | "other", "wordForm": string (optional), "definition": string, "ipa": string (optional), "examples": string[] (optional)}] (optional), "suggestedTags": string[], "suggestedDeckCategory": string (optional)}`;
+{"backAnswer": string, "ipa": string (optional), "hint": string (optional), "personalExamples": string[], "partsOfSpeech": [{"pos": "noun" | "verb" | "adjective" | "adverb" | "other", "wordForm": string, "definition": string, "ipa": string (optional), "examples": string[] (optional)}] (optional), "suggestedTags": string[], "suggestedDeckCategory": string (optional)}`;
 
 export function isGeneratedPosEntry(value: unknown): value is GeneratedPosEntry {
   if (!value || typeof value !== 'object') return false;
@@ -74,6 +78,9 @@ export function isGeneratedPosEntry(value: unknown): value is GeneratedPosEntry 
     POS_TYPES.includes(entry.pos as PosType) &&
     typeof entry.definition === 'string' &&
     entry.definition.trim().length > 0 &&
+    // Not all providers enforce the schema's `required: wordForm` (Groq/OpenRouter only get a
+    // prompt hint, no real validation) — stay lenient here so a compliant entry missing just this
+    // one field isn't dropped wholesale; the caller falls back to the card's title instead.
     (entry.wordForm === undefined || typeof entry.wordForm === 'string') &&
     (entry.ipa === undefined || typeof entry.ipa === 'string') &&
     (entry.examples === undefined || Array.isArray(entry.examples))

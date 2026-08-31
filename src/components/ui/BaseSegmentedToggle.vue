@@ -31,7 +31,7 @@ const buttonSizeClasses = computed(() => (props.size === 'sm' ? 'py-1.5 text-xs'
 </script>
 
 <template>
-  <div class="rounded-lg border border-primary/30 p-1">
+  <div class="rounded-lg border bg-card-surface border-primary/30 p-1">
     <div class="relative flex">
       <div
         class="absolute inset-y-0 rounded transition-[transform,background-color] duration-200 ease-in-out"

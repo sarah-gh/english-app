@@ -102,7 +102,7 @@ export const PARTS_OF_SPEECH_RESPONSE_SCHEMA = {
 export const PARTS_OF_SPEECH_JSON_SHAPE_HINT = `
 
 Respond with ONLY a JSON object of this exact shape, no other text:
-{"partsOfSpeech": [{"pos": "noun" | "verb" | "adjective" | "adverb" | "other", "wordForm": string (optional), "definition": string, "ipa": string (optional), "examples": string[] (optional)}]}`;
+{"partsOfSpeech": [{"pos": "noun" | "verb" | "adjective" | "adverb" | "other", "wordForm": string, "definition": string, "ipa": string (optional), "examples": string[] (optional)}]}`;
 
 export function parsePartsOfSpeechResponseText(
   text: string | undefined,

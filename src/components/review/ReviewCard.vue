@@ -36,12 +36,18 @@ const { playCardAudio } = useCardAudio();
 
 const SWIPE_THRESHOLD = 100;
 const FLY_DISTANCE = 640;
+/** Drag-released fly-aways inherit the finger's momentum, so a quick transition still reads as
+ *  continuous motion. A button click starts from a dead stop, so it gets a slower, eased release
+ *  to keep the card's exit visually trackable. */
+const DRAG_FLY_TRANSITION = 'transform 0.35s ease';
+const BUTTON_FLY_TRANSITION = 'transform 0.55s cubic-bezier(0.25, 1, 0.5, 1)';
 
 const rootEl = ref<HTMLDivElement>();
 const offsetX = ref(0);
 const isDragging = ref(false);
 const isFlying = ref(false);
 const flyDirection = ref<SwipeDirection | null>(null);
+const flyTransition = ref(DRAG_FLY_TRANSITION);
 
 const isHintRevealed = ref(false);
 const isImageExpanded = ref(false);
@@ -107,11 +113,16 @@ function endDrag(event: PointerEvent) {
   }
 }
 
-function commitSwipe(direction: SwipeDirection) {
+function commitSwipe(direction: SwipeDirection, transition: string = DRAG_FLY_TRANSITION) {
   if (!props.swipeEnabled || isFlying.value) return;
   isFlying.value = true;
   flyDirection.value = direction;
+  flyTransition.value = transition;
   offsetX.value = direction === 'right' ? FLY_DISTANCE : -FLY_DISTANCE;
+}
+
+function triggerButtonSwipe(direction: SwipeDirection) {
+  commitSwipe(direction, BUTTON_FLY_TRANSITION);
 }
 
 function onTransitionEnd(event: TransitionEvent) {
@@ -122,12 +133,12 @@ function onTransitionEnd(event: TransitionEvent) {
 }
 
 defineExpose({
-  triggerSwipe: commitSwipe,
+  triggerSwipe: triggerButtonSwipe,
 });
 
 const cardStyle = computed(() => ({
   transform: `translateX(${offsetX.value}px) rotate(${offsetX.value / 20}deg)`,
-  transition: isDragging.value ? 'none' : 'transform 0.35s ease',
+  transition: isDragging.value ? 'none' : flyTransition.value,
 }));
 
 const rightOverlayProgress = computed(() =>
@@ -228,7 +239,7 @@ onBeforeUnmount(() => {
          underneath them instead of dragging them along or clipping them. Inset by `mx-1 my-3`
          (on top of its own padding) so the body's own edge — and its scrollbar — never sits flush
          against the gold inset line, which is what let content/scrollbar visually cross it. -->
-    <div class="card-scroll relative z-10 mx-3 my-3 min-h-0 flex-1 overflow-y-auto px-3 py-4">
+    <div class="card-scroll relative z-10 mx-3 my-3 min-h-0 flex-1 touch-pan-y overflow-y-auto px-3 py-4">
       <div class="flex items-start justify-between gap-3">
         <h2 class="font-serif text-3xl font-semibold text-card-gold">{{ card.frontTitle }}</h2>
         <button
@@ -313,7 +324,7 @@ onBeforeUnmount(() => {
           <button
             v-else
             type="button"
-            class="mt-4 rounded border-2 border-dashed border-card-gold/30 py-3 text-sm font-medium text-card-muted hover:border-primary hover:text-primary"
+            class="mt-4 rounded border-2 border-dashed border-card-gold/30 px-3 py-3 text-sm font-medium text-card-muted hover:border-primary hover:text-primary"
             @pointerdown.stop
             @click.stop="revealAnswer"
           >

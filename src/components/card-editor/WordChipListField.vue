@@ -31,7 +31,7 @@ function removeWord(index: number) {
 <template>
   <div>
     <label class="mb-1 block text-xs font-medium text-text/60">{{ label }}</label>
-    <div class="flex flex-wrap items-center gap-1.5 rounded border border-text/20 p-2 focus-within:border-primary">
+    <div class="flex bg-card-surface flex-wrap items-center gap-1.5 rounded border border-text/20 p-2 focus-within:border-primary">
       <span
         v-for="(word, index) in words"
         :key="word"
@@ -54,7 +54,7 @@ function removeWord(index: number) {
         v-model="draft"
         type="text"
         :placeholder="words.length === 0 ? placeholder : ''"
-        class="min-w-[8rem] flex-1 border-none py-1 text-sm outline-none"
+        class="min-w-32  flex-1 border-none py-1 text-sm outline-none"
         @keydown.enter.prevent="addWord"
         @blur="addWord"
       />

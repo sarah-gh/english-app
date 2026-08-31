@@ -178,11 +178,12 @@ async function applyAutofillResult(result: GeneratedCardDetails): Promise<void> 
   if (result.personalExamples.length > 0) draft.value.examples = result.personalExamples;
 
   if (result.partsOfSpeech && result.partsOfSpeech.length > 0) {
+    const rootWord = draft.value.frontTitle.trim();
     draft.value.partsOfSpeech = result.partsOfSpeech.map(
       (entry): PosEntryFormState => ({
         id: crypto.randomUUID(),
         pos: entry.pos,
-        wordForm: entry.wordForm ?? '',
+        wordForm: entry.wordForm?.trim() || rootWord,
         definition: entry.definition,
         ipa: entry.ipa ?? '',
         examples: entry.examples ?? [],
@@ -284,6 +285,7 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
         :loading="isSuggestingFrontTitle"
         :invalid="frontTitleMeta.touched && Boolean(frontTitleError)"
         :placeholder="draft.cardMode === 'word-family' ? 'e.g. Success' : 'e.g. Ubiquitous'"
+        class="bg-card-surface"
         @blur="touchFrontTitle"
       >
         <template #item="{ item }: { item: WordSuggestion }">
@@ -351,7 +353,7 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
           v-model="draft.backAnswer"
           rows="3"
           placeholder="e.g. Present, appearing, or found everywhere."
-          class="w-full rounded border px-3 py-2 text-sm focus:border-primary focus:outline-none"
+          class="w-full rounded bg-card-surface border px-3 py-2 text-sm focus:border-primary focus:outline-none"
           :class="backAnswerMeta.touched && backAnswerError ? 'border-danger/80' : 'border-text/20'"
           @blur="touchBackAnswer"
         />
@@ -406,7 +408,7 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
         v-model="draft.hint"
         type="text"
         placeholder="Revealed via tap during review"
-        class="w-full rounded border border-text/20 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+        class="w-full rounded bg-card-surface border border-text/20 px-3 py-2 text-sm focus:border-primary focus:outline-none"
       />
     </div>
 

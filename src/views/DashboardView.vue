@@ -76,10 +76,11 @@ function deckCardCount(deckId: string): number {
       <section>
         <h2 class="mb-2 text-sm font-semibold text-text">Sections</h2>
         <div class="grid grid-cols-2 gap-3">
-          <BaseButton variant="tile" to="/cards">
-            <span class="flex flex-row items-center gap-1.5">
-              <AppIcon icon-name="DocumentText" :size="18" :viewBox="'0 0 23 23'" />
-              Browse Cards
+          
+          <BaseButton variant="tile" to="/study">
+            <span class="flex flex-row items-center gap-1.5 ">
+              <AppIcon icon-name="RefreshCircle" :size="18" :viewBox="'0 0 23 23'" />
+              Study
             </span>
           </BaseButton>
           <BaseButton variant="tile" to="/cards/new">
@@ -88,29 +89,28 @@ function deckCardCount(deckId: string): number {
               Card Creator
             </span>
           </BaseButton>
+          <BaseButton variant="tile" to="/cards">
+            <span class="flex flex-row items-center gap-1.5">
+              <AppIcon icon-name="DocumentText" :size="18" :viewBox="'0 0 23 23'" />
+              Browse Cards
+            </span>
+          </BaseButton>
+          <BaseButton variant="tile" to="/data-management">
+            <span class="flex flex-row items-center gap-1.5">
+              <AppIcon icon-name="Import" :size="18" />
+              Data &amp; Backups
+            </span>
+          </BaseButton>
           <BaseButton variant="tile" to="/decks">
             <span class="flex flex-row items-center gap-1.5">
               <AppIcon icon-name="Folder2" :size="18" :viewBox="'0 0 23 23'" />
               Deck Management
             </span>
           </BaseButton>
-          <BaseButton variant="tile" to="/study">
-            <span class="flex flex-row items-center gap-1.5 ">
-              <AppIcon icon-name="RefreshCircle" :size="18" :viewBox="'0 0 23 23'" />
-              Study
-            </span>
-          </BaseButton>
           <BaseButton variant="tile" to="/ai-quiz">
             <span class="flex flex-row items-center gap-1.5">
               <AiSparkleIcon :size="18" />
               AI Quiz Generator
-            </span>
-          </BaseButton>
-
-          <BaseButton variant="tile" to="/data-management">
-            <span class="flex flex-row items-center gap-1.5">
-              <AppIcon icon-name="Import" :size="18" />
-              Data &amp; Backups
             </span>
           </BaseButton>
         </div>

@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { RouterLink } from 'vue-router';
 import ConfirmDialog from '@/components/app/ConfirmDialog.vue';
+import DeckFormModal from '@/components/browse/DeckFormModal.vue';
 import TopicFormModal from '@/components/browse/TopicFormModal.vue';
 import { useCardStore } from '@/stores/card-store';
 import { useDeckStore } from '@/stores/deck-store';
@@ -67,10 +68,16 @@ function tagCardCount(tagId: string): number {
   return cardStore.cards.filter((card) => card.tagIds.includes(tagId)).length;
 }
 
-// --- Deck rename/delete ---
+// --- Deck create/rename/delete ---
+const creatingDeck = ref(false);
 const editingDeckId = ref<string | null>(null);
 const deckNameDraft = ref('');
 const deletingDeck = ref<Deck | null>(null);
+
+async function saveDeck(values: { name: string }) {
+  await deckStore.add({ name: values.name });
+  creatingDeck.value = false;
+}
 
 function startEditDeck(deck: Deck) {
   editingDeckId.value = deck.id;
@@ -84,6 +91,21 @@ async function saveDeckName() {
   }
   editingDeckId.value = null;
 }
+
+const deletingDeckCardCount = computed(() =>
+  deletingDeck.value ? deckCardCount(deletingDeck.value.id) : 0,
+);
+
+const deletingDeckTitle = computed(() =>
+  deletingDeckCardCount.value > 0 ? 'Delete deck with cards?' : 'Delete this deck?',
+);
+
+const deletingDeckMessage = computed(() => {
+  if (!deletingDeck.value) return '';
+  return deletingDeckCardCount.value > 0
+    ? `Warning: This deck contains ${deletingDeckCardCount.value} card(s) across its topics. Deleting this deck will permanently delete all associated topics and their cards. This can't be undone.`
+    : `Are you sure you want to delete "${deletingDeck.value.name}"? This can't be undone.`;
+});
 
 async function confirmDeleteDeck() {
   if (deletingDeck.value) {
@@ -134,80 +156,95 @@ async function confirmDeleteTag() {
 
     <template v-else>
       <section class="mb-8">
-        <h2 class="mb-2 text-sm font-semibold text-text">Decks</h2>
+        <div class="mb-2 flex items-center justify-between">
+          <h2 class="text-sm font-semibold text-text">Decks</h2>
+          <button
+type="button"
+            class="inline-flex items-center gap-1 text-xs font-medium text-primary underline underline-offset-2"
+            @click="creatingDeck = true">
+            <AppIcon icon-name="Add" :size="12" />
+            Add Deck
+          </button>
+        </div>
         <ul class="divide-y divide-text/10 rounded-xl border border-text/10">
-          <li v-for="deck in deckStore.decks" :key="deck.id" class="flex flex-wrap items-center gap-3 px-4 py-3">
+          <li v-for="deck in deckStore.decks" :key="deck.id" class="px-4 py-3">
             <template v-if="editingDeckId === deck.id">
-              <input
+              <div class="flex flex-wrap items-center gap-3">
+                <input
 v-model="deckNameDraft" type="text"
-                class="w-full rounded border border-text/20 px-2 py-1 text-sm focus:border-primary focus:outline-none"
-                @keyup.enter="saveDeckName" />
-              <button
+                  class="w-full rounded border border-text/20 px-2 py-1 text-sm focus:border-primary focus:outline-none"
+                  @keyup.enter="saveDeckName" />
+                <button
 type="button" class="shrink-0 text-xs font-medium text-primary underline underline-offset-2"
-                @click="saveDeckName">
-                Save
-              </button>
-              <button type="button" class="shrink-0 text-xs text-text/50" @click="editingDeckId = null">
-                Cancel
-              </button>
+                  @click="saveDeckName">
+                  Save
+                </button>
+                <button type="button" class="shrink-0 text-xs text-text/50" @click="editingDeckId = null">
+                  Cancel
+                </button>
+              </div>
             </template>
             <template v-else>
-              <span class="min-w-0 flex-1 truncate text-sm text-text">{{ deck.name }}</span>
-              <span class="shrink-0 text-xs text-text/50">{{ deckCardCount(deck.id) }} cards</span>
-              <button
-type="button"
-                class="inline-flex shrink-0 items-center gap-1 rounded border border-text/20 px-2 py-1 text-xs text-text/60 hover:border-primary hover:text-primary"
-                @click="toggleDeckTopics(deck.id)">
-                <AppIcon
+              <div class="flex items-center gap-2">
+                <span class="min-w-0 flex-1 truncate text-sm text-text">{{ deck.name }}</span>
+                <span class="shrink-0 text-xs text-text/50">{{ deckCardCount(deck.id) }} cards</span>
+                <div class="flex shrink-0 items-center gap-1.5">
+                  <button
+type="button" aria-label="Toggle topics"
+                    class="inline-flex shrink-0 items-center gap-1 rounded border border-text/20 px-2 py-1 text-xs text-text/60 hover:border-primary hover:text-primary"
+                    @click="toggleDeckTopics(deck.id)">
+                    <AppIcon
 icon-name="ArrowDown2" :size="12" class="transition-transform duration-200"
-                  :class="{ 'rotate-180': expandedDeckId === deck.id }" />
-                Topics
-              </button>
-              <button
-type="button"
-                class="inline-flex shrink-0 items-center gap-1 rounded border border-text/20 px-2 py-1 text-xs text-text/60 hover:border-primary hover:text-primary"
-                @click="startEditDeck(deck)">
-                <AppIcon icon-name="Edit2" :size="12" />
-                Rename
-              </button>
-              <button
-type="button"
-                class="inline-flex shrink-0 items-center gap-1 rounded border border-danger/30 px-2 py-1 text-xs text-danger hover:border-danger"
-                @click="deletingDeck = deck">
-                <AppIcon icon-name="Trash" :size="12" />
-                Delete
-              </button>
-            </template>
-            <div v-if="expandedDeckId === deck.id" class="w-full border-t border-text/10 pt-3">
-              <ul class="mb-2 space-y-1.5">
-                <li
-v-for="topic in topicStore.byDeck(deck.id)" :key="topic.id"
-                  class="flex items-center gap-2 rounded border border-text/10 px-3 py-1.5">
-                  <span class="min-w-0 flex-1 truncate text-xs text-text">{{ topic.name }}</span>
-                  <span class="shrink-0 text-[11px] text-text/50">{{ deckTopicCardCount(topic.id) }} cards</span>
+                      :class="{ 'rotate-180': expandedDeckId === deck.id }" />
+                    <span class="hidden sm:inline">Topics</span>
+                  </button>
                   <button
-type="button" aria-label="Rename topic"
-                    class="shrink-0 rounded p-1 text-text/40 hover:text-primary" @click="editingTopic = topic">
+type="button" aria-label="Rename deck"
+                    class="inline-flex shrink-0 items-center gap-1 rounded border border-text/20 px-2 py-1 text-xs text-text/60 hover:border-primary hover:text-primary"
+                    @click="startEditDeck(deck)">
                     <AppIcon icon-name="Edit2" :size="12" />
+                    <span class="hidden sm:inline">Rename</span>
                   </button>
                   <button
-type="button" aria-label="Delete topic"
-                    class="shrink-0 rounded p-1 text-text/40 hover:text-danger" @click="deletingTopic = topic">
+type="button" aria-label="Delete deck"
+                    class="inline-flex shrink-0 items-center gap-1 rounded border border-danger/30 px-2 py-1 text-xs text-danger hover:border-danger"
+                    @click="deletingDeck = deck">
                     <AppIcon icon-name="Trash" :size="12" />
+                    <span class="hidden sm:inline">Delete</span>
                   </button>
-                </li>
-                <li v-if="topicStore.byDeck(deck.id).length === 0" class="px-1 py-1 text-xs text-text/35">
-                  No topics yet.
-                </li>
-              </ul>
-              <button
+                </div>
+              </div>
+              <div v-if="expandedDeckId === deck.id" class="mt-3 border-t border-text/10 pt-3">
+                <ul class="mb-2 space-y-1.5">
+                  <li
+v-for="topic in topicStore.byDeck(deck.id)" :key="topic.id"
+                    class="flex items-center gap-2 rounded border border-text/10 px-3 py-1.5">
+                    <span class="min-w-0 flex-1 truncate text-xs text-text">{{ topic.name }}</span>
+                    <span class="shrink-0 text-[11px] text-text/50">{{ deckTopicCardCount(topic.id) }} cards</span>
+                    <button
+type="button" aria-label="Rename topic"
+                      class="shrink-0 rounded p-1 text-text/40 hover:text-primary" @click="editingTopic = topic">
+                      <AppIcon icon-name="Edit2" :size="12" />
+                    </button>
+                    <button
+type="button" aria-label="Delete topic"
+                      class="shrink-0 rounded p-1 text-text/40 hover:text-danger" @click="deletingTopic = topic">
+                      <AppIcon icon-name="Trash" :size="12" />
+                    </button>
+                  </li>
+                  <li v-if="topicStore.byDeck(deck.id).length === 0" class="px-1 py-1 text-xs text-text/35">
+                    No topics yet.
+                  </li>
+                </ul>
+                <button
 type="button"
-                class="inline-flex items-center gap-1 text-xs font-medium text-primary underline underline-offset-2"
-                @click="creatingTopicForDeckId = deck.id">
-                <AppIcon icon-name="Add" :size="12" />
-                Add Topic
-              </button>
-            </div>
+                  class="inline-flex items-center gap-1 text-xs font-medium text-primary underline underline-offset-2"
+                  @click="creatingTopicForDeckId = deck.id">
+                  <AppIcon icon-name="Add" :size="12" />
+                  Add Topic
+                </button>
+              </div>
+            </template>
           </li>
           <li v-if="deckStore.decks.length === 0" class="px-4 py-3 text-sm text-text/35">
             No decks yet.
@@ -218,8 +255,8 @@ type="button"
       <section>
         <h2 class="mb-2 text-sm font-semibold text-text">Tags</h2>
         <ul class="divide-y divide-text/10 rounded-xl border border-text/10">
-          <li v-for="tag in tagStore.tags" :key="tag.id" class="flex items-center gap-3 px-4 py-3">
-            <template v-if="editingTagId === tag.id">
+          <li v-for="tag in tagStore.tags" :key="tag.id" class="px-4 py-3">
+            <div v-if="editingTagId === tag.id" class="flex items-center gap-3">
               <input
 v-model="tagColorDraft" type="color"
                 class="h-8 w-8 shrink-0 cursor-pointer rounded border border-text/20" />
@@ -235,26 +272,28 @@ type="button" class="shrink-0 text-xs font-medium text-primary underline underli
               <button type="button" class="shrink-0 text-xs text-text/50" @click="editingTagId = null">
                 Cancel
               </button>
-            </template>
-            <template v-else>
+            </div>
+            <div v-else class="flex items-center gap-2">
               <span class="h-3 w-3 shrink-0 rounded-full" :style="{ backgroundColor: tag.color }" />
               <span class="min-w-0 flex-1 truncate text-sm text-text">{{ tag.name }}</span>
               <span class="shrink-0 text-xs text-text/50">{{ tagCardCount(tag.id) }} cards</span>
-              <button
-type="button"
-                class="inline-flex shrink-0 items-center gap-1 rounded border border-text/20 px-2 py-1 text-xs text-text/60 hover:border-primary hover:text-primary"
-                @click="startEditTag(tag)">
-                <AppIcon icon-name="Edit2" :size="12" />
-                Edit
-              </button>
-              <button
-type="button"
-                class="inline-flex shrink-0 items-center gap-1 rounded border border-danger/30 px-2 py-1 text-xs text-danger hover:border-danger"
-                @click="deletingTag = tag">
-                <AppIcon icon-name="Trash" :size="12" />
-                Delete
-              </button>
-            </template>
+              <div class="flex shrink-0 items-center gap-1.5">
+                <button
+type="button" aria-label="Rename tag"
+                  class="inline-flex shrink-0 items-center gap-1 rounded border border-text/20 px-2 py-1 text-xs text-text/60 hover:border-primary hover:text-primary"
+                  @click="startEditTag(tag)">
+                  <AppIcon icon-name="Edit2" :size="12" />
+                  <span class="hidden sm:inline">Edit</span>
+                </button>
+                <button
+type="button" aria-label="Delete tag"
+                  class="inline-flex shrink-0 items-center gap-1 rounded border border-danger/30 px-2 py-1 text-xs text-danger hover:border-danger"
+                  @click="deletingTag = tag">
+                  <AppIcon icon-name="Trash" :size="12" />
+                  <span class="hidden sm:inline">Delete</span>
+                </button>
+              </div>
+            </div>
           </li>
           <li v-if="tagStore.tags.length === 0" class="px-4 py-3 text-sm text-text/35">
             No tags yet.
@@ -263,10 +302,15 @@ type="button"
       </section>
     </template>
 
+    <DeckFormModal
+v-if="creatingDeck" :existing-names="deckStore.decks.map((deck) => deck.name)"
+      @save="saveDeck" @cancel="creatingDeck = false" />
+
     <ConfirmDialog
-v-if="deletingDeck" title="Delete this deck?"
-      :message="`Deleting “${deletingDeck.name}” will also permanently delete its ${deckCardCount(deletingDeck.id)} card(s). This can't be undone.`"
-      confirm-label="Delete" variant="danger" @confirm="confirmDeleteDeck" @cancel="deletingDeck = null" />
+v-if="deletingDeck" :title="deletingDeckTitle"
+      :message="deletingDeckMessage"
+      confirm-label="Delete" :variant="deletingDeckCardCount > 0 ? 'danger' : 'primary'"
+      @confirm="confirmDeleteDeck" @cancel="deletingDeck = null" />
 
     <ConfirmDialog
 v-if="deletingTag" title="Delete this tag?"

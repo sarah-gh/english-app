@@ -39,7 +39,7 @@ async function createDeck() {
         label="Deck / Category"
         required
         placeholder="Select a deck"
-        class="w-full"
+        class="w-full "
         :options="deckOptions"
         :error="error"
         @blur="emit('blur')"

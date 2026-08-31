@@ -176,7 +176,7 @@ async function handleDelete() {
         <button
           v-else
           type="button"
-          class="mt-3 w-full rounded border border-dashed border-text/20 py-2 text-xs font-medium text-text/50 hover:border-primary hover:text-primary"
+          class="mt-3 w-full rounded border border-dashed border-text/20 px-3 py-2 text-xs font-medium text-text/50 hover:border-primary hover:text-primary"
           @click="isRevealed = true"
         >
           Show Answer

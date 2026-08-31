@@ -2,18 +2,21 @@ import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { dailyStatRepository } from '@/db/repositories';
 import { buildMatchingQuizChunk, type MatchingQuizChunk } from '@/services/review/matching-quiz';
-import { buildPriorityQueue } from '@/services/review/priority-queue';
+import { buildPriorityQueue, type ReviewPriorityFilter } from '@/services/review/priority-queue';
 import { nextReviewStatus, type SwipeDirection } from '@/services/review/state-machine';
 import { useCardStore } from '@/stores/card-store';
 import type { Card, ReviewStatus } from '@/types/card';
 import type { CardViewMode } from '@/types/view-mode';
 
 export type SessionSize = 5 | 10 | 15 | 20;
+export type { ReviewPriorityFilter };
 
 export interface StudySessionConfig {
   deckId?: string;
   topicId?: string;
   sessionSize: SessionSize;
+  /** Defaults to `'default'` (the mixed-priority order) when omitted. */
+  reviewStatusFilter?: ReviewPriorityFilter;
 }
 
 export type StudySessionPhase = 'studying' | 'quiz' | 'summary';
@@ -76,7 +79,7 @@ export const useStudySessionStore = defineStore('study-session', () => {
       return true;
     });
 
-    const initialQueue = buildPriorityQueue(candidates, config.sessionSize);
+    const initialQueue = buildPriorityQueue(candidates, config.sessionSize, config.reviewStatusFilter);
 
     lastConfig.value = config;
     totalSlots.value = config.sessionSize;

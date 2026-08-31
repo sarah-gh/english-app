@@ -1,6 +1,10 @@
-import type { Card } from '@/types/card';
+import type { Card, ReviewStatus } from '@/types/card';
 import { weightedShuffleByTier, type WeightedTier } from '@/services/review/weighted-sampler';
 import { shuffle } from '@/utils/shuffle';
+
+/** `'default'` keeps the existing mixed-priority ordering below; any concrete `ReviewStatus`
+ *  narrows the candidate pool to only cards currently in that status before the queue is built. */
+export type ReviewPriorityFilter = 'default' | ReviewStatus;
 
 /** A card that's been swiped/matched before but never failed a match falls back to its swipe
  *  tier; a card that's never been swiped (still 'new') is treated as the lowest-urgency tier
@@ -15,13 +19,24 @@ function tierOf(card: Card): WeightedTier {
  * 2. Previously-failed cards (`reviewStats.failedMatches > 0`) next.
  * 3. Everything else, ordered by Hard -> Medium -> Easy tier weighting.
  * The result is capped at `size` — later tiers are simply left out once the cap is hit.
+ *
+ * When `priorityFilter` names a concrete status ('new' | 'easy' | 'medium' | 'hard') instead of
+ * `'default'`, the candidate pool is narrowed to only cards currently in that status first — the
+ * ordering above still applies within that narrowed pool.
  */
-export function buildPriorityQueue(cards: Card[], size: number): Card[] {
+export function buildPriorityQueue(
+  cards: Card[],
+  size: number,
+  priorityFilter: ReviewPriorityFilter = 'default',
+): Card[] {
+  const pool =
+    priorityFilter === 'default' ? cards : cards.filter((card) => card.reviewStatus === priorityFilter);
+
   const neverStudied: Card[] = [];
   const previouslyFailed: Card[] = [];
   const rest: Card[] = [];
 
-  for (const card of cards) {
+  for (const card of pool) {
     if (card.reviewStats.timesReviewed === 0) {
       neverStudied.push(card);
     } else if (card.reviewStats.failedMatches > 0) {

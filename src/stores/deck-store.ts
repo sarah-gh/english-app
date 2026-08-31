@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { deckRepository } from '@/db/repositories';
 import { useCardStore } from '@/stores/card-store';
+import { useTopicStore } from '@/stores/topic-store';
 import type { Deck, DeckUpdate, NewDeck } from '@/types/deck';
 
 export const useDeckStore = defineStore('decks', () => {
@@ -34,13 +35,16 @@ export const useDeckStore = defineStore('decks', () => {
     if (deck) Object.assign(deck, changes);
   }
 
-  /** Deletes the deck and cascades to remove its cards from the card store's cache too. */
+  /** Deletes the deck and cascades to remove its cards and topics from their stores' caches too. */
   async function remove(id: string): Promise<void> {
     await deckRepository.delete(id);
     decks.value = decks.value.filter((deck) => deck.id !== id);
 
     const cardStore = useCardStore();
     cardStore.cards = cardStore.cards.filter((card) => card.deckId !== id);
+
+    const topicStore = useTopicStore();
+    topicStore.topics = topicStore.topics.filter((topic) => topic.deckId !== id);
   }
 
   return { decks, isLoaded, fetchAll, ensureLoaded, getById, add, edit, remove };

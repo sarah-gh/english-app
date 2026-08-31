@@ -87,7 +87,7 @@ function removeCachedAudio() {
 </script>
 
 <template>
-  <div class="space-y-3 rounded-lg border border-text/20 p-4">
+  <div class="space-y-3 rounded-lg border border-text/20 p-4 bg-card-surface">
     <div class="flex items-center justify-between">
       <h3 class="text-sm font-semibold text-text">Pronunciation</h3>
       <label class="flex items-center gap-2 text-xs text-text/60">
@@ -110,6 +110,7 @@ function removeCachedAudio() {
         <AiFieldButton
           :loading="isGeneratingIpa"
           :disabled="!canGenerateIpa"
+          class=""
           :title="word.trim() ? 'Auto-fill this field with AI' : 'Enter a word first to use AI Auto-Fill'"
           @click="generateIpaValue"
         />
@@ -119,7 +120,7 @@ function removeCachedAudio() {
         v-model="ipa"
         type="text"
         placeholder="/wɜːrd/"
-        class="w-full rounded border border-text/20 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+        class="w-full bg-background rounded border border-text/20 px-3 py-2 text-sm focus:border-primary focus:outline-none"
       />
     </div>
 
@@ -127,7 +128,7 @@ function removeCachedAudio() {
       <button
         type="button"
         :disabled="!isTtsSupported || !word.trim()"
-        class="inline-flex items-center gap-1.5 rounded border border-primary px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary hover:text-background disabled:cursor-not-allowed disabled:border-text/20 disabled:text-text/30 disabled:hover:bg-transparent"
+        class="inline-flex bg-background items-center gap-1.5 rounded border border-primary px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary hover:text-background disabled:cursor-not-allowed disabled:border-text/20 disabled:text-text/30 disabled:hover:bg-transparent"
         @click="speakWord"
       >
         <AppIcon
@@ -140,7 +141,7 @@ function removeCachedAudio() {
       <button
         type="button"
         :disabled="isFetchingAudio || !word.trim()"
-        class="inline-flex items-center gap-1.5 rounded border border-primary px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary hover:text-background disabled:cursor-not-allowed disabled:border-text/20 disabled:text-text/30 disabled:hover:bg-transparent"
+        class="inline-flex bg-background items-center gap-1.5 rounded border border-primary px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary hover:text-background disabled:cursor-not-allowed disabled:border-text/20 disabled:text-text/30 disabled:hover:bg-transparent"
         @click="fetchAudio"
       >
         <AppIcon

@@ -17,8 +17,9 @@ const tagStore = useTagStore();
 
 const hasErrors = computed(() => props.row.errors.length > 0);
 
-/** Matches the default color `resolveTagId` falls back to at import time for a brand-new tag,
- *  so the preview chip's color doesn't jump the moment the card is actually imported. */
+/** A brand-new tag gets a randomly assigned color at actual import time (see `resolveTagId`), so
+ *  there's no specific color to preview ahead of that — this neutral placeholder just distinguishes
+ *  "new tag" chips from existing tags, which show their real saved color. */
 function tagColor(name: string): string {
   const existing = tagStore.tags.find((tag) => tag.name.toLowerCase() === name.toLowerCase());
   return existing?.color ?? '#6b7280';

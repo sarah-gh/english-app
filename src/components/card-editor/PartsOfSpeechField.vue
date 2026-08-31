@@ -42,7 +42,7 @@ async function handleGenerate() {
       (entry): PosEntryFormState => ({
         id: crypto.randomUUID(),
         pos: entry.pos,
-        wordForm: entry.wordForm ?? '',
+        wordForm: entry.wordForm?.trim() || title,
         definition: entry.definition,
         ipa: entry.ipa ?? '',
         examples: entry.examples ?? [],
@@ -109,7 +109,7 @@ function removeEntry(id: string) {
       <div
         v-for="entry in entries"
         :key="entry.id"
-        class="space-y-2 rounded border border-text/10 p-3"
+        class="space-y-2 rounded border bg-card-surface border-text/10 p-3"
       >
         <div class="flex items-end gap-2">
           <BaseSelect

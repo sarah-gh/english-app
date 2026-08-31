@@ -71,7 +71,7 @@ async function confirmDeleteTopic() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-background px-4 pt-6 pb-3">
+  <div class="min-h-screen bg-background px-4 pt-6 pb-18.75">
     <RouterLink
       to="/"
       class="mb-4 inline-flex items-center gap-1 text-sm text-text/50 hover:text-primary"
@@ -90,24 +90,27 @@ async function confirmDeleteTopic() {
           variant="secondary"
           size="sm"
           to="/cards/import"
-          class="bg-card-gold/90! text-background! hover:bg-card-gold!"
+          aria-label="Import"
+          class="bg-card-gold/90! text-background! hover:bg-card-gold! px-2.5!"
         >
           <AppIcon
             icon-name="DocumentUpload"
             :size="14"
           />
-          Import
+          <span class="hidden sm:inline">Import</span>
         </BaseButton>
         <BaseButton
           variant="primary"
           size="sm"
           to="/cards/new"
+          aria-label="Add Card"
+          class="px-2.5!"
         >
           <AppIcon
             icon-name="Add"
             :size="14"
           />
-          Add Card
+          <span class="hidden sm:inline">Add Card</span>
         </BaseButton>
       </div>
     </div>

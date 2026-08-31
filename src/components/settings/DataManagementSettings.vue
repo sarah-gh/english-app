@@ -16,6 +16,7 @@ import { useTagStore } from '@/stores/tag-store';
 import { useTopicStore } from '@/stores/topic-store';
 import type { NewCard } from '@/types/card';
 import { parseJsonCardImport, type JsonImportValidationResult } from '@/utils/import/json-card-importer';
+import { getRandomTagColor } from '@/utils/tag-color';
 
 const settingsStore = useSettingsStore();
 const cardStore = useCardStore();
@@ -207,7 +208,7 @@ async function resolveTagId(name: string, cache: Map<string, string>): Promise<s
   if (cached) return cached;
 
   const existing = tagStore.tags.find((tag) => tag.name.toLowerCase() === key);
-  const tag = existing ?? (await tagStore.add({ name, color: '#6b7280' }));
+  const tag = existing ?? (await tagStore.add({ name, color: getRandomTagColor() }));
   cache.set(key, tag.id);
   return tag.id;
 }

@@ -48,21 +48,22 @@ defineEmits<{
       <span class="min-w-0 flex-1 truncate text-base font-semibold text-card-gold">{{
         name
       }}</span>
-      <span class="shrink-0 text-xs text-card-muted">
+      <span class="hidden shrink-0 text-xs text-card-muted sm:inline">
         {{ topics.length }} topic{{ topics.length === 1 ? '' : 's' }} · {{ cardCount }} card{{
           cardCount === 1 ? '' : 's'
         }}
       </span>
       <button
         type="button"
-        class="inline-flex shrink-0 items-center gap-1 rounded-full bg-card-gold px-3 py-1.5 text-xs font-medium text-background hover:bg-card-gold/90"
+        aria-label="Add topic"
+        class="inline-flex shrink-0 items-center gap-1 rounded-full bg-card-gold p-1.5 text-xs font-medium text-background hover:bg-card-gold/90 sm:px-3 sm:py-1.5"
         @click.stop="$emit('createTopic')"
       >
         <AppIcon
           icon-name="Add"
           :size="12"
         />
-        Add Topic
+        <span class="hidden sm:inline">Add Topic</span>
       </button>
     </div>
 

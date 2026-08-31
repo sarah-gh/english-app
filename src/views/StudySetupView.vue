@@ -6,7 +6,7 @@ import BaseSegmentedToggle from '@/components/ui/BaseSegmentedToggle.vue';
 import BaseSelect from '@/components/ui/BaseSelect.vue';
 import { useCardStore } from '@/stores/card-store';
 import { useDeckStore } from '@/stores/deck-store';
-import { type SessionSize, useStudySessionStore } from '@/stores/study-session-store';
+import { type ReviewPriorityFilter, type SessionSize, useStudySessionStore } from '@/stores/study-session-store';
 import { useTopicStore } from '@/stores/topic-store';
 import type { CardViewMode } from '@/types/view-mode';
 
@@ -21,6 +21,15 @@ const selectedDeckId = ref('');
 const selectedTopicId = ref('');
 const sessionSize = ref<SessionSize>(20);
 const selectedViewMode = ref<CardViewMode>('practice');
+const reviewStatusFilter = ref<ReviewPriorityFilter>('default');
+
+const REVIEW_PRIORITY_OPTIONS: { value: ReviewPriorityFilter; label: string }[] = [
+  { value: 'default', label: 'Default / Mixed Priority (Recommended)' },
+  { value: 'new', label: 'New Cards Only' },
+  { value: 'hard', label: 'Hard Cards Only' },
+  { value: 'medium', label: 'Medium Cards Only' },
+  { value: 'easy', label: 'Easy Cards Only' },
+];
 
 onMounted(async () => {
   await Promise.all([cardStore.ensureLoaded(), deckStore.ensureLoaded(), topicStore.ensureLoaded()]);
@@ -54,6 +63,7 @@ const matchingCount = computed(
     cardStore.cards.filter((card) => {
       if (selectedDeckId.value && card.deckId !== selectedDeckId.value) return false;
       if (selectedTopicId.value && card.topicId !== selectedTopicId.value) return false;
+      if (reviewStatusFilter.value !== 'default' && card.reviewStatus !== reviewStatusFilter.value) return false;
       return true;
     }).length,
 );
@@ -64,6 +74,7 @@ function startSession() {
       deckId: selectedDeckId.value || undefined,
       topicId: selectedTopicId.value || undefined,
       sessionSize: sessionSize.value,
+      reviewStatusFilter: reviewStatusFilter.value,
     },
     selectedViewMode.value,
   );
@@ -139,10 +150,14 @@ function startSession() {
             chevron-class="text-card-gold"
           />
 
-          <!-- <p class="mb-3 text-xs text-card-muted">
-            Cards are prioritized automatically: never-studied first, then previously-missed cards,
-            then Hard → Medium → Easy.
-          </p> -->
+          <BaseSelect
+            v-model="reviewStatusFilter"
+            label="Review Priority / Status"
+            class="mb-5"
+            :options="REVIEW_PRIORITY_OPTIONS"
+            trigger-class="bg-card-surface border-card-gold/20"
+            chevron-class="text-card-gold"
+          />
 
           <button
             type="button"

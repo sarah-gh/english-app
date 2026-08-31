@@ -13,6 +13,7 @@ import {
   type ParsedCardRow,
 } from '@/services/import/excel-card-import';
 import type { NewCard } from '@/types/card';
+import { getRandomTagColor } from '@/utils/tag-color';
 
 const router = useRouter();
 const cardStore = useCardStore();
@@ -129,7 +130,7 @@ async function resolveTagId(name: string, cache: Map<string, string>): Promise<s
   if (cached) return cached;
 
   const existing = tagStore.tags.find((tag) => tag.name.toLowerCase() === key);
-  const tag = existing ?? (await tagStore.add({ name, color: '#6b7280' }));
+  const tag = existing ?? (await tagStore.add({ name, color: getRandomTagColor() }));
   cache.set(key, tag.id);
   return tag.id;
 }

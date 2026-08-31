@@ -58,7 +58,7 @@ const selectedLabel = computed(() => props.options.find((option) => option.value
       <div class="relative">
         <ListboxButton
           :id="selectId"
-          class="flex w-full items-center justify-between gap-2 rounded border px-3 py-2 text-left text-sm text-text focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-text/5 disabled:text-text/40"
+          class="flex w-full bg-card-surface items-center justify-between gap-2 rounded border px-3 py-2 text-left text-sm text-text focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-text/5 disabled:text-text/40"
           :class="error ? 'border-danger/80 bg-background' : (triggerClass ?? 'border-text/20 bg-background')"
           @blur="emit('blur')"
         >

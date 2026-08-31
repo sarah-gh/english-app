@@ -36,7 +36,7 @@ function removeQuestion(id: string) {
       <div
         v-for="question in quizQuestions"
         :key="question.id"
-        class="space-y-2 rounded border border-text/10 p-3"
+        class="space-y-2 rounded border bg-card-surface border-text/10 p-3"
       >
         <div class="flex gap-2">
           <input
