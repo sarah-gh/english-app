@@ -86,5 +86,52 @@ export class AppDatabase extends Dexie {
             if (!card.antonyms) card.antonyms = [];
           });
       });
+
+    // v4: adds `updatedAt`/`isDeleted` to Deck/Topic/Tag (Card already had `updatedAt`) so Cloud
+    // Sync can resolve conflicts by recency and replicate deletions as tombstones instead of
+    // silently vanishing rows a device hasn't synced yet. Kept off the index list deliberately —
+    // IndexedDB can't index boolean values, so `isDeleted` is filtered with `.filter()` at read
+    // time rather than `.where()`.
+    this.version(4)
+      .stores({
+        cards: 'id, deckId, topicId, reviewStatus, *tagIds, createdAt',
+        decks: 'id, name, createdAt',
+        tags: 'id, name',
+        topics: 'id, deckId, name, createdAt',
+        aiQuizResults: 'id, createdAt',
+        dailyStats: 'date',
+        settings: 'id',
+      })
+      .upgrade(async (tx) => {
+        const now = Date.now();
+
+        await tx
+          .table<Card, string>('cards')
+          .toCollection()
+          .modify((card) => {
+            if (card.isDeleted === undefined) card.isDeleted = false;
+          });
+        await tx
+          .table<Deck, string>('decks')
+          .toCollection()
+          .modify((deck) => {
+            if (deck.updatedAt === undefined) deck.updatedAt = deck.createdAt ?? now;
+            if (deck.isDeleted === undefined) deck.isDeleted = false;
+          });
+        await tx
+          .table<Topic, string>('topics')
+          .toCollection()
+          .modify((topic) => {
+            if (topic.updatedAt === undefined) topic.updatedAt = topic.createdAt ?? now;
+            if (topic.isDeleted === undefined) topic.isDeleted = false;
+          });
+        await tx
+          .table<Tag, string>('tags')
+          .toCollection()
+          .modify((tag) => {
+            if (tag.updatedAt === undefined) tag.updatedAt = tag.createdAt ?? now;
+            if (tag.isDeleted === undefined) tag.isDeleted = false;
+          });
+      });
   }
 }

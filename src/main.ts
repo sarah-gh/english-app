@@ -9,6 +9,8 @@ import AppIcon from './components/app/AppIcon.vue'
 import router from './router'
 import { seedInitialDataIfNeeded } from './db/seed'
 import { vueQueryPluginOptions } from './plugins/query-client'
+import { deduplicateLocalData } from './services/sync/deduplicate-local-data'
+import { purgeOldSoftDeletes } from './services/sync/garbage-collector'
 import { applyTheme, readStoredThemeMode } from './services/theme/apply-theme'
 
 // Applied synchronously, before Vue/Pinia even start up, so the first paint is already in the
@@ -24,4 +26,11 @@ app.component('AppIcon', AppIcon)
 
 seedInitialDataIfNeeded().finally(() => {
   app.mount('#app')
+  // Fire-and-forget: never blocks first paint, and any failure here shouldn't be fatal to the app.
+  // Dedup runs first so `purgeOldSoftDeletes` never races it to hard-delete a tombstone it just
+  // created (moot in practice — a fresh tombstone is nowhere near the 30-day cutoff — but keeps
+  // the two maintenance passes' effects easy to reason about in order).
+  deduplicateLocalData()
+    .catch(() => {})
+    .finally(() => purgeOldSoftDeletes().catch(() => {}))
 })

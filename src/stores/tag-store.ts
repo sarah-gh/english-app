@@ -31,7 +31,7 @@ export const useTagStore = defineStore('tags', () => {
   async function edit(id: string, changes: TagUpdate): Promise<void> {
     await tagRepository.update(id, changes);
     const tag = getById(id);
-    if (tag) Object.assign(tag, changes);
+    if (tag) Object.assign(tag, changes, { updatedAt: Date.now() });
   }
 
   /** Deletes the tag and strips its id from every card in the card store's cache too. */

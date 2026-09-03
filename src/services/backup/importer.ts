@@ -233,6 +233,7 @@ export async function importBackup(file: File): Promise<ImportSummary> {
       reviewStats: parseReviewStats(raw.reviewStats),
       createdAt: typeof raw.createdAt === 'number' ? raw.createdAt : Date.now(),
       updatedAt: typeof raw.updatedAt === 'number' ? raw.updatedAt : Date.now(),
+      isDeleted: Boolean(raw.isDeleted),
     });
   }
 
@@ -240,9 +241,21 @@ export async function importBackup(file: File): Promise<ImportSummary> {
   const aiQuizResults = Array.isArray(manifest.aiQuizResults) ? manifest.aiQuizResults : [];
   const dailyStats = Array.isArray(manifest.dailyStats) ? manifest.dailyStats : [];
 
-  await deckRepository.bulkPut(manifest.decks);
-  await topicRepository.bulkPut(topics);
-  await tagRepository.bulkPut(manifest.tags);
+  // Backups from before Cloud Sync (BACKUP_VERSION < 2's deck/topic/tag records) predate
+  // `updatedAt`/`isDeleted` — back-fill both so older archives still import cleanly.
+  const now = Date.now();
+  const backfillSyncFields = <T extends { createdAt: number; updatedAt?: number; isDeleted?: boolean }>(
+    records: T[],
+  ): T[] =>
+    records.map((record) => ({
+      ...record,
+      updatedAt: typeof record.updatedAt === 'number' ? record.updatedAt : (record.createdAt ?? now),
+      isDeleted: Boolean(record.isDeleted),
+    }));
+
+  await deckRepository.bulkPut(backfillSyncFields(manifest.decks));
+  await topicRepository.bulkPut(backfillSyncFields(topics));
+  await tagRepository.bulkPut(backfillSyncFields(manifest.tags));
   await cardRepository.bulkPut(cards);
   await aiQuizResultRepository.bulkPut(aiQuizResults);
   await dailyStatRepository.bulkPut(dailyStats);

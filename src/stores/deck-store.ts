@@ -32,7 +32,7 @@ export const useDeckStore = defineStore('decks', () => {
   async function edit(id: string, changes: DeckUpdate): Promise<void> {
     await deckRepository.update(id, changes);
     const deck = getById(id);
-    if (deck) Object.assign(deck, changes);
+    if (deck) Object.assign(deck, changes, { updatedAt: Date.now() });
   }
 
   /** Deletes the deck and cascades to remove its cards and topics from their stores' caches too. */

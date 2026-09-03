@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import BaseCard from '@/components/ui/BaseCard.vue';
-
 withDefaults(
   defineProps<{
     value: number | string;
@@ -14,13 +12,16 @@ withDefaults(
 </script>
 
 <template>
-  <BaseCard class="text-center">
+  <div class="rounded-2xl border border-slate-600 bg-card-surface p-4 text-center">
+    <div class="mb-2 flex justify-center" :class="valueClass">
+      <slot name="icon" />
+    </div>
     <p
       class="text-2xl font-semibold"
       :class="valueClass"
     >
       {{ value }}
     </p>
-    <p class="text-xs text-text/50">{{ label }}</p>
-  </BaseCard>
+    <p class="text-xs text-card-muted">{{ label }}</p>
+  </div>
 </template>

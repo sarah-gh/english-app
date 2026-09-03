@@ -6,9 +6,21 @@ function byCreatedAtDesc(cards: Card[]): Card[] {
   return cards.sort((a, b) => b.createdAt - a.createdAt);
 }
 
+/** Cloud Sync needs tombstones (`isDeleted: true` rows) to replicate deletions to other devices —
+ *  every other reader wants live rows only, so this filter is applied at every normal read path. */
+function excludeDeleted(cards: Card[]): Card[] {
+  return cards.filter((card) => !card.isDeleted);
+}
+
 export const cardRepository = {
   async getAll(): Promise<Card[]> {
-    return byCreatedAtDesc(await db.cards.toArray());
+    return byCreatedAtDesc(excludeDeleted(await db.cards.toArray()));
+  },
+
+  /** Used by Cloud Sync, which needs tombstones too so a deletion on one device replicates to the
+   *  others instead of being invisible to the merge. */
+  async getAllIncludingDeleted(): Promise<Card[]> {
+    return db.cards.toArray();
   },
 
   async getById(id: string): Promise<Card | undefined> {
@@ -16,19 +28,19 @@ export const cardRepository = {
   },
 
   async getByDeck(deckId: string): Promise<Card[]> {
-    return byCreatedAtDesc(await db.cards.where('deckId').equals(deckId).toArray());
+    return byCreatedAtDesc(excludeDeleted(await db.cards.where('deckId').equals(deckId).toArray()));
   },
 
   async getByTopic(topicId: string): Promise<Card[]> {
-    return byCreatedAtDesc(await db.cards.where('topicId').equals(topicId).toArray());
+    return byCreatedAtDesc(excludeDeleted(await db.cards.where('topicId').equals(topicId).toArray()));
   },
 
   async getByTag(tagId: string): Promise<Card[]> {
-    return byCreatedAtDesc(await db.cards.where('tagIds').equals(tagId).toArray());
+    return byCreatedAtDesc(excludeDeleted(await db.cards.where('tagIds').equals(tagId).toArray()));
   },
 
   async getByReviewStatus(status: ReviewStatus): Promise<Card[]> {
-    return byCreatedAtDesc(await db.cards.where('reviewStatus').equals(status).toArray());
+    return byCreatedAtDesc(excludeDeleted(await db.cards.where('reviewStatus').equals(status).toArray()));
   },
 
   async create(card: NewCard): Promise<Card> {
@@ -40,6 +52,7 @@ export const cardRepository = {
       reviewStats: { ...DEFAULT_REVIEW_STATS },
       createdAt: timestamp,
       updatedAt: timestamp,
+      isDeleted: false,
     };
     await db.cards.add(record);
     return record;
@@ -55,6 +68,7 @@ export const cardRepository = {
       reviewStats: { ...DEFAULT_REVIEW_STATS },
       createdAt: timestamp,
       updatedAt: timestamp,
+      isDeleted: false,
     }));
     await db.cards.bulkAdd(records);
     return records;
@@ -86,11 +100,14 @@ export const cardRepository = {
     });
   },
 
+  /** Soft-deletes: marks the row `isDeleted` instead of removing it, so Cloud Sync can replicate
+   *  the deletion to other devices as a change record. Permanently removed later by the
+   *  garbage collector once the tombstone is 30+ days old. */
   async delete(id: string): Promise<void> {
-    await db.cards.delete(id);
+    await db.cards.update(id, { isDeleted: true, updatedAt: Date.now() });
   },
 
-  /** Used by backup import — writes records as-is, preserving ids and timestamps. */
+  /** Used by backup import and Cloud Sync — writes records as-is, preserving ids and timestamps. */
   async bulkPut(cards: Card[]): Promise<void> {
     await db.cards.bulkPut(cards);
   },

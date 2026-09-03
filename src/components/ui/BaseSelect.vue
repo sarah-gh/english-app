@@ -1,6 +1,7 @@
 <script setup lang="ts" generic="T extends string">
 import { Listbox, ListboxButton, ListboxOptions, ListboxOption } from '@headlessui/vue';
-import { computed, useId } from 'vue';
+import { autoUpdate, flip, offset, size, useFloating } from '@floating-ui/vue';
+import { computed, useId, useTemplateRef } from 'vue';
 import WarningIcon from '@/components/app/WarningIcon.vue';
 
 const props = withDefaults(
@@ -34,6 +35,25 @@ const emit = defineEmits<{ 'update:modelValue': [value: T]; blur: [] }>();
 const selectId = useId();
 
 const selectedLabel = computed(() => props.options.find((option) => option.value === props.modelValue)?.label);
+
+const triggerRef = useTemplateRef<InstanceType<typeof ListboxButton>>('trigger');
+const panelRef = useTemplateRef<InstanceType<typeof ListboxOptions>>('panel');
+
+const { floatingStyles } = useFloating(triggerRef, panelRef, {
+  placement: 'bottom-start',
+  strategy: 'fixed',
+  whileElementsMounted: autoUpdate,
+  middleware: [
+    offset(4),
+    flip({ padding: 8 }),
+    size({
+      padding: 8,
+      apply({ rects, elements }) {
+        elements.floating.style.width = `${rects.reference.width}px`;
+      },
+    }),
+  ],
+});
 </script>
 
 <template>
@@ -55,9 +75,10 @@ const selectedLabel = computed(() => props.options.find((option) => option.value
       :disabled="disabled"
       @update:model-value="(value) => emit('update:modelValue', value as T)"
     >
-      <div class="relative">
+      <div>
         <ListboxButton
           :id="selectId"
+          ref="trigger"
           class="flex w-full bg-card-surface items-center justify-between gap-2 rounded border px-3 py-2 text-left text-sm text-text focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-text/5 disabled:text-text/40"
           :class="error ? 'border-danger/80 bg-background' : (triggerClass ?? 'border-text/20 bg-background')"
           @blur="emit('blur')"
@@ -82,7 +103,9 @@ const selectedLabel = computed(() => props.options.find((option) => option.value
           leave-to-class="opacity-0"
         >
           <ListboxOptions
-            class="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-text/10 bg-white/95 py-1 text-sm shadow-lg focus:outline-none dark:bg-slate-900/95"
+            ref="panel"
+            :style="floatingStyles"
+            class="z-50 max-h-60 overflow-auto rounded-lg border border-text/10 bg-white/95 py-1 text-sm shadow-lg focus:outline-none dark:bg-slate-900/95"
           >
             <ListboxOption
               v-for="option in options"

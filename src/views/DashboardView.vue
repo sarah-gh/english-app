@@ -56,7 +56,7 @@ function deckCardCount(deckId: string): number {
           <li v-for="deck in deckStore.decks" :key="deck.id">
             <RouterLink
               :to="`/cards?deck=${deck.id}`"
-              class="-mx-1 flex items-center justify-between rounded-lg px-1 py-3 hover:bg-card-definition"
+              class="-mx-1 flex items-center justify-between rounded-lg px-2 py-3 hover:bg-card-definition"
             >
               <span class="text-sm text-text">{{ deck.name }}</span>
               <span class="text-xs text-card-muted">{{ deckCardCount(deck.id) }} cards</span>

@@ -35,7 +35,7 @@ export const useTopicStore = defineStore('topics', () => {
   async function edit(id: string, changes: TopicUpdate): Promise<void> {
     await topicRepository.update(id, changes);
     const topic = getById(id);
-    if (topic) Object.assign(topic, changes);
+    if (topic) Object.assign(topic, changes, { updatedAt: Date.now() });
   }
 
   /** Deletes the topic and unassigns it from every card in the card store's cache too. */

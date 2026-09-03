@@ -6,8 +6,12 @@ import ArrowDown2 from 'vue-iconsax/dist/components/icons/ArrowDown2.vue.js';
 import ArrowLeft from 'vue-iconsax/dist/components/icons/ArrowLeft.vue.js';
 import ArrowRight2 from 'vue-iconsax/dist/components/icons/ArrowRight2.vue.js';
 import Book1 from 'vue-iconsax/dist/components/icons/Book1.vue.js';
+import ClipboardText from 'vue-iconsax/dist/components/icons/ClipboardText.vue.js';
 import CloseCircle from 'vue-iconsax/dist/components/icons/CloseCircle.vue.js';
+import CloudConnection from 'vue-iconsax/dist/components/icons/CloudConnection.vue.js';
+import CloudCross from 'vue-iconsax/dist/components/icons/CloudCross.vue.js';
 import Code from 'vue-iconsax/dist/components/icons/Code.vue.js';
+import Copy from 'vue-iconsax/dist/components/icons/Copy.vue.js';
 import Danger from 'vue-iconsax/dist/components/icons/Danger.vue.js';
 import DocumentDownload from 'vue-iconsax/dist/components/icons/DocumentDownload.vue.js';
 import DocumentText from 'vue-iconsax/dist/components/icons/DocumentText.vue.js';
@@ -25,6 +29,7 @@ import Refresh from 'vue-iconsax/dist/components/icons/Refresh.vue.js';
 import RefreshCircle from 'vue-iconsax/dist/components/icons/RefreshCircle.vue.js';
 import SearchNormal1 from 'vue-iconsax/dist/components/icons/SearchNormal1.vue.js';
 import Setting2 from 'vue-iconsax/dist/components/icons/Setting2.vue.js';
+import Star1 from 'vue-iconsax/dist/components/icons/Star1.vue.js';
 import TickCircle from 'vue-iconsax/dist/components/icons/TickCircle.vue.js';
 import Trash from 'vue-iconsax/dist/components/icons/Trash.vue.js';
 import VolumeHigh from 'vue-iconsax/dist/components/icons/VolumeHigh.vue.js';
@@ -40,8 +45,12 @@ const ICONS = {
   ArrowLeft,
   ArrowRight2,
   Book1,
+  ClipboardText,
   CloseCircle,
+  CloudConnection,
+  CloudCross,
   Code,
+  Copy,
   Danger,
   DocumentDownload,
   DocumentText,
@@ -59,6 +68,7 @@ const ICONS = {
   RefreshCircle,
   SearchNormal1,
   Setting2,
+  Star1,
   TickCircle,
   Trash,
   VolumeHigh,

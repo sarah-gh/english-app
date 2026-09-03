@@ -77,7 +77,14 @@ export interface Card {
   reviewStats: CardReviewStats;
   createdAt: number;
   updatedAt: number;
+  /** Soft-delete flag — set instead of removing the row outright, so a deletion on one device can
+   *  be replicated to another as a change record during cloud sync rather than being invisible to
+   *  it. Garbage-collected locally 30 days after `updatedAt`. */
+  isDeleted: boolean;
 }
 
-export type NewCard = Omit<Card, 'id' | 'reviewStatus' | 'reviewStats' | 'createdAt' | 'updatedAt'>;
+export type NewCard = Omit<
+  Card,
+  'id' | 'reviewStatus' | 'reviewStats' | 'createdAt' | 'updatedAt' | 'isDeleted'
+>;
 export type CardUpdate = Partial<Omit<Card, 'id' | 'createdAt'>>;
