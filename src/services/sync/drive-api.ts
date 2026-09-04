@@ -16,21 +16,54 @@ export class DriveApiError extends Error {
   }
 }
 
+/** Google occasionally answers with a bare 502/503/504 (or the connection drops outright) with no
+ *  CORS headers on the error response at all, which the browser reports to `fetch` as an opaque
+ *  network failure rather than a readable status — those are exactly the transient cases worth
+ *  retrying, since the same request typically succeeds a moment later. */
+const RETRYABLE_STATUSES = new Set([500, 502, 503, 504]);
+const RETRY_DELAYS_MS = [1000, 2000, 4000];
+const REQUEST_TIMEOUT_MS = 20_000;
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function driveFetch(url: string, token: string, init: RequestInit = {}): Promise<Response> {
-  let response: Response;
-  try {
-    response = await fetch(url, {
-      ...init,
-      headers: { ...init.headers, Authorization: `Bearer ${token}` },
-    });
-  } catch {
-    throw new DriveApiError('Could not reach Google Drive.', 0);
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    const timeoutController = new AbortController();
+    const timeoutId = setTimeout(() => timeoutController.abort(), REQUEST_TIMEOUT_MS);
+
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        ...init,
+        signal: timeoutController.signal,
+        headers: { ...init.headers, Authorization: `Bearer ${token}` },
+      });
+    } catch {
+      // Covers both a network-level fetch failure (offline, CORS-opaque 502) and our own abort
+      // timeout — neither carries a usable status, so both retry the same way.
+      if (attempt < RETRY_DELAYS_MS.length) {
+        await delay(RETRY_DELAYS_MS[attempt]);
+        continue;
+      }
+      throw new DriveApiError('Could not reach Google Drive.', 0);
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+    if (!response.ok) {
+      if (RETRYABLE_STATUSES.has(response.status) && attempt < RETRY_DELAYS_MS.length) {
+        await delay(RETRY_DELAYS_MS[attempt]);
+        continue;
+      }
+      throw new DriveApiError(`Google Drive request failed (${response.status}).`, response.status);
+    }
+    return response;
   }
 
-  if (!response.ok) {
-    throw new DriveApiError(`Google Drive request failed (${response.status}).`, response.status);
-  }
-  return response;
+  // Unreachable — the loop above always returns or throws on its last iteration.
+  throw new DriveApiError('Could not reach Google Drive.', 0);
 }
 
 export interface GoogleProfile {
@@ -89,4 +122,10 @@ export async function updateSyncFile(token: string, fileId: string, payload: unk
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
+}
+
+/** Permanently removes `flashcards_sync.json` from the appDataFolder. Drive returns an empty 204
+ *  on success, so there's no body to parse. */
+export async function deleteSyncFile(token: string, fileId: string): Promise<void> {
+  await driveFetch(`${DRIVE_FILES_URL}/${fileId}`, token, { method: 'DELETE' });
 }

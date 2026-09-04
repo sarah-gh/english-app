@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import BorderedCard from '@/components/common/BorderedCard.vue';
+
 withDefaults(
   defineProps<{
     value: number | string;
@@ -12,7 +14,9 @@ withDefaults(
 </script>
 
 <template>
-  <div class="rounded-2xl border border-slate-600 bg-card-surface p-4 text-center">
+  <BorderedCard class="mb-0 text-center py-5! px-2!">
+
+  <!-- <div class="rounded-2xl border border-slate-600 bg-card-surface p-4 text-center"> -->
     <div class="mb-2 flex justify-center" :class="valueClass">
       <slot name="icon" />
     </div>
@@ -23,5 +27,6 @@ withDefaults(
       {{ value }}
     </p>
     <p class="text-xs text-card-muted">{{ label }}</p>
-  </div>
+  <!-- </div> -->
+   </BorderedCard>
 </template>

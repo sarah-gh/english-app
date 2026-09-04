@@ -122,6 +122,26 @@ async function confirmDeleteTopic() {
       Loading…
     </p>
     <template v-else>
+      <RouterLink
+        to="/cards/all"
+        class="mb-3 flex items-center gap-2 rounded-2xl border border-card-gold/20 bg-card-surface px-4 py-3 hover:border-card-gold/40"
+      >
+        <AppIcon
+          icon-name="Category2"
+          :size="16"
+          class="shrink-0 text-card-gold/60"
+        />
+        <span class="min-w-0 flex-1 truncate text-base font-semibold text-card-gold">All Cards</span>
+        <span class="hidden shrink-0 text-xs text-card-muted sm:inline">
+          {{ cardStore.cards.length }} card{{ cardStore.cards.length === 1 ? '' : 's' }}
+        </span>
+        <AppIcon
+          icon-name="ArrowRight2"
+          :size="14"
+          class="shrink-0 text-card-muted"
+        />
+      </RouterLink>
+
       <p class="mb-3 text-xs text-text/50">Expand a deck to browse its topics.</p>
       <DeckTree
         :decks="deckStore.decks"

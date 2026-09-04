@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import SettingsSectionCard from '@/components/settings/SettingsSectionCard.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
-import BaseCard from '@/components/ui/BaseCard.vue';
 import BaseSegmentedToggle from '@/components/ui/BaseSegmentedToggle.vue';
 import { speechSynthesisService } from '@/services/tts/speech-synthesis.service';
 import { useSettingsStore } from '@/stores/settings-store';
@@ -21,11 +21,21 @@ function testAccent() {
 </script>
 
 <template>
-  <BaseCard class="mb-6">
-    <h2 class="mb-3 text-sm font-semibold text-text">Pronunciation</h2>
+  <SettingsSectionCard
+    title="Pronunciation"
+    badge-class="bg-red-400/10 text-red-400"
+    description="Choose your preferred accent."
+  >
+    <template #icon>
+      <AppIcon
+        icon-name="VolumeHigh"
+        :size="18"
+      />
+    </template>
     <p class="mb-2 text-xs font-medium text-text/60">Accent</p>
     <BaseSegmentedToggle
       class="mb-3"
+      tone="recessed"
       :model-value="settingsStore.settings.speechAccent"
       :options="[
         { value: 'en-US', label: 'US English' },
@@ -36,6 +46,7 @@ function testAccent() {
     <BaseButton
       variant="secondary"
       size="sm"
+      class="rounded-xl!"
       @click="testAccent"
     >
       <AppIcon
@@ -44,5 +55,5 @@ function testAccent() {
       />
       Test Voice
     </BaseButton>
-  </BaseCard>
+  </SettingsSectionCard>
 </template>

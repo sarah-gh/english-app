@@ -6,13 +6,16 @@ import ArrowDown2 from 'vue-iconsax/dist/components/icons/ArrowDown2.vue.js';
 import ArrowLeft from 'vue-iconsax/dist/components/icons/ArrowLeft.vue.js';
 import ArrowRight2 from 'vue-iconsax/dist/components/icons/ArrowRight2.vue.js';
 import Book1 from 'vue-iconsax/dist/components/icons/Book1.vue.js';
+import Category2 from 'vue-iconsax/dist/components/icons/Category2.vue.js';
 import ClipboardText from 'vue-iconsax/dist/components/icons/ClipboardText.vue.js';
 import CloseCircle from 'vue-iconsax/dist/components/icons/CloseCircle.vue.js';
 import CloudConnection from 'vue-iconsax/dist/components/icons/CloudConnection.vue.js';
 import CloudCross from 'vue-iconsax/dist/components/icons/CloudCross.vue.js';
 import Code from 'vue-iconsax/dist/components/icons/Code.vue.js';
+import Colorfilter from 'vue-iconsax/dist/components/icons/Colorfilter.vue.js';
 import Copy from 'vue-iconsax/dist/components/icons/Copy.vue.js';
 import Danger from 'vue-iconsax/dist/components/icons/Danger.vue.js';
+import Discover from 'vue-iconsax/dist/components/icons/Discover.vue.js';
 import DocumentDownload from 'vue-iconsax/dist/components/icons/DocumentDownload.vue.js';
 import DocumentText from 'vue-iconsax/dist/components/icons/DocumentText.vue.js';
 import DocumentUpload from 'vue-iconsax/dist/components/icons/DocumentUpload.vue.js';
@@ -23,6 +26,8 @@ import Flash from 'vue-iconsax/dist/components/icons/Flash.vue.js';
 import Folder2 from 'vue-iconsax/dist/components/icons/Folder2.vue.js';
 import Home2 from 'vue-iconsax/dist/components/icons/Home2.vue.js';
 import Import from 'vue-iconsax/dist/components/icons/Import.vue.js';
+import Logout from 'vue-iconsax/dist/components/icons/Logout.vue.js';
+import Minus from 'vue-iconsax/dist/components/icons/Minus.vue.js';
 import Play from 'vue-iconsax/dist/components/icons/Play.vue.js';
 import ProfileCircle from 'vue-iconsax/dist/components/icons/ProfileCircle.vue.js';
 import Refresh from 'vue-iconsax/dist/components/icons/Refresh.vue.js';
@@ -45,13 +50,16 @@ const ICONS = {
   ArrowLeft,
   ArrowRight2,
   Book1,
+  Category2,
   ClipboardText,
   CloseCircle,
   CloudConnection,
   CloudCross,
   Code,
+  Colorfilter,
   Copy,
   Danger,
+  Discover,
   DocumentDownload,
   DocumentText,
   DocumentUpload,
@@ -62,6 +70,8 @@ const ICONS = {
   Folder2,
   Home2,
   Import,
+  Logout,
+  Minus,
   Play,
   ProfileCircle,
   Refresh,

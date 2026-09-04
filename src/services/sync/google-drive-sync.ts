@@ -1,13 +1,17 @@
 import { cardToSyncCard, syncCardToCard } from '@/services/sync/card-codec';
 import {
+  aiQuizResultRepository,
   cardRepository,
+  dailyStatRepository,
   deckRepository,
+  settingsRepository,
   tagRepository,
   topicRepository,
 } from '@/db/repositories';
 import { deduplicateLocalData } from '@/services/sync/deduplicate-local-data';
 import {
   createSyncFile,
+  deleteSyncFile,
   DriveApiError,
   downloadSyncFile,
   fetchUserProfile,
@@ -21,7 +25,7 @@ import {
   revokeAccessToken,
   type AccessTokenResult,
 } from '@/services/sync/google-identity';
-import { mergeById } from '@/services/sync/merge';
+import { mergeById, mergeCards, mergeDailyStats, mergeSingleton } from '@/services/sync/merge';
 import {
   emptySyncPayload,
   SYNC_PAYLOAD_VERSION,
@@ -32,6 +36,9 @@ import {
   type SyncPayload,
   type SyncSummary,
 } from '@/services/sync/types';
+import type { AiQuizResult } from '@/types/ai-quiz-result';
+import type { DailyStat } from '@/types/daily-stat';
+import type { AppSettings } from '@/types/settings';
 
 const CLIENT_ID: string | undefined = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -54,14 +61,21 @@ const STORAGE_KEYS = {
  *  the same way. */
 let cachedToken: AccessTokenResult | null = null;
 let remoteFileId: string | null = null;
-let proactiveRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 
-/** How long before an access token's real expiry to proactively try renewing it — both the
- *  target for `scheduleProactiveRefresh` below and the head start `getAccessToken` gives
- *  user-initiated actions (see `SAFETY_MARGIN_MS`). Also doubles as the "near expiration" cutoff
- *  on reload: a restored token with more than this much life left is reused as-is with zero GIS
- *  calls; only one with less goes through a (background, best-effort) refresh. */
-const REFRESH_LEAD_MS = 10 * 60_000;
+/** A token counts as usable right up until this close to its real expiry — only enough head room
+ *  to cover a request that's already in flight when the clock runs out.
+ *
+ *  Deliberately narrow, and that narrowness is the point. This margin used to be ten minutes,
+ *  shared with the renewal lead time below, which meant a token with nine perfectly good minutes
+ *  left was treated as unusable: a page reload in that window sent the startup sync into a GIS
+ *  request it had no user gesture to make, which the browser popup-blocked, which surfaced to the
+ *  user as "Sign-in expired" — on a session that was never expired at all. */
+const TOKEN_USABLE_MARGIN_MS = 60_000;
+
+/** How much life left before a call that *is* allowed to open a window renews the token up front,
+ *  rather than letting a long sync run past expiry and eat a mid-flight 401. Only ever applied to
+ *  gesture-bound callers: renewing means a GIS request, and a GIS request means a real window. */
+const TOKEN_RENEW_MARGIN_MS = 5 * 60_000;
 
 function loadPersistedToken(): AccessTokenResult | null {
   const raw = localStorage.getItem(STORAGE_KEYS.accessToken);
@@ -90,55 +104,64 @@ function clearPersistedToken(): void {
 function setCachedToken(result: AccessTokenResult): void {
   cachedToken = result;
   persistToken(result);
-  scheduleProactiveRefresh(result.expiresAt);
 }
 
-/** Opportunistically renews the token ~10 minutes ahead of expiry, purely as a background head
- *  start — NOT a substitute for the on-demand refresh in `getAccessToken`, which remains the real
- *  safety net. GIS has no hidden-iframe silent-renew mode (see `requestAccessToken`'s doc
- *  comment): even a `prompt: 'none'` call opens an actual, self-closing popup, and browsers only
- *  allow `window.open` calls that originate from a user gesture. A `setTimeout` firing on its own
- *  is never a user gesture, so this frequently comes back `popup_blocked` in browsers with strict
- *  popup policies — that failure is expected and silently swallowed here rather than surfaced to
- *  the user. Where it does succeed (this varies by browser), the user simply never sees an
- *  expired token; where it doesn't, the next actual sync's silent-then-interactive fallback still
- *  runs exactly as it did before this existed. */
-function scheduleProactiveRefresh(expiresAt: number): void {
-  if (proactiveRefreshTimer) clearTimeout(proactiveRefreshTimer);
-  if (!CLIENT_ID) return;
-
-  const delay = Math.max(expiresAt - REFRESH_LEAD_MS - Date.now(), 5_000);
-  proactiveRefreshTimer = setTimeout(() => {
-    void requestAccessToken(CLIENT_ID!, { interactive: false })
-      .then(setCachedToken)
-      .catch(() => {
-        // Best-effort only — see the doc comment above.
-      });
-  }, delay);
-}
-
-function clearProactiveRefresh(): void {
-  if (proactiveRefreshTimer) {
-    clearTimeout(proactiveRefreshTimer);
-    proactiveRefreshTimer = null;
-  }
-}
+/* There is deliberately no timer-based token renewal here, and there must not be one.
+ *
+ * A previous version scheduled a `prompt: 'none'` renewal ~10 minutes before expiry. Because an
+ * access token lives an hour, that timer fired ~50 minutes into every session and — since GIS has
+ * no hidden-iframe silent mode, and even `prompt: 'none'` opens a real browser window that
+ * immediately self-closes (see `requestAccessToken`'s doc comment) — the user saw a window flash
+ * open and shut, out of nowhere, roughly once an hour. Worse, a restored token already inside the
+ * renewal window scheduled that same timer with a 5-second floor, so the flash also landed a few
+ * seconds after certain page loads.
+ *
+ * It bought nothing in exchange. A `window.open` that doesn't originate from a user gesture is
+ * blocked outright by strict popup policies (and by every mobile browser worth naming), so the
+ * renewal it was flashing for usually failed anyway. Renewal now happens lazily, and only inside a
+ * real user gesture — see `getAccessToken`. */
 
 // Hydrate from localStorage as soon as this module loads, so `initOnStartup`'s background sync
 // (and anything else that runs before a user gesture happens) finds a usable cached token instead
 // of unconditionally hitting a silent GIS request that has no way to succeed without one.
 cachedToken = loadPersistedToken();
-if (cachedToken) scheduleProactiveRefresh(cachedToken.expiresAt);
 
-/** Catches up a token that went stale while the tab was backgrounded (e.g. the laptop slept
- *  through the 1hr lifetime) — JS timers don't fire while a tab is hidden, so
- *  `scheduleProactiveRefresh`'s `setTimeout` can't. Same best-effort, silent-only contract as
- *  that function; this just gives it another chance to run as soon as the tab is back, instead of
- *  waiting for the next sync to discover the 401 the hard way. */
-if (typeof document !== 'undefined') {
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState !== 'visible' || !CLIENT_ID || !isGoogleConnected()) return;
-    void getAccessToken({ interactive: false }).catch(() => {});
+/** Notified whenever another tab changes the shared session — see the `storage` listener below. */
+type SessionChangeListener = () => void;
+const sessionChangeListeners = new Set<SessionChangeListener>();
+
+export function onSessionChanged(listener: SessionChangeListener): () => void {
+  sessionChangeListeners.add(listener);
+  return () => {
+    sessionChangeListeners.delete(listener);
+  };
+}
+
+/** Keeps every open tab on the same session, in place of the old `visibilitychange` handler that
+ *  fired a silent token request each time a tab came back to the foreground — another
+ *  non-gesture GIS call, and so another source of the same window flash.
+ *
+ *  `storage` fires only in the tabs that *didn't* do the writing, which is exactly the set that
+ *  needs to catch up. It gives this tab three things for free, with no network and no popup:
+ *  a token another tab just renewed (so only one tab ever pays for a renewal), a sign-out
+ *  performed elsewhere (so a disconnected tab stops claiming it's connected), and a fresh
+ *  `lastSyncedAt` from another tab's sync (so the UI stops showing a stale "Last synced"). */
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (event) => {
+    if (!event.key || !(Object.values(STORAGE_KEYS) as string[]).includes(event.key)) return;
+
+    if (event.key === STORAGE_KEYS.accessToken) {
+      cachedToken = loadPersistedToken();
+      return;
+    }
+    // A sign-out in another tab invalidates this tab's in-memory session too — the token it's
+    // holding was revoked by that `disconnect`, and the cached file id belongs to an account this
+    // browser is no longer signed in to.
+    if (event.key === STORAGE_KEYS.isConnected && !isGoogleConnected()) {
+      cachedToken = null;
+      remoteFileId = null;
+    }
+    sessionChangeListeners.forEach((listener) => listener());
   });
 }
 
@@ -176,7 +199,6 @@ function clearConnected(): void {
   localStorage.removeItem(STORAGE_KEYS.lastSyncedAt);
   cachedToken = null;
   remoteFileId = null;
-  clearProactiveRefresh();
   clearPersistedToken();
 }
 
@@ -187,48 +209,64 @@ export function preloadGoogleIdentity(): void {
   if (isCloudSyncConfigured()) void loadGoogleIdentityScript();
 }
 
-/** Gets a usable access token, refreshing silently (`prompt: 'none'`) when the cached one is
- *  missing/near expiry. `forceRefresh` skips the cache entirely — used for the one-retry-on-401
- *  path, since a 401 means the token Drive just rejected is no longer trustworthy even if our
- *  clock thinks it's still valid.
+/** Gets a usable access token, renewing it only when that can be done without ambushing the user
+ *  with a window.
  *
- *  `allowInteractiveFallback` is the only thing that ever pops a visible sign-in window from this
- *  function, and only when the *silent* attempt (`!options.interactive`) fails with `reason`
- *  `'interaction_required'` or `'cancelled'` — both mean Google couldn't complete it without the
- *  user present. Empirically (verified against the live GIS script, not just its docs), a
- *  `prompt: 'none'` request with no existing Google session doesn't always surface as a clean
- *  `interaction_required` token-response error — GIS can instead open its popup and immediately
- *  self-close it, which fires `error_callback`'s `popup_closed` path, reported here as
- *  `'cancelled'`. That's harmless to treat the same as `interaction_required` only because this
- *  branch only ever runs for the silent attempt: a real user can't have manually dismissed a
- *  popup they were never silently shown one to dismiss. `popup_blocked` is the one reason that's
- *  never retried — it means the browser refused to open a window at all for *this* call, and an
- *  interactive attempt starting from the same non-gesture context would hit the same wall. The
- *  caller is responsible for only setting `allowInteractiveFallback` when the call is itself
- *  still running inside a user gesture (see `syncNow`'s `allowInteractiveFallback` option). */
+ *  `allowWindow` is the single gate on whether this function may talk to GIS at all, and it must
+ *  be set only by a caller that is itself still inside a real user gesture — a "Sync Now",
+ *  "Connect", or "Delete Cloud Data" click. Everything else (the app-launch sync, the back-online
+ *  retry) leaves it off. The reason is that *every* GIS token path opens a genuine browser window,
+ *  including `prompt: 'none'`, which opens one and self-closes it (see `requestAccessToken`).
+ *  There is no invisible renewal to fall back on, so the honest choices for a background caller
+ *  are "flash a window at someone who didn't ask" or "don't renew". This picks the second: with no
+ *  usable cached token and no gesture, it throws `refresh_required` without calling GIS, and the
+ *  next thing the user clicks quietly puts the session back. That failure is *not* a signed-out
+ *  session and callers must not present it as one.
+ *
+ *  `forceRefresh` skips the cache entirely — used for the one-retry-on-401 path, since a 401 means
+ *  the token Drive just rejected is no longer trustworthy even if our clock thinks it's still
+ *  valid.
+ *
+ *  Escalation to a visible consent screen happens only when `allowInteractiveFallback` is also set
+ *  and the silent attempt failed with `'interaction_required'` or `'cancelled'` — both meaning
+ *  Google couldn't complete it without the user present. Empirically (verified against the live
+ *  GIS script, not just its docs), a `prompt: 'none'` request with no existing Google session
+ *  doesn't always surface as a clean `interaction_required` token-response error — GIS can instead
+ *  open its popup and immediately self-close it, which fires `error_callback`'s `popup_closed`
+ *  path, reported here as `'cancelled'`. That's safe to treat the same as `interaction_required`
+ *  only because this branch runs solely after a silent attempt: a real user can't have dismissed a
+ *  popup they were never shown. `popup_blocked` is never escalated — the browser refused to open a
+ *  window for this call, and a second attempt from the same context hits the same wall. */
 async function getAccessToken(options: {
-  interactive: boolean;
+  allowWindow: boolean;
   forceRefresh?: boolean;
   allowInteractiveFallback?: boolean;
 }): Promise<string> {
   if (!CLIENT_ID) throw new SyncNotConfiguredError();
 
-  // Wider than the strict minimum needed to avoid a mid-call expiry: a user-initiated action
-  // (Sync Now, Connect) that finds the cached token inside this window renews it silently as
-  // part of the same call, still within the user's gesture, rather than waiting to hit a 401
-  // partway through and needing the `withTokenRetry` retry-and-continue path.
-  const SAFETY_MARGIN_MS = REFRESH_LEAD_MS;
-  if (!options.forceRefresh && cachedToken && cachedToken.expiresAt - SAFETY_MARGIN_MS > Date.now()) {
-    return cachedToken.accessToken;
+  // Gesture-bound callers get the wider margin: they can afford to renew a nearly-spent token up
+  // front, inside the gesture they already have. Background callers get the narrow one, so a token
+  // is spent right down to the wire rather than being declared unusable while it still works.
+  const margin = options.allowWindow ? TOKEN_RENEW_MARGIN_MS : TOKEN_USABLE_MARGIN_MS;
+  const isUsable = (token: AccessTokenResult | null, requiredMargin: number): token is AccessTokenResult =>
+    token !== null && token.expiresAt - requiredMargin > Date.now();
+
+  const cached = cachedToken;
+  if (!options.forceRefresh && isUsable(cached, margin)) return cached.accessToken;
+
+  if (!options.allowWindow) {
+    throw new SyncAuthError(
+      'Cloud Sync is paused until your next sync.',
+      'refresh_required',
+    );
   }
 
   try {
-    const result = await requestAccessToken(CLIENT_ID, { interactive: options.interactive });
+    const result = await requestAccessToken(CLIENT_ID, { interactive: false });
     setCachedToken(result);
     return result.accessToken;
   } catch (error) {
     if (
-      !options.interactive &&
       options.allowInteractiveFallback &&
       error instanceof SyncAuthError &&
       (error.reason === 'interaction_required' || error.reason === 'cancelled')
@@ -237,22 +275,45 @@ async function getAccessToken(options: {
       setCachedToken(result);
       return result.accessToken;
     }
+    // A renewal that failed early — the token was inside the wide gesture margin but still has
+    // real life left — is not a reason to fail the sync. Use what's already in hand and let the
+    // 401 path deal with it if it does run out mid-flight.
+    const stillCached = cachedToken;
+    if (!options.forceRefresh && isUsable(stillCached, TOKEN_USABLE_MARGIN_MS)) {
+      return stillCached.accessToken;
+    }
     throw error;
   }
 }
 
 /** Wraps a Drive call so a token that expired mid-sync (large syncs can outlast the 1hr access
- *  token) triggers exactly one silent refresh-and-retry instead of failing the whole sync. */
+ *  token) triggers exactly one refresh-and-retry instead of failing the whole sync.
+ *
+ *  `allowInteractiveFallback` doubles as the "this call is inside a user gesture" signal, so it
+ *  also decides whether the refresh is even allowed to open a window (see `getAccessToken`). */
 async function withTokenRetry<T>(
   fn: (token: string) => Promise<T>,
   options: { allowInteractiveFallback?: boolean } = {},
 ): Promise<T> {
-  const token = await getAccessToken({ interactive: false, allowInteractiveFallback: options.allowInteractiveFallback });
+  const allowWindow = Boolean(options.allowInteractiveFallback);
+  const token = await getAccessToken({
+    allowWindow,
+    allowInteractiveFallback: options.allowInteractiveFallback,
+  });
   try {
     return await fn(token);
   } catch (error) {
     if (error instanceof DriveApiError && error.status === 401) {
-      const refreshedToken = await getAccessToken({ interactive: false, forceRefresh: true });
+      // Drive just rejected this token, so it's dead no matter what its recorded expiry claims —
+      // drop it from memory *and* localStorage. Leaving it persisted meant the next page load
+      // restored a token already known to be rejected and failed the startup sync all over again.
+      cachedToken = null;
+      clearPersistedToken();
+      const refreshedToken = await getAccessToken({
+        allowWindow,
+        allowInteractiveFallback: options.allowInteractiveFallback,
+        forceRefresh: true,
+      });
       return await fn(refreshedToken);
     }
     throw error;
@@ -277,6 +338,35 @@ export async function connect(): Promise<SyncSummary> {
 export async function disconnect(): Promise<void> {
   if (cachedToken) await revokeAccessToken(cachedToken.accessToken);
   clearConnected();
+}
+
+/** Testing-only: permanently deletes `flashcards_sync.json` from the appDataFolder, but — unlike
+ *  `disconnect` — leaves this device's "connected" state, token, and profile untouched. The next
+ *  `syncNow` on ANY device sharing this Drive account starts from an empty remote payload and
+ *  re-creates the file from whichever device syncs first, exactly like a first-ever sync. Not part
+ *  of the normal Cloud Sync flow; exists purely so development/QA can exercise the "no remote file
+ *  yet" path on demand without actually revoking Drive access. */
+export async function deleteCloudSyncData(): Promise<void> {
+  if (!CLIENT_ID) throw new SyncNotConfiguredError();
+  if (!isGoogleConnected()) throw new SyncAuthError('Google Drive is not connected.');
+  if (!navigator.onLine) throw new SyncOfflineError();
+
+  try {
+    await withTokenRetry(async (token) => {
+      const fileId = remoteFileId ?? (await findSyncFileId(token));
+      if (!fileId) return;
+      await deleteSyncFile(token, fileId);
+      remoteFileId = null;
+    }, { allowInteractiveFallback: true });
+
+    localStorage.removeItem(STORAGE_KEYS.lastSyncedAt);
+  } catch (error) {
+    if (error instanceof SyncAuthError || error instanceof SyncNotConfiguredError) throw error;
+    if (error instanceof DriveApiError && (error.status === 401 || error.status === 403)) {
+      throw new SyncAuthError();
+    }
+    throw new SyncOfflineError();
+  }
 }
 
 async function fetchRemotePayload(token: string): Promise<SyncPayload> {
@@ -309,22 +399,28 @@ async function uploadPayload(token: string, payload: SyncPayload): Promise<void>
 }
 
 /**
- * Runs one full two-way sync: fetches local + remote state, resolves every deck/topic/tag/card by
- * `id` with last-write-wins on `updatedAt` (see `mergeById`), writes the losing side's records to
- * wherever they lost, collapses any same-named deck/topic/tag duplicates the id-based merge
- * couldn't catch (see `deduplicateLocalData`), and uploads the result as the new
- * `flashcards_sync.json`. Local IndexedDB is fully updated — merge, then dedup — before anything is
- * uploaded, so a failure during the upload step never loses data: it just means the already-settled
- * local state gets re-pushed on the next successful sync.
+ * Runs one full two-way sync: fetches local + remote state, resolves every deck/topic/tag/
+ * quiz-history record by `id` with last-write-wins on `updatedAt` (see `mergeById`), every card the
+ * same way except `studyCount`, which takes whichever side counted more (see `mergeCards`), and
+ * every daily-stat row by `date` with the same max-count approach (see `mergeDailyStats`), writes
+ * the losing side's records to wherever they lost, collapses any same-named deck/topic/tag or
+ * same-front-text card duplicates the id-based merge couldn't catch (see `deduplicateLocalData`),
+ * and uploads the result as the new `flashcards_sync.json`. Local IndexedDB is fully updated —
+ * merge, then dedup — before anything is uploaded, so a failure during the upload step never loses
+ * data: it just means the already-settled local state gets re-pushed on the next successful sync.
  *
- * `allowInteractiveFallback` (default off) should be set only when this call is itself running
- * inside a user gesture — a "Sync Now" or "Connect" click. It lets a silent token refresh that
- * comes back `interaction_required` fall through to one interactive popup in the same call,
- * rather than making the user click twice. Background callers (app-launch sync, the
- * back-online retry) must leave it off: an unrequested popup from a timer is exactly what silent
- * refresh exists to avoid, and browsers block it anyway since it's not gesture-triggered — the
- * silent attempt still runs either way, so a valid existing session refreshes with zero UI
- * regardless of this flag.
+ * `allowInteractiveFallback` (default off) must be set only when this call is itself running
+ * inside a user gesture — a "Sync Now" or "Connect" click. It carries two permissions at once: it
+ * lets the call renew an expired token at all (any renewal opens a window — see `getAccessToken`),
+ * and it lets a silent renewal that comes back `interaction_required` escalate to one consent
+ * screen in the same call rather than making the user click twice.
+ *
+ * Background callers (app-launch sync, the back-online retry) leave it off, and as a result a
+ * background sync whose token has run out does not renew: it fails fast with a
+ * `refresh_required` `SyncAuthError`, having opened nothing and shown nothing. That is the
+ * intended, quiet outcome — local data is untouched, and the user's next sync click restores the
+ * session. A background sync whose token is still good needs no GIS call at all and syncs
+ * normally, which is the overwhelmingly common case within a token's hour.
  */
 export async function syncNow(options: { allowInteractiveFallback?: boolean } = {}): Promise<SyncSummary> {
   if (!CLIENT_ID) throw new SyncNotConfiguredError();
@@ -332,12 +428,16 @@ export async function syncNow(options: { allowInteractiveFallback?: boolean } = 
   if (!navigator.onLine) throw new SyncOfflineError();
 
   try {
-    const [localDecks, localTopics, localTags, localCards] = await Promise.all([
-      deckRepository.getAllIncludingDeleted(),
-      topicRepository.getAllIncludingDeleted(),
-      tagRepository.getAllIncludingDeleted(),
-      cardRepository.getAllIncludingDeleted(),
-    ]);
+    const [localDecks, localTopics, localTags, localCards, localQuizHistory, localDailyStats, localSettings] =
+      await Promise.all([
+        deckRepository.getAllIncludingDeleted(),
+        topicRepository.getAllIncludingDeleted(),
+        tagRepository.getAllIncludingDeleted(),
+        cardRepository.getAllIncludingDeleted(),
+        aiQuizResultRepository.getAll(),
+        dailyStatRepository.getAll(),
+        settingsRepository.get(),
+      ]);
     const localSyncCards = await Promise.all(localCards.map(cardToSyncCard));
 
     const remote = await withTokenRetry((token) => fetchRemotePayload(token), options);
@@ -345,7 +445,16 @@ export async function syncNow(options: { allowInteractiveFallback?: boolean } = 
     const deckResult = mergeById(localDecks, remote.decks);
     const topicResult = mergeById(localTopics, remote.topics);
     const tagResult = mergeById(localTags, remote.tags);
-    const cardResult = mergeById<SyncCard>(localSyncCards, remote.cards);
+    // Whole-record last-write-wins for every card field except `studyCount`, which is resolved by
+    // `Math.max` instead so one device's study reps never get silently discarded by the other's
+    // more-recent edit winning the rest of the record (see `mergeCards`'s own doc comment).
+    const cardResult = mergeCards<SyncCard>(localSyncCards, remote.cards);
+    // Quiz results have no edit UI, so `updatedAt` normally just mirrors `createdAt` — but reusing
+    // `mergeById` still resolves the (rare) case of an id somehow colliding across devices the same
+    // last-write-wins way as every other entity, rather than needing a bespoke merge.
+    const quizResult = mergeById<AiQuizResult>(localQuizHistory, remote.quizHistory ?? []);
+    const dailyStatResult = mergeDailyStats<DailyStat>(localDailyStats, remote.dailyStats ?? []);
+    const settingsResult = mergeSingleton<AppSettings>(localSettings, remote.settings);
 
     await Promise.all([
       deckRepository.bulkPut(deckResult.toApplyLocally),
@@ -355,21 +464,28 @@ export async function syncNow(options: { allowInteractiveFallback?: boolean } = 
         const cardsToApply = await Promise.all(cardResult.toApplyLocally.map(syncCardToCard));
         await cardRepository.bulkPut(cardsToApply);
       })(),
+      aiQuizResultRepository.bulkPut(quizResult.toApplyLocally),
+      dailyStatRepository.bulkPut(dailyStatResult.toApplyLocally),
+      settingsResult.toApplyLocally ? settingsRepository.replace(settingsResult.merged) : Promise.resolve(),
     ]);
 
-    // Two devices that independently created the same-named deck/topic/tag (e.g. both seeded a
-    // default "Grammar" deck) end up as two different ids, which the id-based merge above can't
-    // detect — it only ever reconciles records that already share an id. Local IndexedDB now
-    // holds the full local-∪-remote union from the merge, so this is the first point where such
-    // cross-device duplicates are actually visible to collapse.
+    // Two devices that independently created the same-named deck/topic/tag, or the same default
+    // card (e.g. both seeded a "Grammar" deck, or both got the same starter card), end up as two
+    // different ids, which the id-based merge above can't detect — it only ever reconciles records
+    // that already share an id. Local IndexedDB now holds the full local-∪-remote union from the
+    // merge, so this is the first point where such cross-device duplicates are actually visible to
+    // collapse.
     await deduplicateLocalData();
 
-    const [dedupedDecks, dedupedTopics, dedupedTags, dedupedCards] = await Promise.all([
-      deckRepository.getAllIncludingDeleted(),
-      topicRepository.getAllIncludingDeleted(),
-      tagRepository.getAllIncludingDeleted(),
-      cardRepository.getAllIncludingDeleted(),
-    ]);
+    const [dedupedDecks, dedupedTopics, dedupedTags, dedupedCards, dedupedQuizHistory, dedupedDailyStats] =
+      await Promise.all([
+        deckRepository.getAllIncludingDeleted(),
+        topicRepository.getAllIncludingDeleted(),
+        tagRepository.getAllIncludingDeleted(),
+        cardRepository.getAllIncludingDeleted(),
+        aiQuizResultRepository.getAll(),
+        dailyStatRepository.getAll(),
+      ]);
     const dedupedSyncCards = await Promise.all(dedupedCards.map(cardToSyncCard));
 
     const syncedAt = Date.now();
@@ -380,6 +496,9 @@ export async function syncNow(options: { allowInteractiveFallback?: boolean } = 
       topics: dedupedTopics,
       tags: dedupedTags,
       cards: dedupedSyncCards,
+      quizHistory: dedupedQuizHistory,
+      dailyStats: dedupedDailyStats,
+      settings: settingsResult.merged,
     };
     await withTokenRetry((token) => uploadPayload(token, payload), options);
 
@@ -389,9 +508,19 @@ export async function syncNow(options: { allowInteractiveFallback?: boolean } = 
       deckResult.toApplyLocally.length +
       topicResult.toApplyLocally.length +
       tagResult.toApplyLocally.length +
-      cardResult.toApplyLocally.length;
+      cardResult.toApplyLocally.length +
+      quizResult.toApplyLocally.length +
+      dailyStatResult.toApplyLocally.length +
+      (settingsResult.toApplyLocally ? 1 : 0);
     const pushed =
-      dedupedDecks.length + dedupedTopics.length + dedupedTags.length + dedupedCards.length - pulled;
+      dedupedDecks.length +
+      dedupedTopics.length +
+      dedupedTags.length +
+      dedupedCards.length +
+      dedupedQuizHistory.length +
+      dedupedDailyStats.length +
+      1 - // the settings singleton
+      pulled;
 
     return { pulled, pushed, syncedAt };
   } catch (error) {

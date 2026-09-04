@@ -2,6 +2,7 @@
 import { ref, shallowRef } from 'vue';
 import ConfirmDialog from '@/components/app/ConfirmDialog.vue';
 import WarningIcon from '@/components/app/WarningIcon.vue';
+import BorderedCard from '@/components/common/BorderedCard.vue';
 import JsonImportPreviewModal from '@/components/import/JsonImportPreviewModal.vue';
 import JsonTextImportModal from '@/components/import/JsonTextImportModal.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
@@ -276,12 +277,7 @@ async function handleClearAll() {
 </script>
 
 <template>
-  <section class="relative mb-6 rounded-2xl border border-card-gold/20 bg-card-surface px-6 p-5">
-    <span class="pointer-events-none absolute top-3 left-3 h-4 w-4 rounded-tl border-t border-l border-card-gold/60" />
-    <span class="pointer-events-none absolute top-3 right-3 h-4 w-4 rounded-tr border-t border-r border-card-gold/60" />
-    <span class="pointer-events-none absolute bottom-3 left-3 h-4 w-4 rounded-bl border-b border-l border-card-gold/60" />
-    <span class="pointer-events-none absolute right-3 bottom-3 h-4 w-4 rounded-br border-r border-b border-card-gold/60" />
-
+  <BorderedCard class="mb-6">
     <h2 class="mb-1 font-serif text-lg font-bold text-card-gold">Backup &amp; Data</h2>
     <p class="mb-4 text-xs text-card-muted">
       Export everything into a single .zip file, or import one to restore or merge data on this or
@@ -395,14 +391,9 @@ async function handleClearAll() {
       <WarningIcon />
       {{ jsonImportError }}
     </p>
-  </section>
+  </BorderedCard>
 
-  <section class="relative rounded-2xl border border-card-gold/20 bg-card-surface px-6 p-5">
-    <span class="pointer-events-none absolute top-3 left-3 h-4 w-4 rounded-tl border-t border-l border-card-gold/60" />
-    <span class="pointer-events-none absolute top-3 right-3 h-4 w-4 rounded-tr border-t border-r border-card-gold/60" />
-    <span class="pointer-events-none absolute bottom-3 left-3 h-4 w-4 rounded-bl border-b border-l border-card-gold/60" />
-    <span class="pointer-events-none absolute right-3 bottom-3 h-4 w-4 rounded-br border-r border-b border-card-gold/60" />
-
+  <BorderedCard>
     <h2 class="mb-1 font-serif text-lg font-bold text-card-gold">Danger Zone</h2>
     <p class="mb-3 text-xs text-card-muted">
       Permanently deletes every deck, card, and tag on this device, and resets your settings. This
@@ -421,7 +412,7 @@ async function handleClearAll() {
       />
       Clear All Data
     </BaseButton>
-  </section>
+  </BorderedCard>
 
   <ConfirmDialog
     v-if="isConfirmingClear"

@@ -1,7 +1,13 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { settingsRepository } from '@/db/repositories';
-import { DEFAULT_SETTINGS, type AiConfigFields, type AppSettings, type SpeechAccent } from '@/types/settings';
+import {
+  DEFAULT_SETTINGS,
+  type AiConfigFields,
+  type AppSettings,
+  type ProficiencyLevel,
+  type SpeechAccent,
+} from '@/types/settings';
 
 export const useSettingsStore = defineStore('settings', () => {
   const settings = ref<AppSettings>({ ...DEFAULT_SETTINGS });
@@ -24,5 +30,17 @@ export const useSettingsStore = defineStore('settings', () => {
     settings.value = await settingsRepository.setSpeechAccent(accent);
   }
 
-  return { settings, isLoaded, fetchSettings, ensureLoaded, setAiConfig, setSpeechAccent };
+  async function setProficiencyLevel(level: ProficiencyLevel | null): Promise<void> {
+    settings.value = await settingsRepository.setProficiencyLevel(level);
+  }
+
+  return {
+    settings,
+    isLoaded,
+    fetchSettings,
+    ensureLoaded,
+    setAiConfig,
+    setSpeechAccent,
+    setProficiencyLevel,
+  };
 });

@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue';
 import { RouterLink } from 'vue-router';
 import AiSparkleIcon from '@/components/app/AiSparkleIcon.vue';
+import BorderedCard from '@/components/common/BorderedCard.vue';
 import StudyCtaBanner from '@/components/dashboard/StudyCtaBanner.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import { useCardStore } from '@/stores/card-store';
@@ -34,12 +35,7 @@ function deckCardCount(deckId: string): number {
     <template v-else>
       <StudyCtaBanner />
 
-      <section class="relative mb-8 rounded-2xl border border-card-gold/20 bg-card-surface p-6 py-5">
-        <span class="pointer-events-none absolute top-3 left-3 h-4 w-4 rounded-tl border-t border-l border-card-gold/60" />
-        <span class="pointer-events-none absolute top-3 right-3 h-4 w-4 rounded-tr border-t border-r border-card-gold/60" />
-        <span class="pointer-events-none absolute bottom-3 left-3 h-4 w-4 rounded-bl border-b border-l border-card-gold/60" />
-        <span class="pointer-events-none absolute right-3 bottom-3 h-4 w-4 rounded-br border-r border-b border-card-gold/60" />
-
+      <BorderedCard class="mb-8">
         <div class="mb-2 flex items-center justify-between">
           <h2 class="font-serif text-lg font-bold text-card-gold">Decks</h2>
           <BaseButton
@@ -66,7 +62,7 @@ function deckCardCount(deckId: string): number {
             No decks yet.
           </li>
         </ul>
-      </section>
+      </BorderedCard>
 
       <section>
         <h2 class="mb-2 text-sm font-semibold text-text">Sections</h2>

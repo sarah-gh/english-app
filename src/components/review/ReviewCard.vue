@@ -263,6 +263,14 @@ onBeforeUnmount(() => {
       <div class="flex items-start justify-between gap-3">
         <h2 class="font-serif text-3xl font-semibold text-card-gold">{{ card.frontTitle }}</h2>
         <div class="flex shrink-0 items-center gap-2">
+          <span
+            v-if="card.studyCount > 0"
+            class="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
+            :title="`Studied ${card.studyCount} time${card.studyCount === 1 ? '' : 's'}`"
+          >
+            <AppIcon icon-name="TickCircle" :size="12" />
+            {{ card.studyCount }}
+          </span>
           <button
             v-if="interactive"
             type="button"
@@ -371,10 +379,11 @@ onBeforeUnmount(() => {
           <button
             v-else
             type="button"
-            class="mt-4 rounded border-2 border-dashed border-card-gold/30 px-3 py-3 text-sm font-medium text-card-muted hover:border-primary hover:text-primary"
+            class="mt-4 flex w-full items-center justify-center gap-1.5 rounded border-2 border-dashed border-card-gold/30 px-3 py-3 text-sm font-medium text-card-muted hover:border-primary hover:text-primary"
             @pointerdown.stop
             @click.stop="revealAnswer"
           >
+            <AppIcon icon-name="Eye" :size="16" />
             Show Answer
           </button>
 

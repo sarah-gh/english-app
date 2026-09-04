@@ -63,7 +63,7 @@ cx="50" cy="50" :r="RADIUS" fill="none" stroke="currentColor" stroke-width="8" s
       </div>
 
       <div class="min-w-0 flex-1">
-        <p class="text-base font-semibold text-text">Daily Goal</p>
+        <p class="text-base font-semibold text-card-gold font-serif">Daily Goal</p>
         <p class="mt-1 text-[9px] w-2/3 leading-relaxed text-card-muted">{{ goalMessage }}</p>
 
         <div v-if="isEditingGoal" class="mt-3 flex items-center gap-2">

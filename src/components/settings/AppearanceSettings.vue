@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import BaseCard from '@/components/ui/BaseCard.vue';
+import SettingsSectionCard from '@/components/settings/SettingsSectionCard.vue';
 import BaseSegmentedToggle from '@/components/ui/BaseSegmentedToggle.vue';
 import { useThemeStore } from '@/stores/theme-store';
 import type { ThemeMode } from '@/services/theme/apply-theme';
@@ -18,11 +18,21 @@ function selectThemeMode(mode: ThemeMode) {
 </script>
 
 <template>
-  <BaseCard class="mb-6">
-    <h2 class="mb-3 text-sm font-semibold text-text">Appearance</h2>
+  <SettingsSectionCard
+    title="Appearance"
+    badge-class="bg-lime-400/10 text-lime-400"
+    description="Customize how Flashcards looks."
+  >
+    <template #icon>
+      <AppIcon
+        icon-name="Colorfilter"
+        :size="18"
+      />
+    </template>
     <p class="mb-2 text-xs font-medium text-text/60">Theme</p>
     <BaseSegmentedToggle
       class="mb-2"
+      tone="recessed"
       :model-value="themeStore.mode"
       :options="THEME_MODE_OPTIONS"
       @update:model-value="selectThemeMode"
@@ -34,5 +44,5 @@ function selectThemeMode(mode: ThemeMode) {
           : `Always ${themeStore.mode}, regardless of your device's setting.`
       }}
     </p>
-  </BaseCard>
+  </SettingsSectionCard>
 </template>

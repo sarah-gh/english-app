@@ -8,10 +8,12 @@ export const aiQuizResultRepository = {
   },
 
   async create(result: NewAiQuizResult): Promise<AiQuizResult> {
+    const timestamp = Date.now();
     const record: AiQuizResult = {
       ...result,
       id: crypto.randomUUID(),
-      createdAt: Date.now(),
+      createdAt: timestamp,
+      updatedAt: timestamp,
     };
     await db.aiQuizResults.add(record);
     return record;

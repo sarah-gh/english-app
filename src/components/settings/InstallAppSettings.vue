@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import SettingsSectionCard from '@/components/settings/SettingsSectionCard.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
-import BaseCard from '@/components/ui/BaseCard.vue';
 import { isInstallable, isStandalone, promptInstall } from '@/services/pwa/install-prompt';
 
 async function handleInstallClick() {
@@ -9,21 +9,29 @@ async function handleInstallClick() {
 </script>
 
 <template>
-  <BaseCard
+  <SettingsSectionCard
     v-if="!isStandalone"
-    class="mb-6"
+    title="Install Application"
+    description="Install Flashcards on this device for quick access and a full-screen, offline-ready experience."
+    badge-class="bg-emerald-500/10 text-emerald-500"
   >
-    <h2 class="mb-1 text-sm font-semibold text-text">Install Application</h2>
-    <p class="mb-3 text-xs text-text/50">
-      Install Flashcards on this device for quick access and a full-screen, offline-ready
-      experience.
-    </p>
+    <template #icon>
+      <AppIcon
+        icon-name="DocumentDownload"
+        :size="18"
+      />
+    </template>
     <BaseButton
       variant="primary"
       size="sm"
+      class="rounded-xl!"
       :disabled="!isInstallable"
       @click="handleInstallClick"
     >
+      <AppIcon
+        icon-name="DocumentDownload"
+        :size="14"
+      />
       Install Application
     </BaseButton>
     <p
@@ -33,5 +41,5 @@ async function handleInstallClick() {
       Not available right now — your browser may not support installation, or it may already be
       installed.
     </p>
-  </BaseCard>
+  </SettingsSectionCard>
 </template>

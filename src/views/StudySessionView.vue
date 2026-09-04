@@ -144,8 +144,16 @@ function studyAnotherBatch() {
       v-if="!studySessionStore.hasCards"
       class="flex flex-1 flex-col items-center justify-center gap-4 text-center"
     >
-      <p class="text-base font-medium text-text">Nothing to study here.</p>
-      <p class="text-sm text-text/50">Try a different deck, topic, or add more cards.</p>
+      <p class="text-base font-medium text-text">
+        {{ studySessionStore.viewMode === 'practice' ? 'Nothing to practice here yet.' : 'Nothing to study here.' }}
+      </p>
+      <p class="text-sm text-text/50">
+        {{
+          studySessionStore.viewMode === 'practice'
+            ? 'Only cards you have studied at least once will appear in Practice mode. Study this deck first, or add more cards.'
+            : 'Try a different deck, topic, or add more cards.'
+        }}
+      </p>
       <button
         type="button"
         class="rounded bg-primary px-4 py-2 text-sm font-medium text-background hover:bg-primary/90"

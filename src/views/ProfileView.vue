@@ -53,7 +53,7 @@ const statusCounts = computed(() => ({
         </StatTile>
         <StatTile :value="statusCounts.hard" label="Hard" value-class="text-accent">
           <template #icon>
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+            <svg viewBox="2 2 18 18" width="22" height="22" fill="currentColor" aria-hidden="true">
               <path
                 d="M12 2c.3 2.6-1 4-2.4 5.5C8.2 8.9 7 10.5 7 13a5 5 0 0 0 10 0c0-1.7-.7-2.9-1.5-4 .1 1.3-.3 2.2-1 2.7.3-2.5-.6-4.4-2.5-5.7C12.4 4.7 12.2 3.3 12 2Z"
               />

@@ -64,7 +64,11 @@ export const useStudySessionStore = defineStore('study-session', () => {
   const startedAt = ref(0);
   const finishedAt = ref<number | null>(null);
 
-  const hasCards = computed(() => totalSlots.value > 0);
+  // `totalSlots` is the uncapped session-size budget, not the actual candidate count (see its own
+  // doc comment) — using it here meant a genuinely empty candidate pool (e.g. a Practice session
+  // for a deck with no studied cards yet) still reported `hasCards: true`, so the "Nothing to
+  // study here" empty state below never actually triggered for that case.
+  const hasCards = computed(() => totalSessionCards.value > 0);
   const currentCard = computed(() => currentChunk.value[chunkCardIndex.value]);
   const nextCard = computed(() => currentChunk.value[chunkCardIndex.value + 1]);
   const canUndo = computed(() => lastAction.value !== null);
@@ -76,6 +80,9 @@ export const useStudySessionStore = defineStore('study-session', () => {
     const candidates = cardStore.cards.filter((card) => {
       if (config.deckId && card.deckId !== config.deckId) return false;
       if (config.topicId && card.topicId !== config.topicId) return false;
+      // Practice tests retention — a card has to have gone through a Study-mode session at least
+      // once (see `advance` below) before it's eligible to be tested on.
+      if (initialViewMode === 'practice' && card.studyCount === 0) return false;
       return true;
     });
 
@@ -140,11 +147,15 @@ export const useStudySessionStore = defineStore('study-session', () => {
 
   /** Study mode's plain "Next" — moves to the next card without recording a Known/Not Known
    *  assessment (that's Practice mode's job, via `swipe`), but still counts toward the session's
-   *  studied total and still hands off to the matching quiz once the chunk is done. */
+   *  studied total and still hands off to the matching quiz once the chunk is done. Also bumps the
+   *  card just paged past `studyCount` by 1 — reaching `> 0` is what makes a card eligible for a
+   *  future Practice session's candidate pool (see `start` above). */
   function advance(): void {
-    if (!currentCard.value) return;
+    const card = currentCard.value;
+    if (!card) return;
 
     lastAction.value = null;
+    void useCardStore().incrementStudyCount(card.id);
     chunkCardIndex.value += 1;
     totalStudied.value += 1;
 

@@ -62,6 +62,12 @@ export const useCardStore = defineStore('cards', () => {
     if (card) card.reviewStatus = status;
   }
 
+  async function incrementStudyCount(id: string): Promise<void> {
+    await cardRepository.incrementStudyCount(id);
+    const card = getById(id);
+    if (card) card.studyCount += 1;
+  }
+
   async function remove(id: string): Promise<void> {
     await cardRepository.delete(id);
     cards.value = cards.value.filter((card) => card.id !== id);
@@ -95,6 +101,7 @@ export const useCardStore = defineStore('cards', () => {
     addMany,
     edit,
     setReviewStatus,
+    incrementStudyCount,
     recordMatchResult,
     remove,
   };

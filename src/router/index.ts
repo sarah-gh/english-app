@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import AiQuizSetupView from '@/views/AiQuizSetupView.vue'
 import AiQuizView from '@/views/AiQuizView.vue'
+import AllCardsView from '@/views/AllCardsView.vue'
 import CardBrowseCardsView from '@/views/CardBrowseCardsView.vue'
 import CardBrowseDecksView from '@/views/CardBrowseDecksView.vue'
 import CardEditorView from '@/views/CardEditorView.vue'
@@ -18,6 +19,7 @@ const router = createRouter({
   routes: [
     { path: '/', name: 'dashboard', component: DashboardView },
     { path: '/cards', name: 'card-browse-decks', component: CardBrowseDecksView },
+    { path: '/cards/all', name: 'card-browse-all', component: AllCardsView },
     { path: '/cards/new', name: 'card-create', component: CardEditorView },
     { path: '/cards/import', name: 'card-import', component: CardImportView },
     { path: '/cards/:id/edit', name: 'card-edit', component: CardEditorView },
@@ -35,6 +37,12 @@ const router = createRouter({
     { path: '/ai-quiz', name: 'ai-quiz-setup', component: AiQuizSetupView },
     { path: '/ai-quiz/session', name: 'ai-quiz-session', component: AiQuizView },
   ],
+})
+
+// Vue Router preserves scroll position across navigations by default; without this the user lands
+// mid-page on the next view whenever the previous one had been scrolled down.
+router.afterEach(() => {
+  window.scrollTo(0, 0)
 })
 
 export default router

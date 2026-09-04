@@ -15,6 +15,9 @@ withDefaults(
     rows?: number;
     /** Iconsax icon name shown as a leading glyph inside the field (e.g. "SearchNormal1"). */
     icon?: string;
+    /** Overrides the field's border/background classes (default: `border-text/20`, transparent
+     *  background) — e.g. a darker "recessed" look for the Settings view's redesign. */
+    inputClass?: string;
   }>(),
   {
     label: undefined,
@@ -25,6 +28,7 @@ withDefaults(
     required: false,
     rows: undefined,
     icon: undefined,
+    inputClass: undefined,
   },
 );
 
@@ -55,7 +59,8 @@ const inputId = useId();
       :disabled="disabled"
       :required="required"
       :rows="rows"
-      class="w-full rounded border border-text/20 px-3 py-2 text-sm focus:border-primary focus:outline-none disabled:bg-text/5"
+      class="w-full rounded px-3 py-2 text-sm focus:border-primary focus:outline-none disabled:bg-text/5"
+      :class="inputClass ?? 'border border-text/20'"
       @input="$emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)"
     />
     <div
@@ -75,8 +80,8 @@ const inputId = useId();
         :placeholder="placeholder"
         :disabled="disabled"
         :required="required"
-        class="w-full rounded border border-text/20 py-2 text-sm focus:border-primary focus:outline-none disabled:bg-text/5"
-        :class="icon ? 'pl-8 pr-3' : 'px-3'"
+        class="w-full rounded py-2 text-sm focus:border-primary focus:outline-none disabled:bg-text/5"
+        :class="[icon ? 'pl-8 pr-3' : 'px-3', inputClass ?? 'border border-text/20']"
         @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
       />
     </div>

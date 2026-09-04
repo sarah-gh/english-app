@@ -1,14 +1,20 @@
 import { cardRepository, deckRepository, tagRepository, topicRepository } from '@/db/repositories';
-import { deduplicateByName, healReference } from '@/services/sync/merge';
+import { deduplicateByName, deduplicateCards, healReference } from '@/services/sync/merge';
 import type { Card } from '@/types/card';
 
 /**
- * Collapses Deck/Topic/Tag rows that share a normalized name but different ids — the situation two
- * independently-seeded or independently-created devices produce (e.g. both create a "Grammar"
- * deck), which the id-based sync merge can't detect on its own since it only ever reconciles
- * records that already share an id. Redundant rows are soft-deleted (never hard-removed — the
- * usual 30-day tombstone GC still applies to them), and every Card/Topic that referenced one is
- * re-pointed to the surviving row.
+ * Collapses Deck/Topic/Tag rows that share a normalized name but different ids, and Cards that
+ * share a deck and normalized front text but different ids — the situation two independently
+ * seeded or independently created devices produce (e.g. both create a "Grammar" deck, or both get
+ * the same default card), which the id-based sync merge can't detect on its own since it only ever
+ * reconciles records that already share an id. Redundant rows are soft-deleted (never hard-removed
+ * — the usual 30-day tombstone GC still applies to them), and every Card/Topic that referenced a
+ * deduplicated Deck/Topic/Tag is re-pointed to the surviving row.
+ *
+ * Card deduplication runs *after* the Deck/Topic/Tag dedup and reference healing below, against
+ * the healed `deckId`s — otherwise two duplicate cards that each still point at a different,
+ * not-yet-collapsed duplicate deck id would look like they belong to different decks and never get
+ * grouped together.
  *
  * Purely local — reads and writes only this device's IndexedDB, no network involved. `syncNow`
  * calls this right after merging local and remote data (so cross-device duplicates are visible to
@@ -51,6 +57,7 @@ export async function deduplicateLocalData(): Promise<void> {
 
     return { ...card, deckId: healedDeckId, topicId: healedTopicId, tagIds: healedTagIds, updatedAt: now };
   });
+  const dedupedCards = deduplicateCards(healedCards);
 
   // Index-aligned with the original reads throughout (every transform above preserves order and
   // length), and every unchanged entity kept its original object reference — so a plain `!==`
@@ -58,7 +65,7 @@ export async function deduplicateLocalData(): Promise<void> {
   const changedDecks = dedupedDecks.filter((deck, index) => deck !== decks[index]);
   const changedTopics = dedupedTopics.filter((topic, index) => topic !== topics[index]);
   const changedTags = dedupedTags.filter((tag, index) => tag !== tags[index]);
-  const changedCards = healedCards.filter((card, index) => card !== cards[index]);
+  const changedCards = dedupedCards.filter((card, index) => card !== cards[index]);
 
   await Promise.all([
     changedDecks.length > 0 ? deckRepository.bulkPut(changedDecks) : undefined,

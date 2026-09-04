@@ -5,6 +5,7 @@ import AiProviderSettings from '@/components/settings/AiProviderSettings.vue';
 import AppearanceSettings from '@/components/settings/AppearanceSettings.vue';
 import DailyGoalSettings from '@/components/settings/DailyGoalSettings.vue';
 import InstallAppSettings from '@/components/settings/InstallAppSettings.vue';
+import ProficiencyLevelSettings from '@/components/settings/ProficiencyLevelSettings.vue';
 import PronunciationSettings from '@/components/settings/PronunciationSettings.vue';
 import { useSettingsStore } from '@/stores/settings-store';
 
@@ -32,6 +33,7 @@ onMounted(async () => {
     <template v-else>
       <AppearanceSettings />
       <PronunciationSettings />
+      <ProficiencyLevelSettings />
       <DailyGoalSettings />
       <AiProviderSettings />
       <InstallAppSettings />

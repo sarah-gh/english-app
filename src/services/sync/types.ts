@@ -1,5 +1,8 @@
+import type { AiQuizResult } from '@/types/ai-quiz-result';
 import type { Card } from '@/types/card';
+import type { DailyStat } from '@/types/daily-stat';
 import type { Deck } from '@/types/deck';
+import type { AppSettings } from '@/types/settings';
 import type { Tag } from '@/types/tag';
 import type { Topic } from '@/types/topic';
 
@@ -20,15 +23,46 @@ export interface SyncPayload {
   topics: Topic[];
   tags: Tag[];
   cards: SyncCard[];
+  /** Optional only so a payload downloaded from before AI Quiz History synced (version 1) doesn't
+   *  fail to parse — treated the same as an empty array wherever it's read. */
+  quizHistory?: AiQuizResult[];
+  /** Optional for the same reason as `quizHistory` — absent in payloads from before version 3.
+   *  Merged with `mergeDailyStats`, not `mergeById` (see its own doc comment for why). */
+  dailyStats?: DailyStat[];
+  /** The singleton app-settings record — carries the daily study goal and CEFR proficiency level
+   *  between devices, among other preferences. Optional for the same reason as `quizHistory` —
+   *  absent in payloads from before version 4. Resolved with `mergeSingleton` (whole-record
+   *  last-write-wins by `updatedAt`), not `mergeById`, since there's exactly one record rather than
+   *  a collection. */
+  settings?: AppSettings;
 }
 
-export const SYNC_PAYLOAD_VERSION = 1;
+/** Bumped for the `quizHistory` (v2), `dailyStats` (v3), and `settings` (v4) additions — still
+ *  only a diagnostic marker (see `SyncPayload`'s own `updatedAt` doc comment), nothing branches on
+ *  the number itself. */
+export const SYNC_PAYLOAD_VERSION = 4;
 
 export function emptySyncPayload(): SyncPayload {
-  return { version: SYNC_PAYLOAD_VERSION, updatedAt: 0, decks: [], topics: [], tags: [], cards: [] };
+  return {
+    version: SYNC_PAYLOAD_VERSION,
+    updatedAt: 0,
+    decks: [],
+    topics: [],
+    tags: [],
+    cards: [],
+    quizHistory: [],
+    dailyStats: [],
+    settings: undefined,
+  };
 }
 
 /** Why a token request failed, from GIS's own signals:
+ *  - `refresh_required` — not a GIS signal at all: the cached token is missing or spent and the
+ *    caller had no user gesture to spend, so no token request was even attempted. Every GIS token
+ *    path opens a real browser window (see `requestAccessToken`'s doc comment), and a window opened
+ *    from a timer or a page load is exactly the flash this reason exists to prevent. The session
+ *    itself is almost certainly still fine — the user's next "Sync Now" click resolves it silently
+ *    — so this must never be surfaced as "sign-in expired".
  *  - `interaction_required` — a silent (`prompt: 'none'`) request came back and Google explicitly
  *    says it can't complete without the user present (expired/revoked session).
  *  - `cancelled` — GIS's `error_callback` reported `popup_closed`. For an *interactive*
@@ -43,8 +77,18 @@ export function emptySyncPayload(): SyncPayload {
  *    wasn't triggered by a user gesture (a background sync, not a button click). Retrying
  *    anything here — silent or interactive — hits the same block, so the only way forward is a
  *    fresh, real click from the user.
+ *  - `timeout` — GIS neither resolved nor reported an error within the request's time budget. Its
+ *    callbacks are one-shot and fire-and-forget: if the window is dismissed in a way GIS doesn't
+ *    observe, neither `callback` nor `error_callback` ever runs, and without this the awaiting
+ *    promise would hang for the life of the tab (taking the sync spinner with it).
  *  - `unknown` — anything else (network hiccup inside the GIS flow, unexpected response shape). */
-export type SyncAuthFailureReason = 'interaction_required' | 'popup_blocked' | 'cancelled' | 'unknown';
+export type SyncAuthFailureReason =
+  | 'refresh_required'
+  | 'interaction_required'
+  | 'popup_blocked'
+  | 'cancelled'
+  | 'timeout'
+  | 'unknown';
 
 /** Google sign-in didn't happen, was cancelled, or the token could not be refreshed silently. */
 export class SyncAuthError extends Error {

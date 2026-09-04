@@ -1,5 +1,8 @@
 export type SpeechAccent = 'en-US' | 'en-GB';
 
+/** CEFR self-assessed English proficiency level, used to tailor AI Quiz difficulty/wording. */
+export type ProficiencyLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
+
 /** AI backends the Quiz Generator and Card Auto-Fill can call directly. */
 export type ConcreteAiProvider = 'google' | 'groq' | 'openrouter' | 'aihubmix';
 
@@ -42,6 +45,11 @@ export interface AppSettings {
 
   /** Target number of cards to study per day, shown as a progress ring on the Dashboard. */
   dailyGoalCards: number;
+
+  /** Self-assessed CEFR level, `null` if the user hasn't set one yet. Passed to the AI Quiz
+   *  generator so questions/explanations match the learner's level. */
+  proficiencyLevel: ProficiencyLevel | null;
+
   updatedAt: number;
 }
 
@@ -73,7 +81,7 @@ export const DEFAULT_AIHUBMIX_BASE_URL = 'https://aihubmix.com';
 export const DEFAULT_SETTINGS: AppSettings = {
   id: SETTINGS_ID,
   speechAccent: 'en-US',
-  aiProvider: 'google',
+  aiProvider: 'groq',
   googleApiKey: null,
   groqApiKey: null,
   groqBaseUrl: DEFAULT_GROQ_BASE_URL,
@@ -87,5 +95,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
   fallbackBackupProvider: 'groq',
   hasSeededInitialData: false,
   dailyGoalCards: 15,
+  proficiencyLevel: null,
   updatedAt: 0,
 };

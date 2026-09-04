@@ -133,5 +133,75 @@ export class AppDatabase extends Dexie {
             if (tag.isDeleted === undefined) tag.isDeleted = false;
           });
       });
+
+    // v5: adds `updatedAt` to AiQuizResult so Cloud Sync can merge quiz history the same
+    // last-write-wins way as every other synced entity (see `mergeById`).
+    this.version(5)
+      .stores({
+        cards: 'id, deckId, topicId, reviewStatus, *tagIds, createdAt',
+        decks: 'id, name, createdAt',
+        tags: 'id, name',
+        topics: 'id, deckId, name, createdAt',
+        aiQuizResults: 'id, createdAt',
+        dailyStats: 'date',
+        settings: 'id',
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table<AiQuizResult, string>('aiQuizResults')
+          .toCollection()
+          .modify((result) => {
+            if (result.updatedAt === undefined) result.updatedAt = result.createdAt;
+          });
+      });
+
+    // v6: adds `isStudied` to Card — a one-way flag set once a card has been paged through in a
+    // Study-mode session, gating whether it can appear in a Practice-mode session. Existing cards
+    // default to `false` (nothing "studied" them under this new tracking yet), matching how a
+    // brand-new card starts.
+    this.version(6)
+      .stores({
+        cards: 'id, deckId, topicId, reviewStatus, *tagIds, createdAt',
+        decks: 'id, name, createdAt',
+        tags: 'id, name',
+        topics: 'id, deckId, name, createdAt',
+        aiQuizResults: 'id, createdAt',
+        dailyStats: 'date',
+        settings: 'id',
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table<Card & { isStudied?: boolean }, string>('cards')
+          .toCollection()
+          .modify((card) => {
+            if (card.isStudied === undefined) card.isStudied = false;
+          });
+      });
+
+    // v7: replaces Card's `isStudied` boolean (added in v6, moments before this app ever shipped
+    // with it) with a `studyCount` counter — incremented once per Study-mode completion instead of
+    // just flipped true, so Cloud Sync can merge two devices' independent study reps with
+    // `Math.max` instead of one device's count winning outright and the other's being discarded
+    // (see `mergeCards`). `isStudied: true` becomes `studyCount: 1` — "has been studied" with no
+    // way to know how many times under the old tracking, so 1 is the honest floor.
+    this.version(7)
+      .stores({
+        cards: 'id, deckId, topicId, reviewStatus, *tagIds, createdAt',
+        decks: 'id, name, createdAt',
+        tags: 'id, name',
+        topics: 'id, deckId, name, createdAt',
+        aiQuizResults: 'id, createdAt',
+        dailyStats: 'date',
+        settings: 'id',
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table<Card & { isStudied?: boolean }, string>('cards')
+          .toCollection()
+          .modify((card) => {
+            if (card.studyCount === undefined) card.studyCount = card.isStudied ? 1 : 0;
+            delete card.isStudied;
+          });
+      });
   }
 }

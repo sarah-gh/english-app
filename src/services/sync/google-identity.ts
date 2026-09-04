@@ -75,6 +75,13 @@ export function loadGoogleIdentityScript(): Promise<void> {
 
 let tokenClient: GoogleTokenClient | null = null;
 
+/** Ceilings on how long to wait for GIS to answer before giving up (see the `settle` comment in
+ *  `requestAccessToken`). The interactive budget has to cover a human actually signing in —
+ *  picking an account, typing a password, clearing 2FA — so it's generous; a silent request either
+ *  completes against the existing session almost immediately or not at all. */
+const INTERACTIVE_TIMEOUT_MS = 120_000;
+const SILENT_TIMEOUT_MS = 20_000;
+
 async function getTokenClient(clientId: string): Promise<GoogleTokenClient> {
   await loadGoogleIdentityScript();
   if (!tokenClient) {
@@ -111,33 +118,59 @@ export async function requestAccessToken(
   const client = await getTokenClient(clientId);
 
   return new Promise((resolve, reject) => {
+    // GIS's `callback`/`error_callback` are plain assignable properties on a client we reuse
+    // across calls, and it guarantees nothing about firing exactly one of them exactly once. A
+    // window closed in a way GIS doesn't observe fires neither, which would leave this promise
+    // pending forever — and since `syncNow` awaits it behind the `isSyncing` flag, "forever" means
+    // a sync spinner that never stops. `settle` collapses all three outcomes (success, reported
+    // failure, no answer at all) into a single first-one-wins resolution.
+    let settled = false;
+    const settle = (apply: () => void) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeoutId);
+      apply();
+    };
+
+    const timeoutId = setTimeout(
+      () =>
+        settle(() =>
+          reject(new SyncAuthError('Google sign-in timed out. Please try again.', 'timeout')),
+        ),
+      options.interactive ? INTERACTIVE_TIMEOUT_MS : SILENT_TIMEOUT_MS,
+    );
+
     client.callback = (response) => {
-      if (response.error || !response.access_token) {
-        const reason: SyncAuthFailureReason = response.error === 'interaction_required' ? 'interaction_required' : 'unknown';
-        reject(
-          new SyncAuthError(
-            options.interactive
-              ? 'Google sign-in was cancelled or failed.'
-              : 'Your Google session needs to be refreshed.',
-            reason,
-          ),
-        );
-        return;
-      }
-      resolve({
-        accessToken: response.access_token,
-        expiresAt: Date.now() + (response.expires_in ?? 3600) * 1000,
+      settle(() => {
+        if (response.error || !response.access_token) {
+          const reason: SyncAuthFailureReason = response.error === 'interaction_required' ? 'interaction_required' : 'unknown';
+          reject(
+            new SyncAuthError(
+              options.interactive
+                ? 'Google sign-in was cancelled or failed.'
+                : 'Your Google session needs to be refreshed.',
+              reason,
+            ),
+          );
+          return;
+        }
+        resolve({
+          accessToken: response.access_token,
+          expiresAt: Date.now() + (response.expires_in ?? 3600) * 1000,
+        });
       });
     };
     client.error_callback = (error) => {
       const reason: SyncAuthFailureReason =
         error.type === 'popup_failed_to_open' ? 'popup_blocked' : error.type === 'popup_closed' ? 'cancelled' : 'unknown';
-      reject(
-        new SyncAuthError(
-          reason === 'popup_blocked'
-            ? "Google sign-in couldn't open — check your browser's popup blocker."
-            : 'Google sign-in was cancelled or failed.',
-          reason,
+      settle(() =>
+        reject(
+          new SyncAuthError(
+            reason === 'popup_blocked'
+              ? "Google sign-in couldn't open — check your browser's popup blocker."
+              : 'Google sign-in was cancelled or failed.',
+            reason,
+          ),
         ),
       );
     };

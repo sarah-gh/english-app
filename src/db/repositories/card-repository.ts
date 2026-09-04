@@ -50,6 +50,7 @@ export const cardRepository = {
       id: crypto.randomUUID(),
       reviewStatus: 'new',
       reviewStats: { ...DEFAULT_REVIEW_STATS },
+      studyCount: 0,
       createdAt: timestamp,
       updatedAt: timestamp,
       isDeleted: false,
@@ -66,6 +67,7 @@ export const cardRepository = {
       id: crypto.randomUUID(),
       reviewStatus: 'new',
       reviewStats: { ...DEFAULT_REVIEW_STATS },
+      studyCount: 0,
       createdAt: timestamp,
       updatedAt: timestamp,
       isDeleted: false,
@@ -80,6 +82,15 @@ export const cardRepository = {
 
   async setReviewStatus(id: string, status: ReviewStatus): Promise<void> {
     await db.cards.update(id, { reviewStatus: status, updatedAt: Date.now() });
+  },
+
+  /** Bumps a card's `studyCount` by 1 — called once per card completed in a Study-mode session
+   *  (see `study-session-store.ts`'s `advance`). A card needs `studyCount > 0` to be eligible for
+   *  a Practice-mode session. */
+  async incrementStudyCount(id: string): Promise<void> {
+    const card = await db.cards.get(id);
+    if (!card) return;
+    await db.cards.update(id, { studyCount: card.studyCount + 1, updatedAt: Date.now() });
   },
 
   /** Records the outcome of one card's mini matching-quiz attempt: bumps `timesReviewed`,

@@ -75,6 +75,12 @@ export interface Card {
   imageBlob?: Blob;
   reviewStatus: ReviewStatus;
   reviewStats: CardReviewStats;
+  /** Incremented by 1 each time a card is completed in a Study-mode session (see
+   *  `study-session-store.ts`'s `advance`) — never decremented. Practice-mode sessions filter
+   *  their candidate pool to `studyCount > 0`, so a card has to be studied at least once before it
+   *  can be tested on. Merged across devices with `Math.max`, not last-write-wins (see
+   *  `mergeCards`), so a device's study reps are never silently discarded by a sync. */
+  studyCount: number;
   createdAt: number;
   updatedAt: number;
   /** Soft-delete flag — set instead of removing the row outright, so a deletion on one device can
@@ -85,6 +91,6 @@ export interface Card {
 
 export type NewCard = Omit<
   Card,
-  'id' | 'reviewStatus' | 'reviewStats' | 'createdAt' | 'updatedAt' | 'isDeleted'
+  'id' | 'reviewStatus' | 'reviewStats' | 'studyCount' | 'createdAt' | 'updatedAt' | 'isDeleted'
 >;
 export type CardUpdate = Partial<Omit<Card, 'id' | 'createdAt'>>;

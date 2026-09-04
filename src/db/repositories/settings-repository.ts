@@ -67,4 +67,16 @@ export const settingsRepository = {
   async setSpeechAccent(accent: AppSettings['speechAccent']): Promise<AppSettings> {
     return settingsRepository.update({ speechAccent: accent });
   },
+
+  async setProficiencyLevel(level: AppSettings['proficiencyLevel']): Promise<AppSettings> {
+    return settingsRepository.update({ proficiencyLevel: level });
+  },
+
+  /** Used by Cloud Sync only: writes the record as-is, preserving the incoming `updatedAt` instead
+   *  of stamping a new one — the merge that produced `settings` already resolved which side's
+   *  timestamp wins (see `mergeSingleton`), and re-stamping here would make this device's copy look
+   *  newer than it actually is on the next sync. */
+  async replace(settings: AppSettings): Promise<void> {
+    await db.settings.put(settings);
+  },
 };

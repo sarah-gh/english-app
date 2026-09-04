@@ -24,6 +24,11 @@ const isVisible = defineModel<boolean>('isVisible', { required: true });
 
 const emit = defineEmits<{ clear: [] }>();
 
+/** A subtle "recessed" tint in light mode (`slate-950` has no light-mode token override, so used
+ *  bare it renders as a flat, overly heavy gray) and a proper dark inset well once `.dark` is
+ *  active — shared by every input in this field for a consistent recessed look. */
+const RECESSED_INPUT_CLASS = 'border border-text/10 bg-black/5 dark:bg-slate-950/60';
+
 /** e.g. "sk-•••••••57Ca" — first 3 and last 4 characters, so a saved key is verifiable without
  *  fully exposing it. */
 const maskedPreview = computed(() => {
@@ -35,7 +40,7 @@ const maskedPreview = computed(() => {
 </script>
 
 <template>
-  <div class="mb-4 rounded border border-text/10 p-3">
+  <div class="mt-3 mb-4 rounded-xl border border-text/5 bg-black/3 p-4 dark:bg-slate-950/30">
     <div class="mb-2 flex items-center justify-between gap-2">
       <p class="text-xs font-medium text-text/60">{{ title }}</p>
       <a
@@ -53,8 +58,12 @@ const maskedPreview = computed(() => {
       v-if="storedKey"
       class="mb-2 flex items-center gap-1.5 text-xs"
     >
-      <span class="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 font-medium text-background">
-        ✓ Key Saved
+      <span class="inline-flex items-center gap-1 rounded-lg bg-primary/20 px-2.5 py-1 font-medium text-primary">
+        <AppIcon
+          icon-name="TickCircle"
+          :size="12"
+        />
+        Key Saved
       </span>
       <span class="font-mono text-text/50">{{ maskedPreview }}</span>
     </div>
@@ -64,12 +73,13 @@ const maskedPreview = computed(() => {
         v-model="apiKey"
         :type="isVisible ? 'text' : 'password'"
         :placeholder="keyPlaceholder"
+        :input-class="RECESSED_INPUT_CLASS"
         class="w-full"
       />
       <BaseButton
         variant="ghost"
         size="sm"
-        class="shrink-0"
+        class="shrink-0 rounded-xl!"
         :aria-label="isVisible ? 'Hide API key' : 'Show API key'"
         @click="isVisible = !isVisible"
       >
@@ -100,12 +110,14 @@ const maskedPreview = computed(() => {
       v-model="baseUrl"
       label="Base URL"
       :placeholder="baseUrlPlaceholder"
+      :input-class="RECESSED_INPUT_CLASS"
       class="mt-3 w-full"
     />
     <BaseInput
       v-if="model !== undefined"
       v-model="model"
       label="Model"
+      :input-class="RECESSED_INPUT_CLASS"
       class="mt-3 w-full"
     />
   </div>

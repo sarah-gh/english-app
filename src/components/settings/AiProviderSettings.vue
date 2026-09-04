@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue';
+import AiSparkleIcon from '@/components/app/AiSparkleIcon.vue';
 import ApiKeyField from '@/components/settings/ApiKeyField.vue';
+import SettingsSectionCard from '@/components/settings/SettingsSectionCard.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
-import BaseCard from '@/components/ui/BaseCard.vue';
 import BaseSelect from '@/components/ui/BaseSelect.vue';
 import { AiProviderError } from '@/services/ai/errors';
 import { testProviderConnection } from '@/services/ai/test-connection';
@@ -34,7 +35,7 @@ const CONCRETE_PROVIDER_OPTIONS: { value: ConcreteAiProvider; label: string }[] 
   { value: 'aihubmix', label: 'AIHubMix' },
 ];
 
-const aiProviderDraft = ref<AiProvider>('google');
+const aiProviderDraft = ref<AiProvider>('groq');
 const fallbackPrimaryDraft = ref<ConcreteAiProvider>('google');
 const fallbackBackupDraft = ref<ConcreteAiProvider>('groq');
 
@@ -202,17 +203,20 @@ async function clearAihubmixKey() {
 </script>
 
 <template>
-  <BaseCard class="mb-6">
-    <h2 class="mb-1 text-sm font-semibold text-text">AI Quiz Generator</h2>
-    <p class="mb-3 text-xs text-text/50">
-      Configure the provider(s) used to generate quizzes and auto-fill cards. Keys are stored only
-      on this device — never included in exports.
-    </p>
+  <SettingsSectionCard
+    title="AI Quiz Generator"
+    description="Configure the provider(s) used to generate quizzes and auto-fill cards. Keys are stored only on this device."
+    badge-class="bg-violet-500/10 text-violet-400"
+  >
+    <template #icon>
+      <AiSparkleIcon :size="18" />
+    </template>
 
     <BaseSelect
       :model-value="aiProviderDraft"
       label="Active Provider"
       class="mb-4"
+      trigger-class="border-text/10 bg-black/5 dark:bg-slate-950/40 rounded-xl"
       :options="PROVIDER_MODE_OPTIONS"
       @update:model-value="(value) => selectAiProvider(value as AiProvider)"
     />
@@ -227,12 +231,14 @@ async function clearAihubmixKey() {
         <BaseSelect
           :model-value="fallbackPrimaryDraft"
           label="Primary Provider"
+          trigger-class="border-text/10 bg-black/5 dark:bg-slate-950/40 rounded-xl"
           :options="CONCRETE_PROVIDER_OPTIONS"
           @update:model-value="(value) => selectFallbackPrimary(value as ConcreteAiProvider)"
         />
         <BaseSelect
           :model-value="fallbackBackupDraft"
           label="Backup Provider"
+          trigger-class="border-text/10 bg-black/5 dark:bg-slate-950/40 rounded-xl"
           :options="CONCRETE_PROVIDER_OPTIONS"
           @update:model-value="(value) => selectFallbackBackup(value as ConcreteAiProvider)"
         />
@@ -253,6 +259,7 @@ async function clearAihubmixKey() {
         <BaseButton
           variant="ghost"
           size="sm"
+          class="rounded-xl!"
           :loading="testStatus.google.status === 'testing'"
           @click="runTest('google')"
         >
@@ -290,6 +297,7 @@ async function clearAihubmixKey() {
         <BaseButton
           variant="ghost"
           size="sm"
+          class="rounded-xl!"
           :loading="testStatus.groq.status === 'testing'"
           @click="runTest('groq')"
         >
@@ -327,6 +335,7 @@ async function clearAihubmixKey() {
         <BaseButton
           variant="ghost"
           size="sm"
+          class="rounded-xl!"
           :loading="testStatus.openrouter.status === 'testing'"
           @click="runTest('openrouter')"
         >
@@ -363,6 +372,7 @@ async function clearAihubmixKey() {
         <BaseButton
           variant="ghost"
           size="sm"
+          class="rounded-xl!"
           :loading="testStatus.aihubmix.status === 'testing'"
           @click="runTest('aihubmix')"
         >
@@ -387,8 +397,13 @@ async function clearAihubmixKey() {
       <BaseButton
         variant="primary"
         size="sm"
+        class="rounded-xl!"
         @click="saveAiConfig"
       >
+        <AppIcon
+          icon-name="TickCircle"
+          :size="14"
+        />
         Save
       </BaseButton>
       <span
@@ -398,5 +413,5 @@ async function clearAihubmixKey() {
         ✓ {{ aiConfigStatus }}
       </span>
     </div>
-  </BaseCard>
+  </SettingsSectionCard>
 </template>

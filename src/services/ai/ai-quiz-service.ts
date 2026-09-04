@@ -68,7 +68,7 @@ export async function generateMultipleChoiceQuiz(
   cards: Card[],
   questionCount: number,
 ): Promise<GeneratedMultipleChoiceQuestion[]> {
-  const prompt = buildMultipleChoiceQuizPrompt(cards, questionCount);
+  const prompt = buildMultipleChoiceQuizPrompt(cards, questionCount, settings.proficiencyLevel);
   return runQuizRequest(
     settings,
     prompt,
@@ -85,7 +85,7 @@ export async function generateDescriptiveQuiz(
   cards: Card[],
   questionCount: number,
 ): Promise<GeneratedDescriptiveQuestion[]> {
-  const prompt = buildDescriptiveQuizPrompt(cards, questionCount);
+  const prompt = buildDescriptiveQuizPrompt(cards, questionCount, settings.proficiencyLevel);
   return runQuizRequest(
     settings,
     prompt,
@@ -106,7 +106,7 @@ export async function evaluateDescriptiveQuiz(
   settings: AppSettings,
   items: DescriptiveQuizAnswer[],
 ): Promise<GeneratedQuizEvaluation[]> {
-  const prompt = buildDescriptiveEvaluationPrompt(items);
+  const prompt = buildDescriptiveEvaluationPrompt(items, settings.proficiencyLevel);
   return runQuizRequest(
     settings,
     prompt,

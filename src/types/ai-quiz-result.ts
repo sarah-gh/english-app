@@ -30,6 +30,10 @@ export interface AiQuizResult {
   total: number;
   questions?: AiQuizResultQuestionDetail[];
   createdAt: number;
+  /** A quiz result is otherwise create-only (no edit UI), so this normally just mirrors
+   *  `createdAt` — it exists so Cloud Sync can resolve an id collision between two devices the
+   *  same last-write-wins way as every other synced entity (see `mergeById`). */
+  updatedAt: number;
 }
 
-export type NewAiQuizResult = Omit<AiQuizResult, 'id' | 'createdAt'>;
+export type NewAiQuizResult = Omit<AiQuizResult, 'id' | 'createdAt' | 'updatedAt'>;

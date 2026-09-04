@@ -60,13 +60,28 @@ async function handleDelete() {
     <div class="flex items-start justify-between gap-3">
       <div class="min-w-0">
         <p class="truncate font-medium text-text">{{ card.frontTitle }}</p>
-        <p class="mt-0.5 flex items-center gap-1.5 text-xs text-text/50">
+        <p class="mt-3.5 flex items-center gap-1.5 text-xs text-text/50">
           {{ deckName }}
           <span
             class="rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase"
             :class="STATUS_BADGE_CLASSES[card.reviewStatus]"
           >
             {{ STATUS_LABELS[card.reviewStatus] }}
+          </span>
+          <span
+            v-if="card.studyCount > 0"
+            class="inline-flex items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary"
+            :title="`Studied ${card.studyCount} time${card.studyCount === 1 ? '' : 's'}`"
+          >
+            <AppIcon icon-name="TickCircle" :size="10" />
+            ×{{ card.studyCount }}
+          </span>
+          <span
+            v-else
+            class="rounded-full bg-text/8 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-text/40"
+            title="Not studied yet"
+          >
+            Unstudied
           </span>
         </p>
       </div>
@@ -108,7 +123,7 @@ async function handleDelete() {
       </div>
     </div>
 
-    <BaseExpandableContent fade-class="from-white/80 via-white/60 dark:from-slate-900/80 dark:via-slate-900/60">
+    <BaseExpandableContent fade-class="from-white via-white/80 dark:from-slate-900 dark:via-slate-900/80">
       <div
         v-if="cardTags.length > 0"
         class="mt-2 flex flex-wrap gap-1.5"

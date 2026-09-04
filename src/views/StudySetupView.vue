@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
+import BorderedCard from '@/components/common/BorderedCard.vue';
 import SessionSizeSelector from '@/components/study/SessionSizeSelector.vue';
 import BaseSegmentedToggle from '@/components/ui/BaseSegmentedToggle.vue';
 import BaseSelect from '@/components/ui/BaseSelect.vue';
@@ -20,7 +21,7 @@ const isReady = ref(false);
 const selectedDeckId = ref('');
 const selectedTopicId = ref('');
 const sessionSize = ref<SessionSize>(20);
-const selectedViewMode = ref<CardViewMode>('practice');
+const selectedViewMode = ref<CardViewMode>('study');
 const reviewStatusFilter = ref<ReviewPriorityFilter>('default');
 
 const REVIEW_PRIORITY_OPTIONS: { value: ReviewPriorityFilter; label: string }[] = [
@@ -64,6 +65,9 @@ const matchingCount = computed(
       if (selectedDeckId.value && card.deckId !== selectedDeckId.value) return false;
       if (selectedTopicId.value && card.topicId !== selectedTopicId.value) return false;
       if (reviewStatusFilter.value !== 'default' && card.reviewStatus !== reviewStatusFilter.value) return false;
+      // Matches the same Practice-mode eligibility rule `studySessionStore.start` applies, so this
+      // count doesn't promise more cards than the session will actually contain.
+      if (selectedViewMode.value === 'practice' && card.studyCount === 0) return false;
       return true;
     }).length,
 );
@@ -95,12 +99,7 @@ function startSession() {
     </p>
 
     <template v-else>
-      <section class="relative rounded-2xl border border-card-gold/30 bg-card-surface px-6 p-5">
-        <span class="pointer-events-none absolute top-3 left-3 h-4 w-4 rounded-tl border-t border-l border-card-gold/60" />
-        <span class="pointer-events-none absolute top-3 right-3 h-4 w-4 rounded-tr border-t border-r border-card-gold/60" />
-        <span class="pointer-events-none absolute bottom-3 left-3 h-4 w-4 rounded-bl border-b border-l border-card-gold/60" />
-        <span class="pointer-events-none absolute right-3 bottom-3 h-4 w-4 rounded-br border-r border-b border-card-gold/60" />
-
+      <BorderedCard>
         <section class="mb-6">
           <h2 class="mb-2 text-base font-semibold text-text">View Mode</h2>
           <BaseSegmentedToggle
@@ -117,6 +116,13 @@ function startSession() {
                 ? 'Answers are shown upfront so you can read and study.'
                 : 'Answers are hidden until you tap "Show Answer" or start swiping.'
             }}
+          </p>
+          <p
+            v-if="selectedViewMode === 'practice'"
+            class="mt-2 flex items-start gap-1.5 rounded-lg bg-primary/10 px-3 py-2 text-xs text-primary"
+          >
+            <AppIcon icon-name="Danger" :size="14" class="mt-0.5 shrink-0" />
+            Only cards you have studied at least once will appear in Practice mode.
           </p>
         </section>
 
@@ -170,7 +176,7 @@ function startSession() {
             }})
           </button>
         </section>
-      </section>
+      </BorderedCard>
     </template>
   </div>
 </template>

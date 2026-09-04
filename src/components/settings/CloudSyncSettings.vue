@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue';
+import ConfirmDialog from '@/components/app/ConfirmDialog.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import { preloadGoogleIdentity } from '@/services/sync/google-drive-sync';
 import { useSyncStore } from '@/stores/sync-store';
@@ -21,6 +22,12 @@ const lastSyncedLabel = computed(() => {
 });
 
 const isConfirmingDisconnect = ref(false);
+const isConfirmingDeleteCloudData = ref(false);
+
+async function handleDeleteCloudData() {
+  await syncStore.deleteCloudData();
+  isConfirmingDeleteCloudData.value = false;
+}
 
 // A one-off confirmation for the deliberate "Connect" action, mirroring the "✓ Saved
 // successfully" badge AiProviderSettings shows after a save — connecting is important enough
@@ -160,7 +167,7 @@ async function handleConnect() {
           danger
           @click="isConfirmingDisconnect = true"
         >
-          <AppIcon icon-name="Refresh" :size="14" />
+          <AppIcon icon-name="Logout" :size="14" />
           Disconnect
         </BaseButton>
       </div>
@@ -176,6 +183,29 @@ async function handleConnect() {
         You're offline — changes are saved locally and will sync automatically once you're back
         online.
       </p>
+
+      <div class="mt-4 rounded-xl border border-dashed border-danger/30 p-3">
+        <p class="mb-2 flex items-center gap-1.5 text-xs font-medium text-danger">
+          <AppIcon icon-name="Danger" :size="14" />
+          Testing Only
+        </p>
+        <p class="mb-3 text-xs text-card-muted">
+          Permanently deletes the synced backup file from Google Drive. This device's local data
+          and connection are untouched, but every device sharing this account loses the backup
+          until the next sync recreates it.
+        </p>
+        <BaseButton
+          variant="ghost"
+          size="sm"
+          danger
+          :loading="syncStore.isDeletingCloudData"
+          :disabled="syncStore.isOffline"
+          @click="isConfirmingDeleteCloudData = true"
+        >
+          <AppIcon v-if="!syncStore.isDeletingCloudData" icon-name="Trash" :size="14" />
+          Delete Cloud Sync Data
+        </BaseButton>
+      </div>
     </template>
 
     <div
@@ -196,6 +226,24 @@ async function handleConnect() {
         @click="handleConnect"
       >
         Reconnect
+      </BaseButton>
+    </div>
+    <div
+      v-else-if="syncStore.needsRefresh"
+      class="mt-3 flex items-center justify-between gap-3 rounded-xl border border-slate-600 bg-background/40 p-3"
+    >
+      <p class="flex items-center gap-1.5 text-xs font-medium text-card-muted">
+        <AppIcon icon-name="Refresh" :size="14" />
+        Sync paused — resume it whenever you're ready.
+      </p>
+      <BaseButton
+        variant="ghost"
+        size="sm"
+        :loading="syncStore.isSyncing"
+        :disabled="syncStore.isOffline"
+        @click="() => syncStore.syncNow({ userInitiated: true })"
+      >
+        Resume
       </BaseButton>
     </div>
     <p
@@ -240,5 +288,15 @@ async function handleConnect() {
         </BaseButton>
       </div>
     </div>
+
+    <ConfirmDialog
+      v-if="isConfirmingDeleteCloudData"
+      title="Delete Cloud Sync Data?"
+      message="Are you sure you want to permanently delete all synced backup data from Google Drive?"
+      confirm-label="Delete"
+      variant="danger"
+      @confirm="handleDeleteCloudData"
+      @cancel="isConfirmingDeleteCloudData = false"
+    />
   </div>
 </template>
