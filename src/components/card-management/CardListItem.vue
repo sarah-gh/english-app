@@ -59,7 +59,7 @@ async function handleDelete() {
   <BaseCard>
     <div class="flex items-start justify-between gap-3">
       <div class="min-w-0">
-        <p class="truncate font-medium text-text">{{ card.frontTitle }}</p>
+        <p class="truncate font-medium font-serif text-lg text-text">{{ card.frontTitle }}</p>
         <p class="mt-3.5 flex items-center gap-1.5 text-xs text-text/50">
           {{ deckName }}
           <span

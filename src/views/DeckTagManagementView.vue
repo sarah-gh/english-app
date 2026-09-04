@@ -186,7 +186,7 @@ type="button" class="shrink-0 text-xs font-medium text-primary underline underli
             </template>
             <template v-else>
               <div class="flex items-center gap-2">
-                <span class="min-w-fit flex-1 truncate text-sm text-text">{{ deck.name }}</span>
+                <span class="min-w-fit flex-1 truncate text-sm text-text">{{ deck.name.length > 20 ? deck.name.slice(0, 20) + '...' : deck.name }}</span>
                 <span class="shrink-0 text-xs text-text/50">{{ deckCardCount(deck.id) }} cards</span>
                 <div class="flex shrink-0 items-center gap-1.5">
                   <button
@@ -275,7 +275,7 @@ type="button" class="shrink-0 text-xs font-medium text-primary underline underli
             </div>
             <div v-else class="flex items-center gap-2">
               <span class="h-3 w-3 shrink-0 rounded-full" :style="{ backgroundColor: tag.color }" />
-              <span class="min-w-fit flex-1 truncate text-sm text-text">{{ tag.name }}</span>
+              <span class="min-w-fit flex-1 truncate text-sm text-text">{{ tag.name.length > 20 ? tag.name.slice(0, 20) + '...' : tag.name }}</span>
               <span class="shrink-0 text-xs text-text/50">{{ tagCardCount(tag.id) }} cards</span>
               <div class="flex shrink-0 items-center gap-1.5">
                 <button

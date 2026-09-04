@@ -40,26 +40,47 @@ async function runQuizRequest<T>(
   responseSchema: object,
   jsonShapeHint: string,
   parse: (text: string | undefined, makeError: (message: string) => Error) => T,
+  temperature?: number,
 ): Promise<T> {
   return withProviderFallback(settings, {
     google: async (apiKey) => {
-      const text = await callGoogleStructured(apiKey, prompt, responseSchema);
+      const text = await callGoogleStructured(apiKey, prompt, responseSchema, temperature);
       return parse(text, (message) => new AiProviderError('google', message, false));
     },
     groq: async (apiKey, baseUrl, model) => {
-      const text = await callOpenAiCompatibleStructured('groq', apiKey, baseUrl, model, prompt + jsonShapeHint);
+      const text = await callOpenAiCompatibleStructured(
+        'groq',
+        apiKey,
+        baseUrl,
+        model,
+        prompt + jsonShapeHint,
+        temperature,
+      );
       return parse(text, (message) => new AiProviderError('groq', message, false));
     },
     openrouter: async (apiKey, baseUrl, model) => {
-      const text = await callOpenAiCompatibleStructured('openrouter', apiKey, baseUrl, model, prompt + jsonShapeHint);
+      const text = await callOpenAiCompatibleStructured(
+        'openrouter',
+        apiKey,
+        baseUrl,
+        model,
+        prompt + jsonShapeHint,
+        temperature,
+      );
       return parse(text, (message) => new AiProviderError('openrouter', message, false));
     },
     aihubmix: async (apiKey, baseUrl) => {
-      const text = await callAihubmixStructured(apiKey, baseUrl, prompt, responseSchema);
+      const text = await callAihubmixStructured(apiKey, baseUrl, prompt, responseSchema, temperature);
       return parse(text, (message) => new AiProviderError('aihubmix', message, false));
     },
   });
 }
+
+/** Sampling temperature used for quiz *generation* (higher than each provider's default so
+ *  repeated generations from the same cards produce more varied questions/wording). Grading
+ *  (`evaluateDescriptiveQuiz`) intentionally leaves this unset — consistent scoring matters more
+ *  there than lexical variety. */
+const QUIZ_GENERATION_TEMPERATURE = 0.7;
 
 /** Generates a 4-option multiple-choice quiz grounded in the given flashcards, using the
  *  provider(s) configured in Settings — see `withProviderFallback` for the fallback semantics. */
@@ -75,6 +96,7 @@ export async function generateMultipleChoiceQuiz(
     MULTIPLE_CHOICE_QUIZ_RESPONSE_SCHEMA,
     MULTIPLE_CHOICE_QUIZ_JSON_SHAPE_HINT,
     parseMultipleChoiceQuizResponseText,
+    QUIZ_GENERATION_TEMPERATURE,
   );
 }
 
@@ -92,6 +114,7 @@ export async function generateDescriptiveQuiz(
     DESCRIPTIVE_QUIZ_RESPONSE_SCHEMA,
     DESCRIPTIVE_QUIZ_JSON_SHAPE_HINT,
     parseDescriptiveQuizResponseText,
+    QUIZ_GENERATION_TEMPERATURE,
   );
 }
 

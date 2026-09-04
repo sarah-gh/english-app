@@ -212,7 +212,7 @@ function clearAllFilters() {
       <TransitionGroup
         tag="div"
         name="card-list"
-        class="relative space-y-3"
+        class="relative space-y-3 max-h-130 overflow-y-auto px-1"
       >
         <CardListItem
           v-for="card in sortedCards"

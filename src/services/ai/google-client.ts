@@ -21,6 +21,7 @@ export async function callGoogleStructured(
   apiKey: string,
   prompt: string,
   responseSchema: object,
+  temperature?: number,
 ): Promise<string | undefined> {
   try {
     const { data } = await apiClient.post<GenerateContentResponse>(
@@ -30,6 +31,7 @@ export async function callGoogleStructured(
         generationConfig: {
           responseMimeType: 'application/json',
           responseSchema,
+          ...(temperature !== undefined && { temperature }),
         },
       },
       { baseURL: BASE_URL, meta: { provider: 'google', apiKey } },

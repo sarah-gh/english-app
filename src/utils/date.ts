@@ -11,13 +11,18 @@ export function todayDateKey(): string {
   return dateKey(new Date());
 }
 
-/** Returns `count` date keys ending today, oldest first (e.g. count=7 -> the last 7 days). */
-export function lastNDateKeys(count: number): string[] {
+/** The current calendar week's 7 date keys, Monday through Sunday (not a trailing 7-day window). */
+export function currentWeekDateKeys(): string[] {
+  const now = new Date();
+  const dayOfWeek = now.getDay(); // 0 is Sunday, 1 is Monday...
+  const distanceToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + distanceToMonday);
+
   const keys: string[] = [];
-  const cursor = new Date();
-  for (let i = count - 1; i >= 0; i--) {
-    const day = new Date(cursor);
-    day.setDate(cursor.getDate() - i);
+  for (let i = 0; i < 7; i++) {
+    const day = new Date(monday);
+    day.setDate(monday.getDate() + i);
     keys.push(dateKey(day));
   }
   return keys;

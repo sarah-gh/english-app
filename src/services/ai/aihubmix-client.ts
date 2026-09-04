@@ -19,7 +19,13 @@ type GenerateContentResponse = {
 
 /** Calls AIHubMix's Gemini-compatible proxy, which accepts the same request/response shape as
  *  the direct Gemini API (including Structured JSON Output) under `{baseUrl}/gemini/...`. */
-async function postToAihubmix(baseUrl: string, apiKey: string, prompt: string, responseSchema: object) {
+async function postToAihubmix(
+  baseUrl: string,
+  apiKey: string,
+  prompt: string,
+  responseSchema: object,
+  temperature?: number,
+) {
   return apiClient.post<GenerateContentResponse>(
     `/gemini/v1beta/models/${MODEL}:generateContent`,
     {
@@ -27,6 +33,7 @@ async function postToAihubmix(baseUrl: string, apiKey: string, prompt: string, r
       generationConfig: {
         responseMimeType: 'application/json',
         responseSchema,
+        ...(temperature !== undefined && { temperature }),
       },
     },
     { baseURL: baseUrl, meta: { provider: 'aihubmix', apiKey } },
@@ -40,12 +47,13 @@ export async function callAihubmixStructured(
   baseUrl: string,
   prompt: string,
   responseSchema: object,
+  temperature?: number,
 ): Promise<string | undefined> {
   const normalizedBaseUrl = baseUrl.replace(/\/+$/, '');
 
   let data: GenerateContentResponse;
   try {
-    ({ data } = await postToAihubmix(normalizedBaseUrl, apiKey, prompt, responseSchema));
+    ({ data } = await postToAihubmix(normalizedBaseUrl, apiKey, prompt, responseSchema, temperature));
   } catch (error) {
     // `status` is only set once a response actually came back — undefined means the request
     // never reached the server (DNS/connection failure), which is when the mirror is worth a try.
@@ -59,7 +67,7 @@ export async function callAihubmixStructured(
       `[aihubmix-client] Could not reach ${normalizedBaseUrl}; retrying via preferred base URL ${PREFERRED_FALLBACK_BASE_URL}.`,
     );
     try {
-      ({ data } = await postToAihubmix(PREFERRED_FALLBACK_BASE_URL, apiKey, prompt, responseSchema));
+      ({ data } = await postToAihubmix(PREFERRED_FALLBACK_BASE_URL, apiKey, prompt, responseSchema, temperature));
     } catch (retryError) {
       if (retryError instanceof ApiError) {
         throw new AiProviderError(

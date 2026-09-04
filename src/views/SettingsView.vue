@@ -31,11 +31,11 @@ onMounted(async () => {
     </p>
 
     <template v-else>
+      <ProficiencyLevelSettings />
+      <AiProviderSettings />
       <AppearanceSettings />
       <PronunciationSettings />
-      <ProficiencyLevelSettings />
       <DailyGoalSettings />
-      <AiProviderSettings />
       <InstallAppSettings />
     </template>
   </div>

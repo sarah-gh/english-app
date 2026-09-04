@@ -6,6 +6,7 @@ import ArrowDown2 from 'vue-iconsax/dist/components/icons/ArrowDown2.vue.js';
 import ArrowLeft from 'vue-iconsax/dist/components/icons/ArrowLeft.vue.js';
 import ArrowRight2 from 'vue-iconsax/dist/components/icons/ArrowRight2.vue.js';
 import Book1 from 'vue-iconsax/dist/components/icons/Book1.vue.js';
+import CalendarTick from 'vue-iconsax/dist/components/icons/CalendarTick.vue.js';
 import Category2 from 'vue-iconsax/dist/components/icons/Category2.vue.js';
 import ClipboardText from 'vue-iconsax/dist/components/icons/ClipboardText.vue.js';
 import CloseCircle from 'vue-iconsax/dist/components/icons/CloseCircle.vue.js';
@@ -50,6 +51,7 @@ const ICONS = {
   ArrowLeft,
   ArrowRight2,
   Book1,
+  CalendarTick,
   Category2,
   ClipboardText,
   CloseCircle,

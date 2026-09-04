@@ -19,6 +19,27 @@ function summarizeCards(cards: Card[]): string {
       if (card.examples.length > 0) {
         lines.push(`   Examples: ${card.examples.map((example) => `"${example}"`).join(' | ')}`);
       }
+      if (card.partsOfSpeech && card.partsOfSpeech.length > 0) {
+        const posSummary = card.partsOfSpeech
+          .map((entry) => {
+            const wordForm = entry.wordForm ? `${entry.wordForm} — ` : '';
+            return `${entry.pos} (${wordForm}${entry.definition})`;
+          })
+          .join('; ');
+        lines.push(`   Parts of speech: ${posSummary}`);
+      }
+      if (card.wordFamily) {
+        const { rootWord, noun, verb, adjective, adverb } = card.wordFamily;
+        const forms = [
+          noun && `noun: ${noun.word}`,
+          verb && `verb: ${verb.word}`,
+          adjective && `adjective: ${adjective.word}`,
+          adverb && `adverb: ${adverb.word}`,
+        ]
+          .filter((form): form is string => Boolean(form))
+          .join(', ');
+        if (forms) lines.push(`   Word family (root "${rootWord}"): ${forms}`);
+      }
       return lines.join('\n');
     })
     .join('\n\n');
@@ -36,7 +57,9 @@ export function buildMultipleChoiceQuizPrompt(
 ): string {
   return `You are creating a multiple-choice practice quiz for an English-language learner based on their personal flashcards below.
 
-Generate exactly ${questionCount} multiple-choice questions that test whether the learner understands and can recall this flashcard content. Distribute the questions across the flashcards provided, favoring cards not yet covered before repeating one. Set "sourceIndex" to the flashcard's number (1-based) shown below that a question was drawn from. Each question must have exactly 4 plausible options in "options", with "correctOptionIndex" as the 0-based index of the correct one. Keep questions concise and grounded only in the flashcard content provided — do not invent unrelated facts.${proficiencyInstruction(proficiencyLevel)}
+Generate exactly ${questionCount} multiple-choice questions that test whether the learner can correctly APPLY each flashcard's term — not just recognize its definition. For every question, invent a brand-new sentence, scenario, or fill-in-the-blank context that does not appear on the card (do not reuse or lightly reword the card's own Explanation/Answer text or its Examples as the question stem). Distribute the questions across the flashcards provided, favoring cards not yet covered before repeating one. Set "sourceIndex" to the flashcard's number (1-based) shown below that a question was drawn from.
+
+Vary the question type across the batch instead of always asking "what does X mean?" — mix in formats such as: a fill-in-the-blank sentence where the learner picks the word/form that correctly completes it, a question about which grammatical form is correct in context (using the Parts of speech / Word family info when available), and a short scenario where the learner picks which option best fits the situation. Each question must have exactly 4 options in "options", with "correctOptionIndex" as the 0-based index of the correct one. Make the 3 incorrect options plausible distractors — confusable or related terms, common learner mistakes, or near-miss grammatical forms — rather than obviously wrong choices. Ground every question only in the flashcard content provided (do not invent unrelated facts or meanings), but express that content through new wording of your own.${proficiencyInstruction(proficiencyLevel)}
 
 Flashcards:
 ${summarizeCards(cards)}`;
@@ -54,7 +77,7 @@ export function buildDescriptiveQuizPrompt(
 ): string {
   return `You are creating an open-ended practice quiz for an English-language learner based on their personal flashcards below.
 
-Generate exactly ${questionCount} open-ended questions that go beyond simple recall — ask the learner to construct an original sentence using the term correctly, explain a subtle nuance or common mistake, analyze how the term applies in a short scenario, or compare it with a closely related term. Distribute the questions across the flashcards provided, favoring cards not yet covered before repeating one. Set "sourceIndex" to the flashcard's number (1-based) shown below that a question was drawn from. Ground every question only in the flashcard content provided — do not invent unrelated facts. Do not include a correct answer; these will be graded separately.${proficiencyInstruction(proficiencyLevel)}
+Generate exactly ${questionCount} open-ended questions that go beyond simple recall — ask the learner to construct an original sentence using the term correctly, explain a subtle nuance or common mistake, analyze how the term applies in a new short scenario, or compare it with a closely related term. Each question must pose a new sentence, situation, or prompt of your own invention — do not quote or lightly reword the card's own Examples. Distribute the questions across the flashcards provided, favoring cards not yet covered before repeating one. Set "sourceIndex" to the flashcard's number (1-based) shown below that a question was drawn from. Ground every question only in the flashcard content provided — do not invent unrelated facts. Do not include a correct answer; these will be graded separately.${proficiencyInstruction(proficiencyLevel)}
 
 Flashcards:
 ${summarizeCards(cards)}`;

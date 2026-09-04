@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import { aiQuizResultRepository, dailyStatRepository, settingsRepository } from '@/db/repositories';
 import type { AiQuizResult } from '@/types/ai-quiz-result';
 import type { DailyStat } from '@/types/daily-stat';
-import { lastNDateKeys, todayDateKey } from '@/utils/date';
+import { currentWeekDateKeys, todayDateKey } from '@/utils/date';
 
 export interface WeekStreakDay {
   date: string;
@@ -21,7 +21,7 @@ export const useAnalyticsStore = defineStore('analytics', () => {
 
   const weekStreak = computed<WeekStreakDay[]>(() => {
     const today = todayDateKey();
-    return lastNDateKeys(7).map((date) => ({
+    return currentWeekDateKeys().map((date) => ({
       date,
       cardsStudied: weekStats.value.find((stat) => stat.date === date)?.cardsStudied ?? 0,
       isToday: date === today,
@@ -33,7 +33,7 @@ export const useAnalyticsStore = defineStore('analytics', () => {
   async function fetchAll(): Promise<void> {
     const [settings, stats, history] = await Promise.all([
       settingsRepository.get(),
-      dailyStatRepository.getByDates(lastNDateKeys(7)),
+      dailyStatRepository.getByDates(currentWeekDateKeys()),
       aiQuizResultRepository.getAll(),
     ]);
     dailyGoal.value = settings.dailyGoalCards;

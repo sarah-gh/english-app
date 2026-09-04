@@ -19,6 +19,7 @@ export async function callOpenAiCompatibleStructured(
   baseUrl: string,
   model: string,
   prompt: string,
+  temperature?: number,
 ): Promise<string | undefined> {
   try {
     const { data } = await apiClient.post<ChatCompletionsResponse>(
@@ -27,6 +28,7 @@ export async function callOpenAiCompatibleStructured(
         model,
         messages: [{ role: 'user', content: prompt }],
         response_format: { type: 'json_object' },
+        ...(temperature !== undefined && { temperature }),
       },
       {
         baseURL: baseUrl.replace(/\/+$/, ''),
