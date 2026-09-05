@@ -10,7 +10,6 @@ defineProps<{
   cardCount: number;
   topics: Topic[];
   cardCountForTopic: (topicId: string) => number;
-  uncategorizedCount: number;
   expanded: boolean;
 }>();
 
@@ -102,13 +101,6 @@ defineEmits<{
               editable
               @edit="$emit('editTopic', topic)"
               @delete="$emit('deleteTopic', topic)"
-            />
-
-            <TopicTreeItem
-              v-if="uncategorizedCount > 0"
-              name="Uncategorized"
-              :card-count="uncategorizedCount"
-              :to="`/cards/${deckId}/uncategorized`"
             />
 
             <p

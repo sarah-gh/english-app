@@ -71,7 +71,7 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
 </script>
 
 <template>
-  <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+  <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
     <BaseSelect
       :model-value="deckId"
       :options="deckOptions"

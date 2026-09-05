@@ -203,5 +203,65 @@ export class AppDatabase extends Dexie {
             delete card.isStudied;
           });
       });
+
+    // v8: every deck now always has a "General" topic, and new cards fall back to it instead of
+    // being left without a topic. Decks created (or topics deleted) before that existed could
+    // still have cards with no `topicId`, or a `topicId` pointing at a topic that no longer exists
+    // — this backfills both: every deck gets a "General" topic (reusing a same-named one instead
+    // of creating a duplicate), and every such orphaned card is reassigned to its deck's.
+    this.version(8)
+      .stores({
+        cards: 'id, deckId, topicId, reviewStatus, *tagIds, createdAt',
+        decks: 'id, name, createdAt',
+        tags: 'id, name',
+        topics: 'id, deckId, name, createdAt',
+        aiQuizResults: 'id, createdAt',
+        dailyStats: 'date',
+        settings: 'id',
+      })
+      .upgrade(async (tx) => {
+        const now = Date.now();
+        const decksTable = tx.table<Deck, string>('decks');
+        const topicsTable = tx.table<Topic, string>('topics');
+        const cardsTable = tx.table<Card, string>('cards');
+
+        const decks = await decksTable.toArray();
+        const topics = await topicsTable.toArray();
+        const validTopicIds = new Set(topics.filter((topic) => !topic.isDeleted).map((topic) => topic.id));
+
+        const generalTopicIdByDeck = new Map<string, string>();
+        for (const topic of topics) {
+          if (
+            !topic.isDeleted &&
+            topic.name.trim().toLowerCase() === 'general' &&
+            !generalTopicIdByDeck.has(topic.deckId)
+          ) {
+            generalTopicIdByDeck.set(topic.deckId, topic.id);
+          }
+        }
+
+        for (const deck of decks) {
+          if (deck.isDeleted || generalTopicIdByDeck.has(deck.id)) continue;
+          const topic: Topic = {
+            id: crypto.randomUUID(),
+            deckId: deck.id,
+            name: 'General',
+            createdAt: now,
+            updatedAt: now,
+            isDeleted: false,
+          };
+          await topicsTable.add(topic);
+          generalTopicIdByDeck.set(deck.id, topic.id);
+        }
+
+        await cardsTable.toCollection().modify((card) => {
+          if (card.topicId && validTopicIds.has(card.topicId)) return;
+          const generalId = generalTopicIdByDeck.get(card.deckId);
+          if (generalId) {
+            card.topicId = generalId;
+            card.updatedAt = now;
+          }
+        });
+      });
   }
 }

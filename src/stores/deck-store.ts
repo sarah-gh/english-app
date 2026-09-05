@@ -22,10 +22,15 @@ export const useDeckStore = defineStore('decks', () => {
     return decks.value.find((deck) => deck.id === id);
   }
 
+  /** Every deck gets a "General" topic up front, so there's always somewhere for a card to land
+   *  if the user creates one before adding any topics of their own. */
   async function add(deck: NewDeck): Promise<Deck> {
     const created = await deckRepository.create(deck);
     decks.value.push(created);
     decks.value.sort((a, b) => a.name.localeCompare(b.name));
+
+    await useTopicStore().ensureGeneral(created.id);
+
     return created;
   }
 

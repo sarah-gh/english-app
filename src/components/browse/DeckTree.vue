@@ -9,7 +9,6 @@ defineProps<{
   cardCountFor: (deckId: string) => number;
   topicsFor: (deckId: string) => Topic[];
   cardCountForTopic: (topicId: string) => number;
-  uncategorizedCountFor: (deckId: string) => number;
 }>();
 
 defineEmits<{
@@ -32,7 +31,6 @@ const browseTreeStore = useBrowseTreeStore();
       :card-count="cardCountFor(deck.id)"
       :topics="topicsFor(deck.id)"
       :card-count-for-topic="cardCountForTopic"
-      :uncategorized-count="uncategorizedCountFor(deck.id)"
       :expanded="browseTreeStore.isExpanded(deck.id)"
       @toggle="browseTreeStore.toggle(deck.id)"
       @create-topic="$emit('createTopic', deck.id)"

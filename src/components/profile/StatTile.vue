@@ -26,7 +26,7 @@ withDefaults(
     >
       {{ value }}
     </p>
-    <p class="text-xs text-card-muted">{{ label }}</p>
+    <p class="text-[11px] text-card-muted">{{ label }}</p>
   <!-- </div> -->
    </BorderedCard>
 </template>

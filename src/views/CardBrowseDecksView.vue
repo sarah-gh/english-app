@@ -40,12 +40,14 @@ function topicsFor(deckId: string): Topic[] {
   return topicStore.byDeck(deckId);
 }
 
+/** New cards always get assigned a topic (falling back to "General"), but a topic's count also
+ *  folds in any leftover topic-less card from before that was guaranteed, so nothing is ever
+ *  silently hidden from the deck tree. */
 function cardCountForTopic(topicId: string): number {
-  return cardStore.byTopic(topicId).length;
-}
-
-function uncategorizedCountFor(deckId: string): number {
-  return cardStore.byDeck(deckId).filter((card) => !card.topicId).length;
+  const count = cardStore.byTopic(topicId).length;
+  const topic = topicStore.getById(topicId);
+  if (!topic || !topicStore.isGeneral(topic)) return count;
+  return count + cardStore.byDeck(topic.deckId).filter((card) => !card.topicId).length;
 }
 
 const creatingTopicForDeckId = ref<string | null>(null);
@@ -148,7 +150,6 @@ async function confirmDeleteTopic() {
         :card-count-for="cardCountFor"
         :topics-for="topicsFor"
         :card-count-for-topic="cardCountForTopic"
-        :uncategorized-count-for="uncategorizedCountFor"
         @create-topic="creatingTopicForDeckId = $event"
         @edit-topic="editingTopic = $event"
         @delete-topic="deletingTopic = $event"
@@ -174,7 +175,7 @@ async function confirmDeleteTopic() {
     <ConfirmDialog
       v-if="deletingTopic"
       title="Delete this topic?"
-      :message="`Deleting “${deletingTopic.name}” won't delete its ${cardCountForTopic(deletingTopic.id)} card(s) — they'll move to Uncategorized.`"
+      :message="`Deleting “${deletingTopic.name}” won't delete its ${cardCountForTopic(deletingTopic.id)} card(s) — they'll move to General.`"
       confirm-label="Delete"
       variant="danger"
       @confirm="confirmDeleteTopic"

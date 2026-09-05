@@ -9,6 +9,7 @@ import BaseButton from '@/components/ui/BaseButton.vue';
 import { exportBackup } from '@/services/backup/exporter';
 import { BackupImportError, importBackup, type ImportSummary } from '@/services/backup/importer';
 import { clearAllData } from '@/services/data/reset-data';
+import { exportDataAsJson } from '@/services/export/data-export';
 import { useAnalyticsStore } from '@/stores/analytics-store';
 import { useCardStore } from '@/stores/card-store';
 import { useDeckStore } from '@/stores/deck-store';
@@ -39,6 +40,18 @@ async function handleExport() {
     await exportBackup();
   } finally {
     isExporting.value = false;
+  }
+}
+
+const isExportingJson = ref(false);
+
+async function handleExportJson() {
+  isExportingJson.value = true;
+  try {
+    await exportDataAsJson();
+    showToast('Data exported successfully.');
+  } finally {
+    isExportingJson.value = false;
   }
 }
 
@@ -281,7 +294,8 @@ async function handleClearAll() {
     <h2 class="mb-1 font-serif text-lg font-bold text-card-gold">Backup &amp; Data</h2>
     <p class="mb-4 text-xs text-card-muted">
       Export everything into a single .zip file, or import one to restore or merge data on this or
-      another device.
+      another device. Prefer plain JSON instead? Use "Export All Data (JSON)" to download a
+      readable snapshot of your decks, cards, tags, settings, and study history.
     </p>
 
     <div class="mb-3 flex flex-wrap gap-3">
@@ -320,6 +334,20 @@ async function handleClearAll() {
         class="hidden"
         @change="handleFileSelected"
       />
+      <BaseButton
+        variant="secondary"
+        size="sm"
+        class="rounded-full! bg-card-gold/90! text-background! hover:bg-card-gold!"
+        :loading="isExportingJson"
+        @click="handleExportJson"
+      >
+        <AppIcon
+          v-if="!isExportingJson"
+          icon-name="DocumentDownload"
+          :size="14"
+        />
+        {{ isExportingJson ? 'Exporting…' : 'Export All Data (JSON)' }}
+      </BaseButton>
     </div>
 
     <p

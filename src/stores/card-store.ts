@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { cardRepository } from '@/db/repositories';
+import { useTopicStore } from '@/stores/topic-store';
 import type { Card, CardUpdate, NewCard, ReviewStatus } from '@/types/card';
 
 export const useCardStore = defineStore('cards', () => {
@@ -36,8 +37,17 @@ export const useCardStore = defineStore('cards', () => {
     return cards.value.filter((card) => card.reviewStatus === status);
   }
 
+  /** A card left without an explicit topic falls back to its deck's "General" topic (created on
+   *  demand) instead of staying topic-less, so it's never orphaned in deck/topic browsing. */
+  async function resolveTopicId(deckId: string, topicId: string | undefined): Promise<string> {
+    if (topicId) return topicId;
+    const general = await useTopicStore().ensureGeneral(deckId);
+    return general.id;
+  }
+
   async function add(card: NewCard): Promise<Card> {
-    const created = await cardRepository.create(card);
+    const topicId = await resolveTopicId(card.deckId, card.topicId);
+    const created = await cardRepository.create({ ...card, topicId });
     // Newest-first: a freshly created card is the newest by definition, so it belongs at the front.
     cards.value.unshift(created);
     return created;
@@ -45,7 +55,11 @@ export const useCardStore = defineStore('cards', () => {
 
   /** Used by bulk import (e.g. Excel) — adds many cards in one go, newest-first. */
   async function addMany(newCards: NewCard[]): Promise<Card[]> {
-    const created = await cardRepository.createMany(newCards);
+    const resolved: NewCard[] = [];
+    for (const card of newCards) {
+      resolved.push({ ...card, topicId: await resolveTopicId(card.deckId, card.topicId) });
+    }
+    const created = await cardRepository.createMany(resolved);
     cards.value = [...created, ...cards.value];
     return created;
   }

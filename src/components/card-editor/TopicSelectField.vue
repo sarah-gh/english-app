@@ -15,7 +15,7 @@ const isCreating = ref(false);
 const newTopicName = ref('');
 
 const topicOptions = computed(() => [
-  { value: '', label: 'No topic' },
+  { value: '', label: 'General (default)' },
   ...topicStore.byDeck(props.deckId).map((topic) => ({ value: topic.id, label: topic.name })),
 ]);
 
@@ -47,7 +47,7 @@ async function createTopic() {
       <BaseSelect
         v-model="topicId"
         label="Topic (optional)"
-        placeholder="No topic"
+        placeholder="General (default)"
         :disabled="!deckId"
         class="w-full"
         :options="topicOptions"

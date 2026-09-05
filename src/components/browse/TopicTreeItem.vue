@@ -6,7 +6,7 @@ const props = defineProps<{
   name: string;
   cardCount: number;
   to: string;
-  /** Pseudo-topics ("All Cards", "Uncategorized") can be opened but not renamed/deleted. */
+  /** The pseudo-topic ("All Cards") can be opened but not renamed/deleted. */
   editable?: boolean;
 }>();
 

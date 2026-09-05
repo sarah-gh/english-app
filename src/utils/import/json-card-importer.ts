@@ -1,8 +1,8 @@
 import type { PartOfSpeechEntry, POSDetail, PosType, WordFamilyData } from '@/types/card';
+import { GENERAL_TOPIC_NAME } from '@/types/topic';
 
 const DEFAULT_DECK_NAME = 'Imported';
-/** Matches the fallback topic name `seedInitialDataIfNeeded()` gives every seed deck. */
-const DEFAULT_TOPIC_NAME = 'General';
+const DEFAULT_TOPIC_NAME = GENERAL_TOPIC_NAME;
 const VALID_POS_TYPES: PosType[] = ['noun', 'verb', 'adjective', 'adverb', 'other'];
 
 /**

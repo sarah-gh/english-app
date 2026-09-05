@@ -4,6 +4,7 @@ import { settingsRepository } from './repositories/settings-repository';
 import { tagRepository } from './repositories/tag-repository';
 import { topicRepository } from './repositories/topic-repository';
 import type { PartOfSpeechEntry } from '@/types/card';
+import { GENERAL_TOPIC_NAME } from '@/types/topic';
 
 interface SeedCard {
   frontTitle: string;
@@ -174,7 +175,7 @@ export async function seedInitialDataIfNeeded(): Promise<void> {
 
   for (const seedDeck of SEED_DECKS) {
     const deck = await deckRepository.create({ name: seedDeck.name });
-    const topic = await topicRepository.create({ deckId: deck.id, name: 'General' });
+    const topic = await topicRepository.create({ deckId: deck.id, name: GENERAL_TOPIC_NAME });
     for (const seedCard of seedDeck.cards) {
       await cardRepository.create({
         frontTitle: seedCard.frontTitle,

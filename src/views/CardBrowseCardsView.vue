@@ -40,7 +40,7 @@ const topic = computed(() =>
 
 const pageTitle = computed(() => {
   if (topicParam.value === 'all') return 'All Cards';
-  if (topicParam.value === 'uncategorized') return 'Uncategorized';
+  if (topicParam.value === 'uncategorized') return 'General';
   return topic.value?.name ?? 'Topic';
 });
 

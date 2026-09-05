@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import PartsOfSpeechDisplay from '@/components/card/PartsOfSpeechDisplay.vue';
 import WordFamilyDisplay from '@/components/card/WordFamilyDisplay.vue';
 import BaseExpandableContent from '@/components/ui/BaseExpandableContent.vue';
+import BaseFlipCard from '@/components/ui/BaseFlipCard.vue';
 import BaseTag from '@/components/ui/BaseTag.vue';
 import { useCardAudio } from '@/composables/useCardAudio';
 import type { SwipeDirection } from '@/services/review/state-machine';
@@ -84,8 +85,11 @@ const wordFamilyChallengeForm = pickWordFamilyChallengeForm(props.card);
  *  reveal it. */
 const showAnswer = computed(() => props.viewMode === 'study' || isAnswerManuallyRevealed.value);
 
-function revealAnswer() {
-  isAnswerManuallyRevealed.value = true;
+/** Drives the main answer's flip card. In Practice mode this also lets the revealed back face be
+ *  tapped again to flip it back into hiding; in Study mode `showAnswer` stays true regardless of
+ *  this ref, so that flip-back never actually hides anything. */
+function setAnswerRevealed(value: boolean) {
+  isAnswerManuallyRevealed.value = value;
 }
 
 let activePointerId: number | null = null;
@@ -324,68 +328,86 @@ onBeforeUnmount(() => {
         fade-class="from-card-surface via-card-surface/80"
       >
         <template v-if="card.wordFamily">
-          <WordFamilyDisplay
-            v-if="showAnswer"
-            :data="card.wordFamily"
-            :highlight="wordFamilyChallengeForm ?? undefined"
-            class="mt-4"
-          />
-          <button
-            v-else
-            type="button"
-            class="mt-4 rounded border-2 border-dashed border-card-gold/30 py-3 text-sm font-medium text-card-muted hover:border-primary hover:text-primary"
-            @pointerdown.stop
-            @click.stop="revealAnswer"
+          <BaseFlipCard
+            class="mt-4 w-full"
+            :flipped="showAnswer"
+            :interactive="interactive"
+            @update:flipped="setAnswerRevealed"
           >
-            <template v-if="wordFamilyChallengeForm">
-              What is the {{ WORD_FAMILY_POS_LABELS[wordFamilyChallengeForm] }} form of
-              “{{ card.wordFamily.rootWord }}”?
+            <template #front>
+              <button
+                type="button"
+                class="flex h-full w-full items-center justify-center rounded-xl border-2 border-dashed border-card-gold/30 p-4 text-center text-sm font-medium text-card-muted hover:border-primary hover:text-primary"
+                @pointerdown.stop
+                @click.stop="setAnswerRevealed(true)"
+              >
+                <template v-if="wordFamilyChallengeForm">
+                  What is the {{ WORD_FAMILY_POS_LABELS[wordFamilyChallengeForm] }} form of
+                  “{{ card.wordFamily.rootWord }}”?
+                </template>
+                <template v-else>Show Word Family</template>
+              </button>
             </template>
-            <template v-else>Show Word Family</template>
-          </button>
+            <template #back>
+              <div class="h-full w-full rounded-xl border border-card-gold/20 bg-card-definition p-4">
+                <WordFamilyDisplay
+                  :data="card.wordFamily"
+                  :highlight="wordFamilyChallengeForm ?? undefined"
+                />
+              </div>
+            </template>
+          </BaseFlipCard>
         </template>
         <template v-else>
-          <template v-if="showAnswer">
-            <div class="mt-4 rounded-xl bg-card-definition p-4">
-              <p class="text-base leading-relaxed text-text">{{ card.backAnswer }}</p>
-            </div>
-
-            <ul
-              v-if="card.examples.length > 0"
-              class="mt-4 space-y-2"
-            >
-              <li
-                v-for="(example, index) in card.examples"
-                :key="index"
-                class="text-base text-text/90"
-              >
-                {{ example }}
-              </li>
-            </ul>
-
-            <p
-              v-if="card.synonyms.length > 0"
-              class="mt-4 text-sm text-text/80"
-            >
-              <span class="font-semibold text-card-gold">Synonyms:</span> {{ card.synonyms.join(', ') }}
-            </p>
-            <p
-              v-if="card.antonyms.length > 0"
-              class="mt-1 text-sm text-text/80"
-            >
-              <span class="font-semibold text-card-gold">Antonyms:</span> {{ card.antonyms.join(', ') }}
-            </p>
-          </template>
-          <button
-            v-else
-            type="button"
-            class="mt-4 flex w-full items-center justify-center gap-1.5 rounded border-2 border-dashed border-card-gold/30 px-3 py-3 text-sm font-medium text-card-muted hover:border-primary hover:text-primary"
-            @pointerdown.stop
-            @click.stop="revealAnswer"
+          <BaseFlipCard
+            class="mt-4 w-full"
+            :flipped="showAnswer"
+            :interactive="interactive"
+            @update:flipped="setAnswerRevealed"
           >
-            <AppIcon icon-name="Eye" :size="16" />
-            Show Answer
-          </button>
+            <template #front>
+              <button
+                type="button"
+                class="flex h-full w-full items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-card-gold/30 p-4 text-sm font-medium text-card-muted hover:border-primary hover:text-primary"
+                @pointerdown.stop
+                @click.stop="setAnswerRevealed(true)"
+              >
+                <AppIcon icon-name="Eye" :size="16" />
+                Show Answer
+              </button>
+            </template>
+            <template #back>
+              <div class="h-full w-full rounded-xl border border-card-gold/20 bg-card-definition p-4">
+                <p class="text-base leading-relaxed text-text">{{ card.backAnswer }}</p>
+              </div>
+            </template>
+          </BaseFlipCard>
+
+          <ul
+            v-if="showAnswer && card.examples.length > 0"
+            class="mt-4 space-y-2"
+          >
+            <li
+              v-for="(example, index) in card.examples"
+              :key="index"
+              class="text-base text-text/90"
+            >
+              {{ example }}
+            </li>
+          </ul>
+
+          <p
+            v-if="showAnswer && card.synonyms.length > 0"
+            class="mt-4 text-sm text-text/80"
+          >
+            <span class="font-semibold text-card-gold">Synonyms:</span> {{ card.synonyms.join(', ') }}
+          </p>
+          <p
+            v-if="showAnswer && card.antonyms.length > 0"
+            class="mt-1 text-sm text-text/80"
+          >
+            <span class="font-semibold text-card-gold">Antonyms:</span> {{ card.antonyms.join(', ') }}
+          </p>
 
           <PartsOfSpeechDisplay
             v-if="card.partsOfSpeech && card.partsOfSpeech.length > 0"

@@ -33,8 +33,14 @@ function deckCardCount(deckId: string): number {
   return cardStore.byDeck(deckId).length;
 }
 
+/** New cards always get assigned a topic (falling back to "General"), but a topic's count also
+ *  folds in any leftover topic-less card from before that was guaranteed, so nothing is ever
+ *  silently hidden. */
 function deckTopicCardCount(topicId: string): number {
-  return cardStore.cards.filter((card) => card.topicId === topicId).length;
+  const count = cardStore.cards.filter((card) => card.topicId === topicId).length;
+  const topic = topicStore.getById(topicId);
+  if (!topic || !topicStore.isGeneral(topic)) return count;
+  return count + cardStore.byDeck(topic.deckId).filter((card) => !card.topicId).length;
 }
 
 // --- Topics (nested under each deck) ---
@@ -325,7 +331,7 @@ v-if="creatingTopicForDeckId || editingTopic" :topic="editingTopic" @save="saveT
 
     <ConfirmDialog
 v-if="deletingTopic" title="Delete this topic?"
-      :message="`Deleting “${deletingTopic.name}” won't delete its ${deckTopicCardCount(deletingTopic.id)} card(s) — they'll move to Uncategorized.`"
+      :message="`Deleting “${deletingTopic.name}” won't delete its ${deckTopicCardCount(deletingTopic.id)} card(s) — they'll move to General.`"
       confirm-label="Delete" variant="danger" @confirm="confirmDeleteTopic" @cancel="deletingTopic = null" />
   </div>
 </template>

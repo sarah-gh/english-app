@@ -1,3 +1,7 @@
+/** Every deck always has (or lazily gets) a topic by this name — the fallback any card lands in
+ *  when no topic was explicitly chosen, so cards never show up orphaned in deck/topic browsing. */
+export const GENERAL_TOPIC_NAME = 'General';
+
 export interface Topic {
   id: string;
   deckId: string;
