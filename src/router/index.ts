@@ -9,6 +9,7 @@ import CardImportView from '@/views/CardImportView.vue'
 import DashboardView from '@/views/DashboardView.vue'
 import DataManagementView from '@/views/DataManagementView.vue'
 import DeckTagManagementView from '@/views/DeckTagManagementView.vue'
+import PrivacyView from '@/views/PrivacyView.vue'
 import ProfileView from '@/views/ProfileView.vue'
 import SettingsView from '@/views/SettingsView.vue'
 import StudySessionView from '@/views/StudySessionView.vue'
@@ -34,6 +35,7 @@ const router = createRouter({
     { path: '/study', name: 'study-setup', component: StudySetupView },
     { path: '/study/session', name: 'study-session', component: StudySessionView },
     { path: '/settings', name: 'settings', component: SettingsView },
+    { path: '/privacy', name: 'privacy', component: PrivacyView },
     { path: '/ai-quiz', name: 'ai-quiz-setup', component: AiQuizSetupView },
     { path: '/ai-quiz/session', name: 'ai-quiz-session', component: AiQuizView },
   ],

@@ -93,14 +93,7 @@ function backToSetup() {
 /** Prefers the exact topic/deck the session was scoped to; falls back up the Browse hierarchy
  *  when the session covered "All decks" or "All topics". */
 function backToTopic() {
-  const config = studySessionStore.lastConfig;
-  if (config?.deckId && config.topicId) {
-    router.push(`/cards/${config.deckId}/${config.topicId}`);
-  } else if (config?.deckId) {
-    router.push(`/cards/${config.deckId}`);
-  } else {
-    router.push('/cards');
-  }
+  router.push('/study');
 }
 
 function studyAnotherBatch() {

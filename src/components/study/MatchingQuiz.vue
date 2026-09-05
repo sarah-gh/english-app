@@ -115,8 +115,8 @@ function requestHint() {
       </div>
     </div>
 
-    <div class="grid grid-cols-2 gap-3 sm:gap-4">
-      <div class="rounded-2xl bg-card-surface p-3">
+    <div class="grid grid-cols-2 gap-2 sm:gap-3">
+      <div class="rounded-2xl bg-card-surface py-3 p-2">
         <div class="mb-3 flex items-center gap-1.5 px-1">
           <AppIcon icon-name="Book1" :size="14" class="text-primary" />
           <span class="text-xs font-semibold tracking-wider text-primary">WORDS</span>
@@ -131,7 +131,7 @@ function requestHint() {
           />
         </div>
       </div>
-      <div class="rounded-2xl bg-card-surface p-3">
+      <div class="rounded-2xl bg-card-surface py-3 p-2">
         <div class="mb-3 flex items-center gap-1.5 px-1">
           <AppIcon icon-name="DocumentText" :size="14" class="text-primary" />
           <span class="text-xs font-semibold tracking-wider text-primary">MEANINGS</span>

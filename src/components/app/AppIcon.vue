@@ -27,6 +27,7 @@ import Flash from 'vue-iconsax/dist/components/icons/Flash.vue.js';
 import Folder2 from 'vue-iconsax/dist/components/icons/Folder2.vue.js';
 import Home2 from 'vue-iconsax/dist/components/icons/Home2.vue.js';
 import Import from 'vue-iconsax/dist/components/icons/Import.vue.js';
+import InfoCircle from 'vue-iconsax/dist/components/icons/InfoCircle.vue.js';
 import Logout from 'vue-iconsax/dist/components/icons/Logout.vue.js';
 import Minus from 'vue-iconsax/dist/components/icons/Minus.vue.js';
 import Play from 'vue-iconsax/dist/components/icons/Play.vue.js';
@@ -72,6 +73,7 @@ const ICONS = {
   Folder2,
   Home2,
   Import,
+  InfoCircle,
   Logout,
   Minus,
   Play,

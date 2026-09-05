@@ -7,6 +7,7 @@ import BaseFlipCard from '@/components/ui/BaseFlipCard.vue';
 import BaseTag from '@/components/ui/BaseTag.vue';
 import { useCardAudio } from '@/composables/useCardAudio';
 import type { SwipeDirection } from '@/services/review/state-machine';
+import { useDeckStore } from '@/stores/deck-store';
 import { useTagStore } from '@/stores/tag-store';
 import type { Card } from '@/types/card';
 import type { Tag } from '@/types/tag';
@@ -34,6 +35,7 @@ const emit = defineEmits<{
 }>();
 
 const tagStore = useTagStore();
+const deckStore = useDeckStore();
 const { playCardAudio } = useCardAudio();
 
 const SWIPE_THRESHOLD = 100;
@@ -174,6 +176,10 @@ function overlayStyle(progress: number) {
   };
 }
 
+/** Cards link straight to their deck (`deckId`) with no intermediate nesting — decks aren't
+ *  parented to other decks, so a card's deck is already its top-level/root deck. */
+const rootDeckName = computed(() => deckStore.getById(props.card.deckId)?.name);
+
 const cardTags = computed<Tag[]>(() =>
   props.card.tagIds
     .map((id) => tagStore.getById(id))
@@ -264,9 +270,15 @@ onBeforeUnmount(() => {
          (on top of its own padding) so the body's own edge — and its scrollbar — never sits flush
          against the gold inset line, which is what let content/scrollbar visually cross it. -->
     <div class="card-scroll relative z-10 mx-3 my-3 min-h-0 flex-1 touch-pan-y overflow-y-auto px-3 py-4">
-      <div class="flex items-start justify-between gap-3">
+      <p
+        v-if="rootDeckName"
+        class="mb-1 text-xs font-medium tracking-wider text-card-muted/70 uppercase"
+      >
+        {{ rootDeckName }}
+      </p>
+      <div class="flex items-start justify-between gap-3 flex-wrap">
         <h2 class="font-serif text-3xl font-semibold text-card-gold">{{ card.frontTitle }}</h2>
-        <div class="flex shrink-0 items-center gap-2">
+        <div class="flex flex-1 justify-end items-center gap-2">
           <span
             v-if="card.studyCount > 0"
             class="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
@@ -420,7 +432,7 @@ onBeforeUnmount(() => {
         </template>
       </BaseExpandableContent>
 
-      
+
 
       <button
         v-if="card.hint"

@@ -33,7 +33,7 @@ const statusClasses = computed(() => {
 <template>
   <button
     type="button"
-    class="flex w-full items-center gap-3 rounded-xl bg-card-definition px-4 py-3.5 text-left text-sm text-text transition-colors duration-150"
+    class="flex w-full items-center gap-3 relative rounded-xl bg-card-definition px-2 py-3.5 text-left text-sm text-text transition-colors duration-150"
     :class="[statusClasses, isClickable ? 'cursor-pointer' : 'cursor-default']"
     :disabled="!isClickable"
     @click="$emit('click')"
@@ -42,6 +42,9 @@ const statusClasses = computed(() => {
     <span
       class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border"
       :class="isFilled ? 'border-primary bg-primary' : 'border-slate-600'"
+      style="position: absolute;
+    top: calc(50% - 12px);
+    right: 10px;"
     >
       <svg v-if="isFilled" viewBox="0 0 24 24" fill="none" class="h-3.5 w-3.5" aria-hidden="true">
         <path d="M5 13l4 4L19 7" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />

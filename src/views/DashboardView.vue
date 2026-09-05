@@ -25,8 +25,10 @@ function deckCardCount(deckId: string): number {
 
 <template>
   <div class="min-h-screen bg-background px-4 py-6 pb-18.75">
-    <h1 class="mb-1 text-2xl font-bold text-text">Flashcards</h1>
-    <p class="mb-6 text-sm text-text/50">Your offline vocabulary trainer</p>
+    <h1 class="mb-1 text-2xl font-bold text-text">Vocabulary Flashcards App</h1>
+    <p class="mb-6 text-sm text-text/50">
+      A serverless, offline-first flashcard manager with Google Drive sync support.
+    </p>
 
     <p v-if="!isReady" class="text-sm text-text/50">
       Loading…

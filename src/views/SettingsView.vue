@@ -37,6 +37,13 @@ onMounted(async () => {
       <PronunciationSettings />
       <DailyGoalSettings />
       <InstallAppSettings />
+
+      <RouterLink
+        to="/privacy"
+        class="mt-2 block text-center text-xs text-text/35 hover:text-text/60"
+      >
+        Privacy Policy
+      </RouterLink>
     </template>
   </div>
 </template>

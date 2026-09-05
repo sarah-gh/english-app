@@ -98,6 +98,16 @@ async function handleConnect() {
       >
         You're offline — connect once you're back online.
       </p>
+
+      <div class="mt-3 flex items-start gap-2 rounded-xl border border-slate-600 bg-background/40 p-3">
+        <AppIcon icon-name="InfoCircle" :size="14" class="mt-0.5 shrink-0 text-card-muted" />
+        <p class="text-xs text-card-muted">
+          <span class="font-medium text-text">Note:</span> On first login, click
+          <span class="font-medium text-text">"Advanced"</span> →
+          <span class="font-medium text-text">"Proceed to Vocabulary Flashcards App"</span>
+          if prompted by Google.
+        </p>
+      </div>
     </template>
 
     <template v-else>

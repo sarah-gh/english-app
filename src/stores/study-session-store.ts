@@ -49,12 +49,13 @@ export const useStudySessionStore = defineStore('study-session', () => {
   const lastAction = ref<LastSwipeAction | null>(null);
   const viewMode = ref<CardViewMode>('practice');
 
+  /** The mismatch-retry budget in `submitMatchingResults` — always set to the actual candidate
+   *  count (`totalSessionCards`), never the raw requested `sessionSize`, so a request for more
+   *  cards than exist can't pad the session with re-queued duplicates past the real card count. */
   const totalSlots = ref(0);
-  /** How many cards this session's progress header should count against — the actual queue size
-   *  (which can be smaller than `totalSlots` when the deck/topic has fewer cards than the
-   *  selected session-size cap), not the raw cap itself. `totalSlots` stays the uncapped budget
-   *  so a mismatched card can still be requeued for another attempt up to that cap; only the
-   *  displayed "X/Y" counter and progress bar need the actual-size version. */
+  /** How many cards this session's progress header should count against — the actual queue size,
+   *  which can be smaller than the requested session-size cap when the deck/topic has fewer
+   *  eligible cards than that cap. */
   const totalSessionCards = ref(0);
   const slotsUsed = ref(0);
   const completedChunkCount = ref(0);
@@ -89,7 +90,11 @@ export const useStudySessionStore = defineStore('study-session', () => {
     const initialQueue = buildPriorityQueue(candidates, config.sessionSize, config.reviewStatusFilter);
 
     lastConfig.value = config;
-    totalSlots.value = config.sessionSize;
+    // Capped to the actual candidate count, not the raw requested `sessionSize` — otherwise a
+    // request for more cards than exist (e.g. 10 requested, only 7 candidates) leaves `totalSlots`
+    // larger than the real queue, and the mismatch-retry logic below keeps re-inserting duplicate
+    // cards to "spend" those phantom slots instead of ending the session once the real cards are done.
+    totalSlots.value = initialQueue.length;
     totalSessionCards.value = initialQueue.length;
     slotsUsed.value = initialQueue.length;
     queue.value = initialQueue;
