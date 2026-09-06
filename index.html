@@ -1,13 +1,33 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8">
-    <link rel="icon" href="/english-app/favicon.ico" sizes="any">
-    <link rel="icon" type="image/svg+xml" href="/english-app/favicon.svg">
-    <link rel="apple-touch-icon" href="/english-app/pwa-192x192.png">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#000000">
-    <meta name="description" content="A serverless, offline-first flashcard manager with Google Drive sync support.">
+    <meta charset="UTF-8" />
+    <link
+      rel="icon"
+      href="/english-app/favicon.ico"
+      sizes="any"
+    />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="/english-app/favicon.svg"
+    />
+    <link
+      rel="apple-touch-icon"
+      href="/english-app/pwa-192x192.png"
+    />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <meta
+      name="theme-color"
+      content="#000000"
+    />
+    <meta
+      name="description"
+      content="A serverless, offline-first flashcard manager with Google Drive sync support."
+    />
     <title>Vocabulary Flashcards App</title>
     <script type="text/javascript">
       // Applied inline, before any CSS/JS module loads, so a dark-mode user never sees a flash of
@@ -16,13 +36,15 @@
       (function () {
         try {
           var stored = localStorage.getItem('theme-mode');
-          var isDark = stored === 'dark' || (stored !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          var isDark =
+            stored === 'dark' ||
+            (stored !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
           document.documentElement.classList.toggle('dark', isDark);
         } catch (e) {}
       })();
     </script>
-    <script type="module" crossorigin src="/english-app/assets/index-DTEwueny.js"></script>
-    <link rel="stylesheet" crossorigin href="/english-app/assets/index-v9KAvydt.css">
+    <script type="module" crossorigin src="/english-app/assets/index-Bo6rEwB_.js"></script>
+    <link rel="stylesheet" crossorigin href="/english-app/assets/index-BKKG-liU.css">
   <link rel="manifest" href="/english-app/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/english-app/registerSW.js"></script></head>
   <body>
     <script type="text/javascript">
@@ -34,12 +56,12 @@
             .slice(1)
             .split('&')
             .map(function (s) {
-              return s.replace(/~and~/g, '&')
+              return s.replace(/~and~/g, '&');
             })
-            .join('?')
-          window.history.replaceState(null, null, l.pathname.slice(0, -1) + decoded + l.hash)
+            .join('?');
+          window.history.replaceState(null, null, l.pathname.slice(0, -1) + decoded + l.hash);
         }
-      })(window.location)
+      })(window.location);
     </script>
     <div id="app"></div>
   </body>
