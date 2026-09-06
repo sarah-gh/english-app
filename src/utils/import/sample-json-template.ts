@@ -2,8 +2,11 @@
  * Reference JSON used by the "Load Sample Template" button in `JsonTextImportModal`. Covers every
  * shape `parseJsonCardImport` understands in one file: the `{ decks: [...] }` wrapper, per-deck
  * `topicName`, and all three card templates the app supports — standard vocabulary (IPA, hint,
- * examples, synonyms, antonyms, `partsOfSpeech`), a grammar/rule card (plain front/back + examples),
- * and a Word Family card (`wordFamily`).
+ * examples, synonyms, antonyms, `extraInfo`, `partsOfSpeech`), a grammar/rule card (plain
+ * front/back + examples). `backAnswer` and `extraInfo` follow the same field-separation rules the
+ * AI Auto-Fill prompts use (see `card-autofill-prompt-builder.ts`): `backAnswer` is just the core
+ * meaning with no restated headword, examples/synonyms/antonyms live in their own arrays instead of
+ * being embedded in either HTML field, and `extraInfo` is reserved for deeper linguistic context.
  */
 const SAMPLE_JSON_IMPORT_DATA = {
   decks: [
@@ -13,7 +16,12 @@ const SAMPLE_JSON_IMPORT_DATA = {
       cards: [
         {
           frontTitle: 'Ubiquitous',
-          backAnswer: 'Present, appearing, or found everywhere.',
+          backAnswer: 'Present, appearing, or found absolutely everywhere.\n\nفارسی: همه‌جا حاضر، فراگیر',
+          extraInfo:
+            '<h3>Usage Nuance &amp; Register</h3><p>Neutral-to-formal — common in writing and educated speech, rarely in casual small talk. Carries no emotional charge; it simply emphasizes how widespread something is.</p>' +
+            '<h3>Word Family</h3><ul><li><strong>Noun:</strong> ubiquity — the state of being everywhere.</li><li><strong>Adverb:</strong> ubiquitously.</li></ul>' +
+            '<h3>Collocations</h3><ul><li><strong>ubiquitous</strong> presence</li><li><strong>ubiquitous</strong> in modern life</li><li>become <strong>ubiquitous</strong></li></ul>' +
+            '<h3>Common Pitfalls</h3><p>Not the same as <strong>common</strong> (merely frequent) — "ubiquitous" specifically means present <em>everywhere at once</em>, so it overstates things if the item only appears often rather than universally.</p>',
           ipa: '/juːˈbɪkwɪtəs/',
           hint: 'Think of smartphones — seen absolutely everywhere.',
           examples: [
@@ -43,6 +51,9 @@ const SAMPLE_JSON_IMPORT_DATA = {
           frontTitle: 'Present Perfect Tense',
           backAnswer:
             'Use the Present Perfect (have/has + past participle) for actions that started in the past and continue now, or past actions with a present result.',
+          extraInfo:
+            '<h3>Contrasts With</h3><p>The Simple Past (<em>I lived here for five years</em>, now finished) states a closed event with a specific past time; the Present Perfect leaves the timeframe open or connects it to now.</p>' +
+            '<h3>Common Pitfalls</h3><p>Never pair it with a specific past time word like "yesterday" or "in 2019" — those force the Simple Past instead.</p>',
           examples: ['I have lived here for five years.', 'She has just finished her homework.'],
           tagNames: ['Grammar', 'Tenses'],
         },

@@ -22,6 +22,7 @@ export const queryKeys = {
   fieldAutofill: {
     all: ['field-autofill'] as const,
     definition: () => [...queryKeys.fieldAutofill.all, 'definition'] as const,
+    extraInfo: () => [...queryKeys.fieldAutofill.all, 'extra-info'] as const,
     ipa: () => [...queryKeys.fieldAutofill.all, 'ipa'] as const,
     examples: () => [...queryKeys.fieldAutofill.all, 'examples'] as const,
     partsOfSpeech: () => [...queryKeys.fieldAutofill.all, 'parts-of-speech'] as const,

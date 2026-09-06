@@ -1,4 +1,5 @@
 import type { PosType } from '@/types/card';
+import { sanitizeRichText, stripHtmlToText } from '@/utils/html';
 
 export interface GeneratedPosEntry {
   pos: PosType;
@@ -15,13 +16,29 @@ export interface GeneratedPosEntry {
 }
 
 export interface GeneratedCardDetails {
+  /** Concise HTML (<p>, <strong>, <em> only) — sanitized down to that tag set by
+   *  `parseCardAutofillResponseText` before it ever reaches the caller. Just a brief definition,
+   *  primary translation, and one core example — extended context belongs in `extraInfo` instead. */
   backAnswer: string;
+  /** Extended context kept separate from the concise `backAnswer`: verb forms/tenses, phrasal
+   *  verbs, collocations, idiom notes, etc. Structured HTML (<h3>, <p>, <strong>, <em>,
+   *  <ul>/<ol>/<li> section headings) — sanitized the same way as `backAnswer`. Omitted when the
+   *  AI found nothing worth adding beyond the concise answer. */
+  extraInfo?: string;
   ipa?: string;
   hint?: string;
-  /** Relatable, real-life example sentences — shown in the editor's "Personal Examples" section.
-   *  At least 2 for vocabulary/idioms, at least 3 (covering distinct usage structures) for
-   *  grammar topics. */
+  /** Relatable, real-life example sentences — populates the card's own `examples` field (the
+   *  editor's "Personal Examples" section) rather than being embedded in the `backAnswer`/
+   *  `extraInfo` HTML. At least 2 for vocabulary/idioms, at least 3 (covering distinct usage
+   *  structures) for grammar topics. */
   personalExamples: string[];
+  /** Plain synonym words/phrases for the card's own `synonyms` field — deliberately kept out of
+   *  the `backAnswer`/`extraInfo` HTML so the card never shows them twice. Empty when the term has
+   *  no useful synonyms (most grammar topics). */
+  synonyms: string[];
+  /** Plain antonym words/phrases for the card's own `antonyms` field, same rationale as
+   *  `synonyms`. Empty when nothing meaningfully opposes the term. */
+  antonyms: string[];
   /** Present only when the title has more than one common part of speech worth distinguishing. */
   partsOfSpeech?: GeneratedPosEntry[];
   /** Plain tag names (no leading "#") — the caller resolves these to existing tags or creates
@@ -52,9 +69,12 @@ export const CARD_AUTOFILL_RESPONSE_SCHEMA = {
   type: 'OBJECT',
   properties: {
     backAnswer: { type: 'STRING' },
+    extraInfo: { type: 'STRING' },
     ipa: { type: 'STRING' },
     hint: { type: 'STRING' },
     personalExamples: { type: 'ARRAY', items: { type: 'STRING' } },
+    synonyms: { type: 'ARRAY', items: { type: 'STRING' } },
+    antonyms: { type: 'ARRAY', items: { type: 'STRING' } },
     partsOfSpeech: { type: 'ARRAY', items: POS_ENTRY_SCHEMA },
     suggestedTags: { type: 'ARRAY', items: { type: 'STRING' } },
     suggestedDeckCategory: { type: 'STRING' },
@@ -68,7 +88,7 @@ export const CARD_AUTOFILL_RESPONSE_SCHEMA = {
 export const CARD_AUTOFILL_JSON_SHAPE_HINT = `
 
 Respond with ONLY a JSON object of this exact shape, no other text:
-{"backAnswer": string, "ipa": string (optional), "hint": string (optional), "personalExamples": string[], "partsOfSpeech": [{"pos": "noun" | "verb" | "adjective" | "adverb" | "other", "wordForm": string, "definition": string, "ipa": string (optional), "examples": string[] (optional)}] (optional), "suggestedTags": string[], "suggestedDeckCategory": string (optional)}`;
+{"backAnswer": string (concise HTML — <p>, <strong>, <em> only), "extraInfo": string (optional — structured HTML with <h3>, <p>, <strong>, <em>, <ul>/<ol>/<li> section headings; no other tags or attributes), "ipa": string (optional), "hint": string (optional), "personalExamples": string[], "synonyms": string[], "antonyms": string[], "partsOfSpeech": [{"pos": "noun" | "verb" | "adjective" | "adverb" | "other", "wordForm": string, "definition": string, "ipa": string (optional), "examples": string[] (optional)}] (optional), "suggestedTags": string[], "suggestedDeckCategory": string (optional)}`;
 
 export function isGeneratedPosEntry(value: unknown): value is GeneratedPosEntry {
   if (!value || typeof value !== 'object') return false;
@@ -108,7 +128,7 @@ export function parseCardAutofillResponseText(
   }
 
   const obj = parsed as Record<string, unknown>;
-  if (typeof obj.backAnswer !== 'string' || !obj.backAnswer.trim()) {
+  if (typeof obj.backAnswer !== 'string' || !stripHtmlToText(obj.backAnswer)) {
     throw makeError("The AI provider's response did not include a usable definition.");
   }
 
@@ -117,10 +137,16 @@ export function parseCardAutofillResponseText(
     : undefined;
 
   return {
-    backAnswer: obj.backAnswer.trim(),
+    backAnswer: sanitizeRichText(obj.backAnswer.trim()),
+    extraInfo:
+      typeof obj.extraInfo === 'string' && stripHtmlToText(obj.extraInfo)
+        ? sanitizeRichText(obj.extraInfo.trim())
+        : undefined,
     ipa: typeof obj.ipa === 'string' && obj.ipa.trim() ? obj.ipa.trim() : undefined,
     hint: typeof obj.hint === 'string' && obj.hint.trim() ? obj.hint.trim() : undefined,
     personalExamples: stringArray(obj.personalExamples),
+    synonyms: stringArray(obj.synonyms),
+    antonyms: stringArray(obj.antonyms),
     partsOfSpeech: partsOfSpeech && partsOfSpeech.length > 0 ? partsOfSpeech : undefined,
     suggestedTags: stringArray(obj.suggestedTags),
     suggestedDeckCategory:

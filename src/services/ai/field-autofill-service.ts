@@ -5,6 +5,7 @@ import { AiProviderError } from './errors';
 import {
   buildDefinitionPrompt,
   buildExamplesPrompt,
+  buildExtraInfoPrompt,
   buildIpaPrompt,
   buildPartsOfSpeechPrompt,
 } from './field-autofill-prompt-builder';
@@ -13,10 +14,14 @@ import {
   DEFINITION_RESPONSE_SCHEMA,
   EXAMPLES_JSON_SHAPE_HINT,
   EXAMPLES_RESPONSE_SCHEMA,
+  EXTRA_INFO_JSON_SHAPE_HINT,
+  EXTRA_INFO_RESPONSE_SCHEMA,
+  type GeneratedDefinition,
   IPA_JSON_SHAPE_HINT,
   IPA_RESPONSE_SCHEMA,
   parseDefinitionResponseText,
   parseExamplesResponseText,
+  parseExtraInfoResponseText,
   parseIpaResponseText,
   parsePartsOfSpeechResponseText,
   PARTS_OF_SPEECH_JSON_SHAPE_HINT,
@@ -57,14 +62,28 @@ async function generateField<T>(
   });
 }
 
-/** Generates just the definition/back-answer field from the card's front title. */
-export async function generateDefinition(settings: AppSettings, title: string): Promise<string> {
+/** Generates the definition/back-answer field from the card's front title, split into the concise
+ *  `backAnswer` and (when there's something worth adding) the extended `extraInfo` section. */
+export async function generateDefinition(settings: AppSettings, title: string): Promise<GeneratedDefinition> {
   return generateField(
     settings,
     buildDefinitionPrompt(title),
     DEFINITION_RESPONSE_SCHEMA,
     DEFINITION_JSON_SHAPE_HINT,
     parseDefinitionResponseText,
+  );
+}
+
+/** Generates just the "Extra Information" field — deeper linguistic context (verb forms, collocations,
+ *  register/usage nuance, word family, cultural context) — from the card's front title and, when
+ *  available, its back answer/explanation for extra context. Never touches any other field. */
+export async function generateExtraInfo(settings: AppSettings, front: string, back?: string): Promise<string> {
+  return generateField(
+    settings,
+    buildExtraInfoPrompt(front, back),
+    EXTRA_INFO_RESPONSE_SCHEMA,
+    EXTRA_INFO_JSON_SHAPE_HINT,
+    parseExtraInfoResponseText,
   );
 }
 

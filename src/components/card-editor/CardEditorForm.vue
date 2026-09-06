@@ -7,11 +7,14 @@ import AiSparkleIcon from '@/components/app/AiSparkleIcon.vue';
 import WarningIcon from '@/components/app/WarningIcon.vue';
 import BaseAutocomplete from '@/components/ui/BaseAutocomplete.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
+import BaseRichTextEditor from '@/components/ui/BaseRichTextEditor.vue';
 import BaseSegmentedToggle from '@/components/ui/BaseSegmentedToggle.vue';
+import { useEntityResolver } from '@/composables/useEntityResolver';
 import { useWordAutocomplete, type WordSuggestion } from '@/composables/useWordAutocomplete';
 import { useAutofillCardDetails } from '@/queries/use-autofill-card-details';
 import { useAutofillWordFamily } from '@/queries/use-autofill-word-family';
 import { useGenerateDefinition } from '@/queries/use-generate-definition';
+import { useGenerateExtraInfo } from '@/queries/use-generate-extra-info';
 import { hasRequiredAiCredentials } from '@/services/ai/ai-card-autofill-service';
 import type { GeneratedCardDetails } from '@/services/ai/card-autofill-schema';
 import { AiServiceError } from '@/services/ai/errors';
@@ -19,7 +22,6 @@ import type { GeneratedWordFamily } from '@/services/ai/word-family-schema';
 import { cardEditorSchema, type CardEditorValidationValues } from '@/schemas/cardSchema';
 import { useDeckStore } from '@/stores/deck-store';
 import { useSettingsStore } from '@/stores/settings-store';
-import { useTagStore } from '@/stores/tag-store';
 import AiFieldButton from './AiFieldButton.vue';
 import type { CardFormState, CardMode, PosEntryFormState } from './card-form-state';
 import DeckSelectField from './DeckSelectField.vue';
@@ -47,7 +49,7 @@ const emit = defineEmits<{
 
 const deckStore = useDeckStore();
 const settingsStore = useSettingsStore();
-const tagStore = useTagStore();
+const { createBatch } = useEntityResolver();
 
 function validationSnapshot(): CardEditorValidationValues {
   return {
@@ -136,9 +138,30 @@ async function handleGenerateDefinition() {
   const title = draft.value.frontTitle.trim();
   if (!title) return;
   try {
-    draft.value.backAnswer = await requestDefinition({ settings: settingsStore.settings, title });
+    const result = await requestDefinition({ settings: settingsStore.settings, title });
+    draft.value.backAnswer = result.backAnswer;
+    if (result.extraInfo) draft.value.extraInfo = result.extraInfo;
   } catch {
     // definitionErrorMessage (computed above) already reflects the mutation's error state.
+  }
+}
+
+const { mutateAsync: requestExtraInfo, isPending: isGeneratingExtraInfo, error: extraInfoApiError } =
+  useGenerateExtraInfo();
+const extraInfoErrorMessage = computed(() => {
+  const error = extraInfoApiError.value;
+  if (!error) return '';
+  return error instanceof AiServiceError ? error.message : 'Auto-fill failed. Please try again.';
+});
+
+async function handleGenerateExtraInfo() {
+  const front = draft.value.frontTitle.trim();
+  if (!front) return;
+  try {
+    const back = draft.value.backAnswer.trim();
+    draft.value.extraInfo = await requestExtraInfo({ settings: settingsStore.settings, front, back: back || undefined });
+  } catch {
+    // extraInfoErrorMessage (computed above) already reflects the mutation's error state.
   }
 }
 
@@ -173,9 +196,12 @@ async function handleAutofill() {
 
 async function applyAutofillResult(result: GeneratedCardDetails): Promise<void> {
   draft.value.backAnswer = result.backAnswer;
+  if (result.extraInfo) draft.value.extraInfo = result.extraInfo;
   if (result.ipa) draft.value.ipa = result.ipa;
   if (result.hint) draft.value.hint = result.hint;
   if (result.personalExamples.length > 0) draft.value.examples = result.personalExamples;
+  if (result.synonyms.length > 0) draft.value.synonyms = result.synonyms;
+  if (result.antonyms.length > 0) draft.value.antonyms = result.antonyms;
 
   if (result.partsOfSpeech && result.partsOfSpeech.length > 0) {
     const rootWord = draft.value.frontTitle.trim();
@@ -215,28 +241,24 @@ function applyWordFamilyResult(result: GeneratedWordFamily): void {
 }
 
 /** Auto-selects a deck matching the AI-suggested category when the user hasn't already picked
- *  one — reusing an existing deck of that name if one exists, otherwise creating it (mirroring
- *  how `applySuggestedTags` resolves-or-creates tags below). */
+ *  one — reusing an existing deck of that name if one exists, otherwise creating it. The
+ *  resolve-or-create rules themselves live in `useEntityResolver`, shared with both importers. */
 async function applySuggestedDeck(categoryName: string | undefined): Promise<void> {
-  if (draft.value.deckId || !categoryName) return;
-  const name = categoryName.trim();
-  if (!name) return;
-
-  const existing = deckStore.decks.find((deck) => deck.name.toLowerCase() === name.toLowerCase());
-  const deck = existing ?? (await deckStore.add({ name }));
-  draft.value.deckId = deck.id;
+  if (draft.value.deckId || !categoryName?.trim()) return;
+  draft.value.deckId = await createBatch().deckId(categoryName);
 }
 
 async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
   if (suggestedTags.length === 0) return;
 
+  // One batch across the whole suggestion list, so a name the AI repeats resolves once.
+  const resolve = createBatch();
   const resolvedTagIds: string[] = [];
   for (const rawName of suggestedTags) {
+    // The AI is asked for plain tag names, but strip a leading "#" in case it writes one anyway.
     const name = rawName.replace(/^#/, '').trim();
     if (!name) continue;
-    const existing = tagStore.tags.find((tag) => tag.name.toLowerCase() === name.toLowerCase());
-    const tag = existing ?? (await tagStore.add({ name, color: '#6b7280' }));
-    resolvedTagIds.push(tag.id);
+    resolvedTagIds.push(await resolve.tagId(name));
   }
   draft.value.tagIds = Array.from(new Set([...draft.value.tagIds, ...resolvedTagIds]));
 }
@@ -348,13 +370,11 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
             @click="handleGenerateDefinition"
           />
         </div>
-        <textarea
+        <BaseRichTextEditor
           id="back-answer"
           v-model="draft.backAnswer"
-          rows="3"
           placeholder="e.g. Present, appearing, or found everywhere."
-          class="w-full rounded bg-card-surface border px-3 py-2 text-sm focus:border-primary focus:outline-none"
-          :class="backAnswerMeta.touched && backAnswerError ? 'border-danger/80' : 'border-text/20'"
+          :invalid="backAnswerMeta.touched && Boolean(backAnswerError)"
           @blur="touchBackAnswer"
         />
         <p
@@ -370,6 +390,34 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
         >
           <WarningIcon />
           {{ definitionErrorMessage }}
+        </p>
+      </div>
+
+      <div>
+        <div class="mb-1 flex items-center justify-between gap-2">
+          <label
+            for="extra-info"
+            class="block text-sm font-medium text-text/70"
+            >Extra Information (optional)</label
+          >
+          <AiFieldButton
+            :loading="isGeneratingExtraInfo"
+            :disabled="!canAutofillField"
+            :title="draft.frontTitle.trim() ? 'Auto-fill this field with AI' : 'Enter a word first to use AI Auto-Fill'"
+            @click="handleGenerateExtraInfo"
+          />
+        </div>
+        <BaseRichTextEditor
+          id="extra-info"
+          v-model="draft.extraInfo"
+          placeholder="Verb forms & tenses, phrasal verbs, collocations, or other supplementary notes."
+        />
+        <p
+          v-if="extraInfoErrorMessage"
+          class="mt-1 flex items-center gap-1.5 text-xs font-medium text-danger"
+        >
+          <WarningIcon />
+          {{ extraInfoErrorMessage }}
         </p>
       </div>
 

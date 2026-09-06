@@ -1,5 +1,6 @@
 import type { Card } from '@/types/card';
 import type { ProficiencyLevel } from '@/types/settings';
+import { stripHtmlToText } from '@/utils/html';
 
 /** Appended to a quiz prompt so generated content matches the learner's self-assessed CEFR level
  *  instead of defaulting to whatever difficulty the model picks on its own. Omitted entirely (via
@@ -14,7 +15,7 @@ function summarizeCards(cards: Card[]): string {
     .map((card, index) => {
       const lines = [
         `${index + 1}. Term/Question: "${card.frontTitle}"`,
-        `   Explanation/Answer: "${card.backAnswer}"`,
+        `   Explanation/Answer: "${stripHtmlToText(card.backAnswer)}"`,
       ];
       if (card.examples.length > 0) {
         lines.push(`   Examples: ${card.examples.map((example) => `"${example}"`).join(' | ')}`);

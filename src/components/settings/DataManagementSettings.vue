@@ -6,6 +6,7 @@ import BorderedCard from '@/components/common/BorderedCard.vue';
 import JsonImportPreviewModal from '@/components/import/JsonImportPreviewModal.vue';
 import JsonTextImportModal from '@/components/import/JsonTextImportModal.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
+import { useEntityResolver } from '@/composables/useEntityResolver';
 import { exportBackup } from '@/services/backup/exporter';
 import { BackupImportError, importBackup, type ImportSummary } from '@/services/backup/importer';
 import { clearAllData } from '@/services/data/reset-data';
@@ -18,7 +19,6 @@ import { useTagStore } from '@/stores/tag-store';
 import { useTopicStore } from '@/stores/topic-store';
 import type { NewCard } from '@/types/card';
 import { parseJsonCardImport, type JsonImportValidationResult } from '@/utils/import/json-card-importer';
-import { getRandomTagColor } from '@/utils/tag-color';
 
 const settingsStore = useSettingsStore();
 const cardStore = useCardStore();
@@ -26,6 +26,7 @@ const deckStore = useDeckStore();
 const topicStore = useTopicStore();
 const tagStore = useTagStore();
 const analyticsStore = useAnalyticsStore();
+const { createBatch } = useEntityResolver();
 
 // --- Backup ---
 const isExporting = ref(false);
@@ -191,64 +192,28 @@ function cancelJsonImport() {
   jsonImportResult.value = null;
 }
 
-/** Reuses an existing deck by case-insensitive name match, otherwise creates one — mirroring the
- *  resolve-or-create pattern the Excel importer uses. */
-async function resolveDeckId(name: string, cache: Map<string, string>): Promise<string> {
-  const key = name.toLowerCase();
-  const cached = cache.get(key);
-  if (cached) return cached;
-
-  const existing = deckStore.decks.find((deck) => deck.name.toLowerCase() === key);
-  const deck = existing ?? (await deckStore.add({ name }));
-  cache.set(key, deck.id);
-  return deck.id;
-}
-
-/** Topics are scoped per-deck, so the cache/lookup key includes the deck id. */
-async function resolveTopicId(deckId: string, name: string, cache: Map<string, string>): Promise<string> {
-  const key = `${deckId}::${name.toLowerCase()}`;
-  const cached = cache.get(key);
-  if (cached) return cached;
-
-  const existing = topicStore.byDeck(deckId).find((topic) => topic.name.toLowerCase() === name.toLowerCase());
-  const topic = existing ?? (await topicStore.add({ deckId, name }));
-  cache.set(key, topic.id);
-  return topic.id;
-}
-
-async function resolveTagId(name: string, cache: Map<string, string>): Promise<string> {
-  const key = name.toLowerCase();
-  const cached = cache.get(key);
-  if (cached) return cached;
-
-  const existing = tagStore.tags.find((tag) => tag.name.toLowerCase() === key);
-  const tag = existing ?? (await tagStore.add({ name, color: getRandomTagColor() }));
-  cache.set(key, tag.id);
-  return tag.id;
-}
-
 async function confirmJsonImport() {
   const result = jsonImportResult.value;
   if (!result || result.parsedCards.length === 0) return;
 
   isImportingJson.value = true;
   try {
-    const deckCache = new Map<string, string>();
-    const topicCache = new Map<string, string>();
-    const tagCache = new Map<string, string>();
+    // One batch for the whole import run — the same cache lifetime the hand-rolled Maps had.
+    const resolve = createBatch();
     const newCards: NewCard[] = [];
 
     for (const card of result.parsedCards) {
-      const deckId = await resolveDeckId(card.deckName, deckCache);
-      const topicId = await resolveTopicId(deckId, card.topicName, topicCache);
+      const deckId = await resolve.deckId(card.deckName);
+      const topicId = await resolve.topicId(deckId, card.topicName);
       const tagIds: string[] = [];
       for (const tagName of card.tagNames) {
-        tagIds.push(await resolveTagId(tagName, tagCache));
+        tagIds.push(await resolve.tagId(tagName));
       }
 
       newCards.push({
         frontTitle: card.frontTitle,
         backAnswer: card.backAnswer,
+        extraInfo: card.extraInfo,
         deckId,
         topicId,
         tagIds,

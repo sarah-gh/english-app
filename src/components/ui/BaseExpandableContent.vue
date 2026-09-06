@@ -43,6 +43,7 @@ const isOverflowing = computed(() => contentHeight.value > props.maxHeight + OVE
 const currentOverflow = computed(() => (isOverflowing.value ? 'hidden' : 'visible'));
 
 const currentMaxHeight = computed(() => {
+  console.log(!isOverflowing.value, !isExpanded.value)
   if (!isOverflowing.value) return 'none';
   if (!isExpanded.value) return `${props.maxHeight}px`;
   // Expanded: a concrete (buffered) px value, not 'none', so max-height can transition smoothly
@@ -54,7 +55,7 @@ const currentMaxHeight = computed(() => {
 <template>
   <div>
     <div
-      class="relative transition-[max-height] duration-300 ease-in-out"
+      class="relative transition-[max-height] duration-300 ease-in-out pb-2"
       :style="{ maxHeight: currentMaxHeight, overflow: currentOverflow }"
     >
       <div

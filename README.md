@@ -96,7 +96,7 @@ Configured entirely in Settings, keys stored only in local IndexedDB, never bund
 
 Tables: `cards`, `decks`, `topics`, `tags`, `aiQuizResults`, `dailyStats`, `settings` (a single-row settings table).
 
-* **Card:** front/back text, deck/topic/tag references, IPA, hint, examples, synonyms, antonyms, optional multi-entry parts-of-speech, optional Word Family data, optional image/audio blobs, review status (`new` / `easy` / `medium` / `hard`), per-card review stats (times reviewed, successful/failed matches), embedded quiz questions saved from AI quiz sessions.
+* **Card:** front/back text, an optional `extraInfo` rich-text field for deeper linguistic context kept separate from the concise back answer, deck/topic/tag references, IPA, hint, examples, synonyms, antonyms, optional multi-entry parts-of-speech, optional Word Family data, optional image/audio blobs, review status (`new` / `easy` / `medium` / `hard`), per-card review stats (times reviewed, successful/failed matches), embedded quiz questions saved from AI quiz sessions.
 * **Deck → Topic → Card** is a strict hierarchy (topics are scoped per deck).
 * Schema is versioned (currently v3) with in-place Dexie `.upgrade()` migrations — e.g. v2 introduced the Topic layer and backfilled a "General" topic per deck; v3 backfilled empty synonym/antonym arrays.
 * Pinia stores (`src/stores/`) are thin caches over Dexie repositories (`src/db/repositories/`) — one store each for cards, decks, topics, tags, settings, theme, study session, quiz session, browse tree, and analytics.
@@ -117,6 +117,7 @@ Each card object supports:
 {
   "frontTitle": "Ephemeral",
   "backAnswer": "Lasting for a very short time",
+  "extraInfo": "<h3>Word Family</h3><ul><li><strong>Noun:</strong> ephemerality</li></ul>",
   "deckName": "Advanced Vocabulary",
   "topicName": "Adjectives",
   "ipa": "/ɪˈfem.ər.əl/",

@@ -3,6 +3,7 @@ import WarningIcon from '@/components/app/WarningIcon.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseModal from '@/components/ui/BaseModal.vue';
 import type { JsonImportValidationResult } from '@/utils/import/json-card-importer';
+import { stripHtmlToText } from '@/utils/html';
 
 defineProps<{
   result: JsonImportValidationResult;
@@ -12,7 +13,8 @@ defineProps<{
 const emit = defineEmits<{ confirm: []; cancel: [] }>();
 
 function truncate(text: string, max: number): string {
-  return text.length > max ? `${text.slice(0, max - 1)}…` : text;
+  const plain = stripHtmlToText(text);
+  return plain.length > max ? `${plain.slice(0, max - 1)}…` : plain;
 }
 </script>
 

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { stripHtmlToText } from '@/utils/html';
 
 const posDetailSchema = z.object({
   word: z.string(),
@@ -28,7 +29,7 @@ export const cardEditorSchema = z
   })
   .superRefine((data, ctx) => {
     if (data.cardMode === 'standard') {
-      if (data.backAnswer.trim().length < 1) {
+      if (stripHtmlToText(data.backAnswer).length < 1) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['backAnswer'],

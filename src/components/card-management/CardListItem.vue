@@ -13,6 +13,7 @@ import { useDeckStore } from '@/stores/deck-store';
 import { useTagStore } from '@/stores/tag-store';
 import type { Card, ReviewStatus } from '@/types/card';
 import type { CardViewMode } from '@/types/view-mode';
+import { stripHtmlToText } from '@/utils/html';
 
 const props = defineProps<{
   card: Card;
@@ -161,7 +162,7 @@ async function handleDelete() {
       </template>
       <template v-else>
         <template v-if="showAnswer">
-          <p class="mt-3 text-sm text-text">{{ card.backAnswer }}</p>
+          <p class="mt-3 text-sm text-text">{{ stripHtmlToText(card.backAnswer) }}</p>
           <ul
             v-if="card.examples.length > 0"
             class="mt-2 space-y-0.5"

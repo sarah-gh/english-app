@@ -2,10 +2,11 @@
 import { computed, onMounted, ref } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
 import WarningIcon from '@/components/app/WarningIcon.vue';
+import ActiveFiltersBar from '@/components/browse/ActiveFiltersBar.vue';
+import AllCardsFilterBar from '@/components/browse/AllCardsFilterBar.vue';
 import QuizCardSelectionList from '@/components/quiz-setup/QuizCardSelectionList.vue';
-import QuizFilterControls from '@/components/quiz-setup/QuizFilterControls.vue';
-import QuizTagFilter from '@/components/quiz-setup/QuizTagFilter.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
+import BaseInput from '@/components/ui/BaseInput.vue';
 import BaseSegmentedToggle from '@/components/ui/BaseSegmentedToggle.vue';
 import { useGenerateDescriptiveQuiz, useGenerateMultipleChoiceQuiz } from '@/queries/use-generate-ai-quiz';
 import { hasRequiredAiCredentials } from '@/services/ai/ai-quiz-service';
@@ -14,20 +15,29 @@ import { useCardStore } from '@/stores/card-store';
 import { useDeckStore } from '@/stores/deck-store';
 import { useQuizSessionStore, type QuizSessionQuestion } from '@/stores/quiz-session-store';
 import { useSettingsStore } from '@/stores/settings-store';
+import { useTagStore } from '@/stores/tag-store';
 import { useTopicStore } from '@/stores/topic-store';
 import type { QuizMode } from '@/types/ai-quiz-result';
+import type { DifficultyFilter, PosFilter, SortOption, StudyStatusFilter } from '@/types/card-filters';
+import { stripHtmlToText } from '@/utils/html';
 
 const router = useRouter();
 const cardStore = useCardStore();
 const deckStore = useDeckStore();
 const topicStore = useTopicStore();
+const tagStore = useTagStore();
 const settingsStore = useSettingsStore();
 const quizSessionStore = useQuizSessionStore();
 
 const isReady = ref(false);
+const searchQuery = ref('');
 const selectedDeckId = ref('');
 const selectedTopicId = ref('');
 const selectedTagIds = ref<string[]>([]);
+const studyStatus = ref<StudyStatusFilter>('all');
+const difficulty = ref<DifficultyFilter>('all');
+const pos = ref<PosFilter>('all');
+const sort = ref<SortOption>('created-desc');
 const selectedCardIds = ref<Set<string>>(new Set());
 const quizMode = ref<QuizMode>('multiple-choice');
 const questionCount = ref(10);
@@ -62,6 +72,7 @@ onMounted(async () => {
     cardStore.ensureLoaded(),
     deckStore.ensureLoaded(),
     topicStore.ensureLoaded(),
+    tagStore.ensureLoaded(),
     settingsStore.ensureLoaded(),
   ]);
   isReady.value = true;
@@ -69,8 +80,14 @@ onMounted(async () => {
 
 const hasApiKey = computed(() => hasRequiredAiCredentials(settingsStore.settings));
 
-const filteredCards = computed(() =>
-  cardStore.cards.filter((card) => {
+function setQuestionCount(rawValue: string) {
+  const parsed = Math.round(Number(rawValue));
+  questionCount.value = Number.isFinite(parsed) ? Math.min(30, Math.max(1, parsed)) : 1;
+}
+
+const filteredCards = computed(() => {
+  const query = searchQuery.value.trim().toLowerCase();
+  return cardStore.cards.filter((card) => {
     if (selectedDeckId.value && card.deckId !== selectedDeckId.value) return false;
     if (selectedTopicId.value && card.topicId !== selectedTopicId.value) return false;
     if (
@@ -79,11 +96,89 @@ const filteredCards = computed(() =>
     ) {
       return false;
     }
+    if (studyStatus.value === 'studied' && card.studyCount === 0) return false;
+    if (studyStatus.value === 'unstudied' && card.studyCount > 0) return false;
+    if (difficulty.value !== 'all' && card.reviewStatus !== difficulty.value) return false;
+    if (pos.value !== 'all' && !card.partsOfSpeech?.some((entry) => entry.pos === pos.value)) return false;
+    if (query) {
+      const haystack = `${card.frontTitle} ${stripHtmlToText(card.backAnswer)} ${card.hint ?? ''}`.toLowerCase();
+      if (!haystack.includes(query)) return false;
+    }
     return true;
-  }),
-);
+  });
+});
+
+const sortedCards = computed(() => {
+  const list = [...filteredCards.value];
+  switch (sort.value) {
+    case 'alphabetical':
+      return list.sort((a, b) => a.frontTitle.localeCompare(b.frontTitle));
+    case 'study-count':
+      return list.sort((a, b) => b.studyCount - a.studyCount);
+    case 'last-reviewed':
+      return list.sort((a, b) => (b.reviewStats.lastReviewedAt ?? 0) - (a.reviewStats.lastReviewedAt ?? 0));
+    case 'created-desc':
+    default:
+      return list.sort((a, b) => b.createdAt - a.createdAt);
+  }
+});
 
 const selectedCount = computed(() => selectedCardIds.value.size);
+
+const STUDY_STATUS_LABELS: Record<Exclude<StudyStatusFilter, 'all'>, string> = {
+  studied: 'Studied',
+  unstudied: 'Unstudied',
+};
+const DIFFICULTY_LABELS: Record<Exclude<DifficultyFilter, 'all'>, string> = {
+  new: 'New',
+  easy: 'Easy',
+  medium: 'Medium',
+  hard: 'Hard',
+};
+const POS_LABELS: Record<Exclude<PosFilter, 'all'>, string> = {
+  noun: 'Noun',
+  verb: 'Verb',
+  adjective: 'Adjective',
+  adverb: 'Adverb',
+  other: 'Other',
+};
+
+const activeChips = computed(() => {
+  const chips: { key: string; label: string }[] = [];
+  if (searchQuery.value.trim()) chips.push({ key: 'search', label: `Search: "${searchQuery.value.trim()}"` });
+  if (selectedDeckId.value) chips.push({ key: 'deck', label: deckStore.getById(selectedDeckId.value)?.name ?? 'Deck' });
+  if (selectedTopicId.value) chips.push({ key: 'topic', label: topicStore.getById(selectedTopicId.value)?.name ?? 'Topic' });
+  for (const id of selectedTagIds.value) {
+    const tag = tagStore.getById(id);
+    if (tag) chips.push({ key: `tag:${id}`, label: tag.name });
+  }
+  if (studyStatus.value !== 'all') chips.push({ key: 'studyStatus', label: STUDY_STATUS_LABELS[studyStatus.value] });
+  if (difficulty.value !== 'all') chips.push({ key: 'difficulty', label: DIFFICULTY_LABELS[difficulty.value] });
+  if (pos.value !== 'all') chips.push({ key: 'pos', label: POS_LABELS[pos.value] });
+  return chips;
+});
+
+function removeFilter(key: string) {
+  if (key === 'search') searchQuery.value = '';
+  else if (key === 'deck') {
+    selectedDeckId.value = '';
+    selectedTopicId.value = '';
+  } else if (key === 'topic') selectedTopicId.value = '';
+  else if (key.startsWith('tag:')) selectedTagIds.value = selectedTagIds.value.filter((id) => id !== key.slice(4));
+  else if (key === 'studyStatus') studyStatus.value = 'all';
+  else if (key === 'difficulty') difficulty.value = 'all';
+  else if (key === 'pos') pos.value = 'all';
+}
+
+function clearAllFilters() {
+  searchQuery.value = '';
+  selectedDeckId.value = '';
+  selectedTopicId.value = '';
+  selectedTagIds.value = [];
+  studyStatus.value = 'all';
+  difficulty.value = 'all';
+  pos.value = 'all';
+}
 
 async function handleGenerate() {
   if (!hasApiKey.value) return;
@@ -201,20 +296,54 @@ async function handleGenerate() {
         </p>
       </div>
 
-      <div class="mb-4">
-        <QuizFilterControls
-          v-model:question-count="questionCount"
-          v-model:deck-id="selectedDeckId"
-          v-model:topic-id="selectedTopicId"
+      <div class="mb-4 max-w-40">
+        <label for="question-count" class="mb-1.5 block font-serif text-sm font-bold text-card-gold">
+          Questions
+        </label>
+        <input
+          id="question-count"
+          type="number"
+          min="1"
+          max="30"
+          :value="questionCount"
+          class="w-full rounded border border-text/20 bg-background px-3 py-2 text-sm text-text focus:border-primary focus:outline-none"
+          @input="setQuestionCount(($event.target as HTMLInputElement).value)"
         />
       </div>
 
-      <div class="mb-4">
-        <QuizTagFilter v-model="selectedTagIds" />
-      </div>
+      <BaseInput
+        v-model="searchQuery"
+        type="search"
+        icon="SearchNormal1"
+        placeholder="Search title, answer, or hint…"
+        class="mb-3"
+      />
+
+      <AllCardsFilterBar
+        v-model:deck-id="selectedDeckId"
+        v-model:topic-id="selectedTopicId"
+        v-model:tag-ids="selectedTagIds"
+        v-model:study-status="studyStatus"
+        v-model:difficulty="difficulty"
+        v-model:pos="pos"
+        v-model:sort="sort"
+        :decks="deckStore.decks"
+        :tags="tagStore.tags"
+        class="mb-3"
+      />
+
+      <ActiveFiltersBar
+        :chips="activeChips"
+        @remove="removeFilter"
+        @clear-all="clearAllFilters"
+      />
+
+      <p class="mb-3 text-xs text-card-muted">
+        {{ sortedCards.length }} card{{ sortedCards.length === 1 ? '' : 's' }} match these filters
+      </p>
 
       <div class="mb-6">
-        <QuizCardSelectionList v-model="selectedCardIds" :cards="filteredCards" />
+        <QuizCardSelectionList v-model="selectedCardIds" :cards="sortedCards" />
       </div>
 
       <BaseButton

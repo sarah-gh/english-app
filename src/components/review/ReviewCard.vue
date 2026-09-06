@@ -12,6 +12,7 @@ import { useTagStore } from '@/stores/tag-store';
 import type { Card } from '@/types/card';
 import type { Tag } from '@/types/tag';
 import type { CardViewMode } from '@/types/view-mode';
+import { sanitizeRichText } from '@/utils/html';
 
 const props = withDefaults(
   defineProps<{
@@ -179,6 +180,20 @@ function overlayStyle(progress: number) {
 /** Cards link straight to their deck (`deckId`) with no intermediate nesting — decks aren't
  *  parented to other decks, so a card's deck is already its top-level/root deck. */
 const rootDeckName = computed(() => deckStore.getById(props.card.deckId)?.name);
+
+/** `backAnswer` may contain rich text HTML from the card editor or AI Auto-Fill — re-sanitized
+ *  here (on top of the sanitization already applied where it's written) since it's rendered with
+ *  `v-html`, which bypasses Vue's usual text escaping. */
+const backAnswerHtml = computed(() => sanitizeRichText(props.card.backAnswer));
+
+/** Same re-sanitization rationale as `backAnswerHtml` above — also rendered with `v-html`. */
+const extraInfoHtml = computed(() => (props.card.extraInfo ? sanitizeRichText(props.card.extraInfo) : ''));
+const isExtraInfoExpanded = ref(false);
+
+function toggleExtraInfo() {
+  if (!props.interactive) return;
+  isExtraInfoExpanded.value = !isExtraInfoExpanded.value;
+}
 
 const cardTags = computed<Tag[]>(() =>
   props.card.tagIds
@@ -390,35 +405,42 @@ onBeforeUnmount(() => {
             </template>
             <template #back>
               <div class="h-full w-full rounded-xl border border-card-gold/20 bg-card-definition p-4">
-                <p class="text-base leading-relaxed text-text">{{ card.backAnswer }}</p>
+                <!-- backAnswerHtml is sanitized via sanitizeRichText above -->
+                <div
+                  class="rich-text-content text-base leading-relaxed text-text"
+                  v-html="backAnswerHtml"
+                />
               </div>
             </template>
           </BaseFlipCard>
 
-          <ul
+          <div
             v-if="showAnswer && card.examples.length > 0"
-            class="mt-4 space-y-2"
+            class="mt-4 rounded-xl border border-card-gold/20 bg-card-definition p-4"
           >
-            <li
-              v-for="(example, index) in card.examples"
-              :key="index"
-              class="text-base text-text/90"
-            >
-              {{ example }}
-            </li>
-          </ul>
+            <h2 class=" text-card-gold text-base mb-1">Examples:</h2>
+            <ul class="space-y-2">
+              <li
+                v-for="(example, index) in card.examples"
+                :key="index"
+                class="text-base text-text/90"
+              >
+                {{ example }}
+              </li>
+            </ul>
+          </div>
 
           <p
             v-if="showAnswer && card.synonyms.length > 0"
             class="mt-4 text-sm text-text/80"
           >
-            <span class="font-semibold text-card-gold">Synonyms:</span> {{ card.synonyms.join(', ') }}
+            <span class="font-semibold text-primary">Synonyms:</span> {{ card.synonyms.join(', ') }}
           </p>
           <p
             v-if="showAnswer && card.antonyms.length > 0"
             class="mt-1 text-sm text-text/80"
           >
-            <span class="font-semibold text-card-gold">Antonyms:</span> {{ card.antonyms.join(', ') }}
+            <span class="font-semibold text-primary">Antonyms:</span> {{ card.antonyms.join(', ') }}
           </p>
 
           <PartsOfSpeechDisplay
@@ -429,15 +451,40 @@ onBeforeUnmount(() => {
             :interactive="interactive"
             class="mt-4"
           />
+
+          <div
+            v-if="showAnswer && extraInfoHtml"
+            class="mt-2 mb-2 rounded-xl border border-card-gold/20 bg-card-definition"
+          >
+            <button
+              type="button"
+              class="flex w-full items-center justify-between gap-2 p-4 text-left text-sm font-semibold text-primary"
+              @pointerdown.stop
+              @click.stop="toggleExtraInfo"
+            >
+              Extra Information
+              <AppIcon
+                icon-name="ArrowDown2"
+                :size="16"
+                class="transition-transform duration-200"
+                :class="{ 'rotate-180': isExtraInfoExpanded }"
+              />
+            </button>
+            <!-- extraInfoHtml is sanitized via sanitizeRichText above -->
+            <div
+              v-if="isExtraInfoExpanded"
+              class="rich-text-content px-4 pb-4 text-base leading-relaxed text-text"
+              v-html="extraInfoHtml"
+            />
+          </div>
         </template>
       </BaseExpandableContent>
 
 
-
       <button
-        v-if="card.hint"
+        v-if="card.hint && viewMode !== 'study'"
         type="button"
-        class="mt-4 rounded border border-card-gold/30 px-3 py-2 text-left text-sm text-card-muted hover:border-primary"
+        class="mt-1 rounded border border-card-gold/30 px-3 py-2 text-left text-sm text-card-muted hover:border-primary"
         @pointerdown.stop
         @click.stop="toggleHint"
       >

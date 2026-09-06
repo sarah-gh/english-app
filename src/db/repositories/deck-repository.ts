@@ -1,24 +1,21 @@
 import { db } from '@/db';
+import { tombstonedTable } from '@/db/repositories/tombstoned-table';
 import type { Deck, DeckUpdate, NewDeck } from '@/types/deck';
 
-function excludeDeleted(decks: Deck[]): Deck[] {
-  return decks.filter((deck) => !deck.isDeleted);
-}
+/** See `tombstoned-table.ts` — one shared implementation of the "deleted rows stay, and only
+ *  Cloud Sync sees them" rule, in place of a per-repository `excludeDeleted` copy. */
+const tombstones = tombstonedTable(db.decks);
 
 export const deckRepository = {
+  /** `orderBy('name')` reads through the Dexie index rather than sorting in JS — the tombstone
+   *  filter is applied to the rows that come back, leaving the query plan untouched. */
   async getAll(): Promise<Deck[]> {
-    return excludeDeleted(await db.decks.orderBy('name').toArray());
+    return tombstones.live(await db.decks.orderBy('name').toArray());
   },
 
-  /** Used by Cloud Sync, which needs tombstones too so a deletion on one device replicates to the
-   *  others instead of being invisible to the merge. */
-  async getAllIncludingDeleted(): Promise<Deck[]> {
-    return db.decks.toArray();
-  },
+  getAllIncludingDeleted: tombstones.getAllIncludingDeleted,
 
-  async getById(id: string): Promise<Deck | undefined> {
-    return db.decks.get(id);
-  },
+  getById: tombstones.getById,
 
   async create(deck: NewDeck): Promise<Deck> {
     const timestamp = Date.now();

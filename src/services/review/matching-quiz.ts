@@ -1,5 +1,6 @@
 import type { Card } from '@/types/card';
 import { shuffle } from '@/utils/shuffle';
+import { stripHtmlToText } from '@/utils/html';
 
 export interface MatchWordItem {
   cardId: string;
@@ -21,6 +22,6 @@ export interface MatchingQuizChunk {
 export function buildMatchingQuizChunk(cards: Card[]): MatchingQuizChunk {
   return {
     words: shuffle(cards.map((card) => ({ cardId: card.id, word: card.frontTitle }))),
-    meanings: shuffle(cards.map((card) => ({ cardId: card.id, meaning: card.backAnswer }))),
+    meanings: shuffle(cards.map((card) => ({ cardId: card.id, meaning: stripHtmlToText(card.backAnswer) }))),
   };
 }

@@ -170,11 +170,24 @@ export const useStudySessionStore = defineStore('study-session', () => {
     }
   }
 
-  /** Study mode's plain "Previous" — steps back within the current chunk only. */
+  /**
+   * Study mode's plain "Previous" — steps back within the current chunk only, and rolls back the
+   * `studyCount` bump `advance` made for the card being stepped back onto.
+   *
+   * Without that rollback, paging Next -> Previous -> Next counted the same card twice, and the
+   * inflation was permanent: `studyCount` is merged across devices with `Math.max` (see
+   * `mergeCards`), so a count that drifts up can never come back down on its own. Practice mode
+   * never reaches this — its cards advance through `swipe`, which doesn't touch `studyCount`.
+   */
   function goToPrevious(): void {
     if (chunkCardIndex.value === 0) return;
     chunkCardIndex.value -= 1;
     totalStudied.value = Math.max(0, totalStudied.value - 1);
+
+    // Read *after* the index moves: the card now under the cursor is exactly the one `advance`
+    // incremented on its way past it.
+    const card = currentChunk.value[chunkCardIndex.value];
+    if (card) void useCardStore().decrementStudyCount(card.id);
   }
 
   /** Capped at 1-card depth: only the most recent swipe can be undone. */

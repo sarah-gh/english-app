@@ -1,3 +1,4 @@
+import { sanitizeRichText, stripHtmlToText } from '@/utils/html';
 import { isGeneratedPosEntry, POS_ENTRY_SCHEMA, type GeneratedPosEntry } from './card-autofill-schema';
 
 function stringArray(value: unknown): string[] {
@@ -8,7 +9,7 @@ function stringArray(value: unknown): string[] {
 /** Gemini Structured Output schema (also understood by AIHubMix's Gemini-compatible proxy). */
 export const DEFINITION_RESPONSE_SCHEMA = {
   type: 'OBJECT',
-  properties: { backAnswer: { type: 'STRING' } },
+  properties: { backAnswer: { type: 'STRING' }, extraInfo: { type: 'STRING' } },
   required: ['backAnswer'],
 };
 
@@ -18,9 +19,19 @@ export const DEFINITION_RESPONSE_SCHEMA = {
 export const DEFINITION_JSON_SHAPE_HINT = `
 
 Respond with ONLY a JSON object of this exact shape, no other text:
-{"backAnswer": string}`;
+{"backAnswer": string (concise HTML — <p>, <strong>, <em> only), "extraInfo": string (optional — structured HTML with <h3>, <p>, <strong>, <em>, <ul>/<ol>/<li> section headings; no other tags or attributes)}`;
 
-export function parseDefinitionResponseText(text: string | undefined, makeError: (message: string) => Error): string {
+export interface GeneratedDefinition {
+  backAnswer: string;
+  /** Extended context (verb forms/tenses, phrasal verbs, collocations, idiom notes, etc) kept
+   *  separate from the concise `backAnswer` — omitted when the AI found nothing worth adding. */
+  extraInfo?: string;
+}
+
+export function parseDefinitionResponseText(
+  text: string | undefined,
+  makeError: (message: string) => Error,
+): GeneratedDefinition {
   if (!text) throw makeError('The AI provider returned an empty response.');
 
   let parsed: unknown;
@@ -31,10 +42,44 @@ export function parseDefinitionResponseText(text: string | undefined, makeError:
   }
 
   const obj = parsed as Record<string, unknown>;
-  if (typeof obj.backAnswer !== 'string' || !obj.backAnswer.trim()) {
+  if (typeof obj.backAnswer !== 'string' || !stripHtmlToText(obj.backAnswer)) {
     throw makeError("The AI provider's response did not include a usable definition.");
   }
-  return obj.backAnswer.trim();
+  return {
+    backAnswer: sanitizeRichText(obj.backAnswer.trim()),
+    extraInfo:
+      typeof obj.extraInfo === 'string' && stripHtmlToText(obj.extraInfo)
+        ? sanitizeRichText(obj.extraInfo.trim())
+        : undefined,
+  };
+}
+
+export const EXTRA_INFO_RESPONSE_SCHEMA = {
+  type: 'OBJECT',
+  properties: { extraInfo: { type: 'STRING' } },
+  required: ['extraInfo'],
+};
+
+export const EXTRA_INFO_JSON_SHAPE_HINT = `
+
+Respond with ONLY a JSON object of this exact shape, no other text:
+{"extraInfo": string (structured HTML with <h3>, <p>, <strong>, <em>, <ul>/<ol>/<li> section headings; no other tags or attributes)}`;
+
+export function parseExtraInfoResponseText(text: string | undefined, makeError: (message: string) => Error): string {
+  if (!text) throw makeError('The AI provider returned an empty response.');
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw makeError('The AI provider returned a response that was not valid JSON.');
+  }
+
+  const obj = parsed as Record<string, unknown>;
+  if (typeof obj.extraInfo !== 'string' || !stripHtmlToText(obj.extraInfo)) {
+    throw makeError('The AI provider did not return usable extra information.');
+  }
+  return sanitizeRichText(obj.extraInfo.trim());
 }
 
 export const IPA_RESPONSE_SCHEMA = {

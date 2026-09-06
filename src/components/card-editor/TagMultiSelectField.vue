@@ -8,8 +8,7 @@ const tagIds = defineModel<string[]>('tagIds', { required: true });
 const tagStore = useTagStore();
 
 /** Starts open whenever the card already has tags (editing an existing card), collapsed for a
- *  brand-new card with none yet — mirrors `QuizTagFilter`'s collapsed-by-default panel without
- *  hiding tags a card already has. */
+ *  brand-new card with none yet. */
 const isExpanded = ref(tagIds.value.length > 0);
 const isCreating = ref(false);
 const newTagName = ref('');

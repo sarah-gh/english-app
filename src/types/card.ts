@@ -54,7 +54,16 @@ export const DEFAULT_REVIEW_STATS: CardReviewStats = {
 export interface Card {
   id: string;
   frontTitle: string;
+  /** Rich text HTML (a restricted tag set — see `sanitizeRichText` in `@/utils/html`), produced by
+   *  the card editor's rich text field or AI Auto-Fill. Rendered with `v-html` wherever it's shown
+   *  formatted, and passed through `stripHtmlToText` wherever only plain text is usable (search,
+   *  list previews, the matching-quiz game). */
   backAnswer: string;
+  /** Optional — extended context that doesn't belong on the concise back-of-card answer: verb
+   *  forms/tenses, phrasal verbs, collocations, idiom origins, and similar supplementary notes.
+   *  Same restricted rich-text HTML tag set as `backAnswer` (see `sanitizeRichText`), shown in its
+   *  own expandable "Extra Information" section during review instead of cluttering the answer. */
+  extraInfo?: string;
   deckId: string;
   /** Optional — cards created before Topics existed (or never sorted) have no topic. */
   topicId?: string;

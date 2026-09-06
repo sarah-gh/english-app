@@ -5,6 +5,7 @@ import BaseCard from '@/components/ui/BaseCard.vue';
 import BaseTag from '@/components/ui/BaseTag.vue';
 import { useTagStore } from '@/stores/tag-store';
 import type { ParsedCardRow } from '@/services/import/excel-card-import';
+import { stripHtmlToText } from '@/utils/html';
 
 const props = defineProps<{
   row: ParsedCardRow;
@@ -83,7 +84,7 @@ function toggle() {
           v-if="row.backAnswer"
           class="mt-2 text-sm text-text"
         >
-          {{ row.backAnswer }}
+          {{ stripHtmlToText(row.backAnswer) }}
         </p>
 
         <ul

@@ -37,7 +37,7 @@ function posLabel(pos: string): string {
 <template>
   <div
     v-if="entries.length > 0"
-    class="space-y-2"
+    class="space-y-2 pb-2"
   >
     <p class="text-xs font-medium text-card-gold uppercase">Parts of Speech</p>
 

@@ -82,6 +82,13 @@ export const useCardStore = defineStore('cards', () => {
     if (card) card.studyCount += 1;
   }
 
+  /** Rolls back one `incrementStudyCount` — see the repository method's doc comment. */
+  async function decrementStudyCount(id: string): Promise<void> {
+    await cardRepository.decrementStudyCount(id);
+    const card = getById(id);
+    if (card) card.studyCount = Math.max(0, card.studyCount - 1);
+  }
+
   async function remove(id: string): Promise<void> {
     await cardRepository.delete(id);
     cards.value = cards.value.filter((card) => card.id !== id);
@@ -116,6 +123,7 @@ export const useCardStore = defineStore('cards', () => {
     edit,
     setReviewStatus,
     incrementStudyCount,
+    decrementStudyCount,
     recordMatchResult,
     remove,
   };

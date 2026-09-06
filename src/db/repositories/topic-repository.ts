@@ -1,29 +1,26 @@
 import { db } from '@/db';
+import { tombstonedTable } from '@/db/repositories/tombstoned-table';
 import type { NewTopic, Topic, TopicUpdate } from '@/types/topic';
 
-function excludeDeleted(topics: Topic[]): Topic[] {
-  return topics.filter((topic) => !topic.isDeleted);
-}
+/** See `tombstoned-table.ts` — one shared implementation of the "deleted rows stay, and only
+ *  Cloud Sync sees them" rule, in place of a per-repository `excludeDeleted` copy. */
+const tombstones = tombstonedTable(db.topics);
 
 export const topicRepository = {
+  /** `orderBy('name')` reads through the Dexie index rather than sorting in JS — the tombstone
+   *  filter is applied to the rows that come back, leaving the query plan untouched. */
   async getAll(): Promise<Topic[]> {
-    return excludeDeleted(await db.topics.orderBy('name').toArray());
+    return tombstones.live(await db.topics.orderBy('name').toArray());
   },
 
-  /** Used by Cloud Sync, which needs tombstones too so a deletion on one device replicates to the
-   *  others instead of being invisible to the merge. */
-  async getAllIncludingDeleted(): Promise<Topic[]> {
-    return db.topics.toArray();
-  },
+  getAllIncludingDeleted: tombstones.getAllIncludingDeleted,
 
-  async getById(id: string): Promise<Topic | undefined> {
-    return db.topics.get(id);
-  },
+  getById: tombstones.getById,
 
   async getByDeck(deckId: string): Promise<Topic[]> {
-    return excludeDeleted(await db.topics.where('deckId').equals(deckId).toArray()).sort((a, b) =>
-      a.name.localeCompare(b.name),
-    );
+    return tombstones
+      .live(await db.topics.where('deckId').equals(deckId).toArray())
+      .sort((a, b) => a.name.localeCompare(b.name));
   },
 
   async create(topic: NewTopic): Promise<Topic> {

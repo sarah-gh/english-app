@@ -14,6 +14,9 @@ export interface ParsedImportCard {
   sourceIndex: number;
   frontTitle: string;
   backAnswer: string;
+  /** Optional — extended context (verb forms/tenses, phrasal verbs, collocations, idiom notes,
+   *  etc) kept separate from the concise `backAnswer`, same as the AI-generated field it mirrors. */
+  extraInfo?: string;
   deckName: string;
   topicName: string;
   ipa?: string;
@@ -143,6 +146,7 @@ function parseCard(
     sourceIndex,
     frontTitle,
     backAnswer,
+    extraInfo: asString(card.extraInfo),
     deckName: asString(card.deckName) ?? inheritedDeckName ?? DEFAULT_DECK_NAME,
     topicName: asString(card.topicName) ?? inheritedTopicName ?? DEFAULT_TOPIC_NAME,
     ipa: asString(card.ipa),

@@ -58,6 +58,7 @@ export interface CardFormState {
   cardMode: CardMode;
   frontTitle: string;
   backAnswer: string;
+  extraInfo: string;
   deckId: string;
   topicId: string;
   tagIds: string[];
@@ -79,6 +80,7 @@ export function blankCardFormState(): CardFormState {
     cardMode: 'standard',
     frontTitle: '',
     backAnswer: '',
+    extraInfo: '',
     deckId: '',
     topicId: '',
     tagIds: [],
@@ -101,6 +103,7 @@ export function cardFormStateFromCard(card: Card): CardFormState {
     cardMode: card.wordFamily ? 'word-family' : 'standard',
     frontTitle: card.frontTitle,
     backAnswer: card.backAnswer,
+    extraInfo: card.extraInfo ?? '',
     deckId: card.deckId,
     topicId: card.topicId ?? '',
     tagIds: [...card.tagIds],
@@ -201,6 +204,7 @@ export function cardFormStateToNewCard(state: CardFormState): NewCard {
   return {
     frontTitle,
     backAnswer,
+    extraInfo: raw.cardMode === 'word-family' ? undefined : raw.extraInfo.trim() || undefined,
     deckId: raw.deckId,
     topicId: raw.topicId || undefined,
     tagIds: [...raw.tagIds],

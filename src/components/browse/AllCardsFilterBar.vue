@@ -1,13 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import TagFilterDropdown from '@/components/browse/TagFilterDropdown.vue';
+import DeckTopicTagFilterBar from '@/components/browse/DeckTopicTagFilterBar.vue';
 import BaseSelect from '@/components/ui/BaseSelect.vue';
-import { useTopicStore } from '@/stores/topic-store';
 import type { DifficultyFilter, PosFilter, SortOption, StudyStatusFilter } from '@/types/card-filters';
 import type { Deck } from '@/types/deck';
 import type { Tag } from '@/types/tag';
 
-const props = defineProps<{
+defineProps<{
   decks: Deck[];
   tags: Tag[];
 }>();
@@ -19,25 +17,6 @@ const studyStatus = defineModel<StudyStatusFilter>('studyStatus', { required: tr
 const difficulty = defineModel<DifficultyFilter>('difficulty', { required: true });
 const pos = defineModel<PosFilter>('pos', { required: true });
 const sort = defineModel<SortOption>('sort', { required: true });
-
-const topicStore = useTopicStore();
-
-const deckOptions = computed(() => [
-  { value: '', label: 'All decks' },
-  ...props.decks.map((deck) => ({ value: deck.id, label: deck.name })),
-]);
-
-const topicOptions = computed(() => [
-  { value: '', label: 'All topics' },
-  ...(deckId.value ? topicStore.byDeck(deckId.value) : []).map((topic) => ({ value: topic.id, label: topic.name })),
-]);
-
-function onDeckChange(value: string) {
-  deckId.value = value;
-  if (!topicStore.byDeck(value).some((topic) => topic.id === topicId.value)) {
-    topicId.value = '';
-  }
-}
 
 const STUDY_STATUS_OPTIONS: { value: StudyStatusFilter; label: string }[] = [
   { value: 'all', label: 'All Statuses' },
@@ -72,18 +51,11 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
 
 <template>
   <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
-    <BaseSelect
-      :model-value="deckId"
-      :options="deckOptions"
-      @update:model-value="onDeckChange"
-    />
-    <BaseSelect
-      v-model="topicId"
-      :disabled="!deckId"
-      :options="topicOptions"
-    />
-    <TagFilterDropdown
-      v-model="tagIds"
+    <DeckTopicTagFilterBar
+      v-model:deck-id="deckId"
+      v-model:topic-id="topicId"
+      v-model:tag-ids="tagIds"
+      :decks="decks"
       :tags="tags"
     />
     <BaseSelect

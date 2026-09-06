@@ -9,6 +9,7 @@ import { useCardStore } from '@/stores/card-store';
 import { useDeckStore } from '@/stores/deck-store';
 import { useTopicStore } from '@/stores/topic-store';
 import type { CardViewMode } from '@/types/view-mode';
+import { stripHtmlToText } from '@/utils/html';
 
 const route = useRoute();
 const router = useRouter();
@@ -56,7 +57,7 @@ const filteredCards = computed(() => {
   const query = searchQuery.value.trim().toLowerCase();
   if (!query) return scopedCards.value;
   return scopedCards.value.filter((card) => {
-    const haystack = `${card.frontTitle} ${card.backAnswer} ${card.hint ?? ''}`.toLowerCase();
+    const haystack = `${card.frontTitle} ${stripHtmlToText(card.backAnswer)} ${card.hint ?? ''}`.toLowerCase();
     return haystack.includes(query);
   });
 });

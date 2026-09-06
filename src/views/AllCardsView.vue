@@ -13,6 +13,7 @@ import { useTagStore } from '@/stores/tag-store';
 import { useTopicStore } from '@/stores/topic-store';
 import type { DifficultyFilter, PosFilter, SortOption, StudyStatusFilter } from '@/types/card-filters';
 import type { CardViewMode } from '@/types/view-mode';
+import { stripHtmlToText } from '@/utils/html';
 
 const cardStore = useCardStore();
 const deckStore = useDeckStore();
@@ -52,7 +53,7 @@ const filteredCards = computed(() => {
     if (difficulty.value !== 'all' && card.reviewStatus !== difficulty.value) return false;
     if (pos.value !== 'all' && !card.partsOfSpeech?.some((entry) => entry.pos === pos.value)) return false;
     if (query) {
-      const haystack = `${card.frontTitle} ${card.backAnswer} ${card.hint ?? ''}`.toLowerCase();
+      const haystack = `${card.frontTitle} ${stripHtmlToText(card.backAnswer)} ${card.hint ?? ''}`.toLowerCase();
       if (!haystack.includes(query)) return false;
     }
     return true;

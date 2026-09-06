@@ -11,8 +11,16 @@ export function blobToDataUrl(blob: Blob): Promise<string> {
 }
 
 /** Inverse of `blobToDataUrl` — `fetch()` on a `data:` URL decodes it back into a Blob without
- *  any manual base64 handling. */
+ *  any manual base64 handling.
+ *
+ *  The `data:` prefix is checked before the string ever reaches `fetch`, because `fetch` would
+ *  happily treat anything else as a real URL: a truncated, tampered-with, or wrong-typed value in
+ *  a sync payload would turn a local decode step into an outbound network request to whatever that
+ *  string happened to point at. Rejecting up front keeps this function purely local. */
 export async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
+  if (!dataUrl.startsWith('data:')) {
+    throw new Error('Value is not a data URL.');
+  }
   const response = await fetch(dataUrl);
   return response.blob();
 }

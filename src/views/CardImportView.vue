@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
 import ImportPreviewCard from '@/components/import/ImportPreviewCard.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
+import { useEntityResolver } from '@/composables/useEntityResolver';
 import { useCardStore } from '@/stores/card-store';
 import { useDeckStore } from '@/stores/deck-store';
 import { useTagStore } from '@/stores/tag-store';
@@ -13,12 +14,12 @@ import {
   type ParsedCardRow,
 } from '@/services/import/excel-card-import';
 import type { NewCard } from '@/types/card';
-import { getRandomTagColor } from '@/utils/tag-color';
 
 const router = useRouter();
 const cardStore = useCardStore();
 const deckStore = useDeckStore();
 const tagStore = useTagStore();
+const { createBatch } = useEntityResolver();
 
 const fileInput = ref<HTMLInputElement | null>(null);
 const fileName = ref('');
@@ -111,43 +112,19 @@ function handleCancel() {
   if (fileInput.value) fileInput.value.value = '';
 }
 
-/** Reuses an existing deck by case-insensitive name match, otherwise creates one — mirroring
- *  the resolve-or-create pattern used when adding a single card from the editor. */
-async function resolveDeckId(name: string, cache: Map<string, string>): Promise<string> {
-  const key = name.toLowerCase();
-  const cached = cache.get(key);
-  if (cached) return cached;
-
-  const existing = deckStore.decks.find((deck) => deck.name.toLowerCase() === key);
-  const deck = existing ?? (await deckStore.add({ name }));
-  cache.set(key, deck.id);
-  return deck.id;
-}
-
-async function resolveTagId(name: string, cache: Map<string, string>): Promise<string> {
-  const key = name.toLowerCase();
-  const cached = cache.get(key);
-  if (cached) return cached;
-
-  const existing = tagStore.tags.find((tag) => tag.name.toLowerCase() === key);
-  const tag = existing ?? (await tagStore.add({ name, color: getRandomTagColor() }));
-  cache.set(key, tag.id);
-  return tag.id;
-}
-
 async function handleImport() {
   if (selectedRows.value.length === 0) return;
   isImporting.value = true;
   try {
-    const deckCache = new Map<string, string>();
-    const tagCache = new Map<string, string>();
+    // One batch for the whole import run — the same cache lifetime the hand-rolled Maps had.
+    const resolve = createBatch();
     const newCards: NewCard[] = [];
 
     for (const row of selectedRows.value) {
-      const deckId = await resolveDeckId(row.deckName, deckCache);
+      const deckId = await resolve.deckId(row.deckName);
       const tagIds: string[] = [];
       for (const tagName of row.tagNames) {
-        tagIds.push(await resolveTagId(tagName, tagCache));
+        tagIds.push(await resolve.tagId(tagName));
       }
 
       newCards.push({
