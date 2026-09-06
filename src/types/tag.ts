@@ -5,7 +5,7 @@ export interface Tag {
   color: string;
   createdAt: number;
   updatedAt: number;
-  /** Soft-delete flag — see `Card.isDeleted` for why deletes don't hard-remove the row. */
+  /** Soft-delete flag, see `Card.isDeleted` for why deletes don't hard-remove the row. */
   isDeleted: boolean;
 }
 

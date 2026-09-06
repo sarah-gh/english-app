@@ -17,7 +17,7 @@ const themeStore = useThemeStore();
 
 const activeCardRef = ref<InstanceType<typeof ReviewCard>>();
 
-/** Editing happens in-place, as an overlay above the current session — the route and the
+/** Editing happens in-place, as an overlay above the current session, the route and the
  *  session store never change, so the same card index/queue state is exactly where the user
  *  left it once the overlay closes. `cardStore.edit` mutates the card object in place, and this
  *  session's queue holds that same object reference, so the card underneath updates for free. */
@@ -103,13 +103,13 @@ function studyAnotherBatch() {
 
 <template>
   <div
-    class="flex min-h-screen w-full max-w-full flex-col overflow-x-hidden bg-card-definition bg-repeat px-4 py-6"
+    class="bg-card-definition flex min-h-screen w-full max-w-full flex-col overflow-x-hidden bg-repeat px-4 py-6"
     :style="backgroundImageStyle"
   >
     <div class="mb-4 flex items-center justify-between">
       <button
         type="button"
-        class="inline-flex items-center gap-1 text-sm text-text/50 hover:text-primary"
+        class="text-text/50 hover:text-primary inline-flex items-center gap-1 text-sm"
         @click="backToSetup"
       >
         <AppIcon
@@ -122,7 +122,7 @@ function studyAnotherBatch() {
         v-if="studySessionStore.phase === 'studying' && studySessionStore.viewMode === 'practice'"
         type="button"
         :disabled="!studySessionStore.canUndo"
-        class="inline-flex items-center gap-1 text-sm font-medium text-primary underline underline-offset-2 disabled:text-text/25 disabled:no-underline"
+        class="text-primary disabled:text-text/25 inline-flex items-center gap-1 text-sm font-medium underline underline-offset-2 disabled:no-underline"
         @click="handleUndo"
       >
         <AppIcon
@@ -137,10 +137,14 @@ function studyAnotherBatch() {
       v-if="!studySessionStore.hasCards"
       class="flex flex-1 flex-col items-center justify-center gap-4 text-center"
     >
-      <p class="text-base font-medium text-text">
-        {{ studySessionStore.viewMode === 'practice' ? 'Nothing to practice here yet.' : 'Nothing to study here.' }}
+      <p class="text-text text-base font-medium">
+        {{
+          studySessionStore.viewMode === 'practice'
+            ? 'Nothing to practice here yet.'
+            : 'Nothing to study here.'
+        }}
       </p>
-      <p class="text-sm text-text/50">
+      <p class="text-text/50 text-sm">
         {{
           studySessionStore.viewMode === 'practice'
             ? 'Only cards you have studied at least once will appear in Practice mode. Study this deck first, or add more cards.'
@@ -149,7 +153,7 @@ function studyAnotherBatch() {
       </p>
       <button
         type="button"
-        class="rounded bg-primary px-4 py-2 text-sm font-medium text-background hover:bg-primary/90"
+        class="bg-primary text-background hover:bg-primary/90 rounded px-4 py-2 text-sm font-medium"
         @click="backToSetup"
       >
         Back to Study Setup
@@ -220,7 +224,7 @@ function studyAnotherBatch() {
       >
         <button
           type="button"
-          class="flex flex-1 items-center justify-center gap-1.5 rounded-full border-2 border-danger py-3 text-sm font-semibold text-danger hover:bg-danger hover:text-background"
+          class="border-danger text-danger hover:bg-danger hover:text-background flex flex-1 items-center justify-center gap-1.5 rounded-full border-2 py-3 text-sm font-semibold"
           @click="triggerButtonSwipe('left')"
         >
           <AppIcon
@@ -231,7 +235,7 @@ function studyAnotherBatch() {
         </button>
         <button
           type="button"
-          class="flex flex-1 items-center justify-center gap-1.5 rounded-full border-2 border-primary py-3 text-sm font-semibold text-primary hover:bg-primary hover:text-background"
+          class="border-primary text-primary hover:bg-primary hover:text-background flex flex-1 items-center justify-center gap-1.5 rounded-full border-2 py-3 text-sm font-semibold"
           @click="triggerButtonSwipe('right')"
         >
           <AppIcon
@@ -249,7 +253,7 @@ function studyAnotherBatch() {
         <button
           type="button"
           :disabled="studySessionStore.chunkCardIndex === 0"
-          class="flex flex-1 items-center justify-center gap-1.5 rounded-full border-2 border-text/20 py-3 text-sm font-semibold text-text/70 hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:border-text/10 disabled:text-text/25"
+          class="border-text/20 text-text/70 hover:border-primary hover:text-primary disabled:border-text/10 disabled:text-text/25 flex flex-1 items-center justify-center gap-1.5 rounded-full border-2 py-3 text-sm font-semibold disabled:cursor-not-allowed"
           @click="handlePrevious"
         >
           <AppIcon
@@ -260,7 +264,7 @@ function studyAnotherBatch() {
         </button>
         <button
           type="button"
-          class="flex flex-1 items-center justify-center gap-1.5 rounded-full border-2 border-primary py-3 text-sm font-semibold text-primary hover:bg-primary hover:text-background"
+          class="border-primary text-primary hover:bg-primary hover:text-background flex flex-1 items-center justify-center gap-1.5 rounded-full border-2 py-3 text-sm font-semibold"
           @click="handleNext"
         >
           Next

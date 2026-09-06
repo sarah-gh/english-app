@@ -3,7 +3,7 @@ import type { POSDetail, WordFamilyData } from '@/types/card';
 
 defineProps<{
   data: WordFamilyData;
-  /** POS key to visually emphasize — used by the review session's "Form Challenge" so the asked
+  /** POS key to visually emphasize, used by the review session's "Form Challenge" so the asked
    *  form stands out once revealed. */
   highlight?: 'noun' | 'verb' | 'adjective' | 'adverb';
 }>();
@@ -26,29 +26,31 @@ function hasDetail(detail: POSDetail | undefined): detail is POSDetail {
       v-for="section in SECTIONS"
       v-show="hasDetail(data[section.key])"
       :key="section.key"
-      class="rounded-lg bg-card-definition p-3"
-      :class="highlight === section.key ? 'ring-1 ring-card-gold/60' : ''"
+      class="bg-card-definition rounded-lg p-3"
+      :class="highlight === section.key ? 'ring-card-gold/60 ring-1' : ''"
     >
       <div class="flex items-center gap-2">
-        <span class="rounded bg-card-gold/20 px-1.5 py-0.5 text-[10px] font-bold text-card-gold uppercase">
+        <span
+          class="bg-card-gold/20 text-card-gold rounded px-1.5 py-0.5 text-[10px] font-bold uppercase"
+        >
           {{ section.label }}
         </span>
-        <span class="text-sm font-semibold text-text">{{ data[section.key]?.word }}</span>
+        <span class="text-text text-sm font-semibold">{{ data[section.key]?.word }}</span>
         <span
           v-if="highlight === section.key"
-          class="text-[10px] font-medium text-card-muted uppercase"
+          class="text-card-muted text-[10px] font-medium uppercase"
           >asked form</span
         >
       </div>
       <p
         v-if="data[section.key]?.meaning"
-        class="mt-1 text-sm text-text/80"
+        class="text-text/80 mt-1 text-sm"
       >
         {{ data[section.key]?.meaning }}
       </p>
       <p
         v-if="data[section.key]?.example"
-        class="mt-1 text-xs text-card-muted"
+        class="text-card-muted mt-1 text-xs"
       >
         “{{ data[section.key]?.example }}”
       </p>
@@ -56,9 +58,9 @@ function hasDetail(detail: POSDetail | undefined): detail is POSDetail {
 
     <p
       v-if="data.usageNotes"
-      class="rounded-lg bg-card-definition p-3 text-xs text-card-muted"
+      class="bg-card-definition text-card-muted rounded-lg p-3 text-xs"
     >
-      <span class="font-medium text-card-gold">Usage notes:</span> {{ data.usageNotes }}
+      <span class="text-card-gold font-medium">Usage notes:</span> {{ data.usageNotes }}
     </p>
   </div>
 </template>

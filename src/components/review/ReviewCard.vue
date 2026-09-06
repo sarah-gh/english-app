@@ -19,7 +19,7 @@ const props = withDefaults(
     card: Card;
     interactive: boolean;
     /** Gates only the drag-to-assess gesture (and the Known/Not Known fly-away it triggers),
-     *  independently of `interactive` — Study mode keeps audio/hint/image interactions live but
+     *  independently of `interactive`, Study mode keeps audio/hint/image interactions live but
      *  has no Known/Not Known assessment, so its card must not respond to swipe drags. */
     swipeEnabled?: boolean;
     viewMode?: CardViewMode;
@@ -79,12 +79,12 @@ function pickWordFamilyChallengeForm(card: Card): WordFamilyPos | null {
 }
 
 /** Picked once when this card instance is created (the wrapping `ReviewCard` remounts fresh per
- *  card via `:key`, so this stays stable across reveals but varies from card to card) — the
+ *  card via `:key`, so this stays stable across reveals but varies from card to card), the
  *  Practice-mode "Form Challenge" asks about this one form before revealing the rest. */
 const wordFamilyChallengeForm = pickWordFamilyChallengeForm(props.card);
 
 /** Study mode always shows the answer; Practice mode conceals it until the Show Answer button
- *  is tapped explicitly — tapping elsewhere on the card, or starting a swipe drag, must not
+ *  is tapped explicitly, tapping elsewhere on the card, or starting a swipe drag, must not
  *  reveal it. */
 const showAnswer = computed(() => props.viewMode === 'study' || isAnswerManuallyRevealed.value);
 
@@ -142,12 +142,12 @@ function onTransitionEnd(event: TransitionEvent) {
   }
 }
 
-/** How far the front card has traveled toward committing a swipe, 0 to 1 — driven straight off
+/** How far the front card has traveled toward committing a swipe, 0 to 1, driven straight off
  *  `offsetX` so it tracks drag, snap-back, and the button/threshold fly-out with the same formula.
  *  The card stack (`StudySessionView`) reads this to drive the back card's scale/opacity/offset in
  *  lockstep with the front card instead of waiting for it to finish animating first. */
 const dragProgress = computed(() => Math.min(Math.abs(offsetX.value) / SWIPE_THRESHOLD, 1));
-/** The transition the front card is currently animating `transform` with — 'none' while actively
+/** The transition the front card is currently animating `transform` with, 'none' while actively
  *  dragging (so it tracks the pointer 1:1), otherwise the fly/snap-back timing. Exposed so the back
  *  card can apply the identical timing to its own transform/opacity and move in perfect sync. */
 const dragTransitionTiming = computed(() => (isDragging.value ? 'none' : flyTiming.value));
@@ -160,7 +160,8 @@ defineExpose({
 
 const cardStyle = computed(() => ({
   transform: `translateX(${offsetX.value}px) rotate(${offsetX.value / 20}deg)`,
-  transition: dragTransitionTiming.value === 'none' ? 'none' : `transform ${dragTransitionTiming.value}`,
+  transition:
+    dragTransitionTiming.value === 'none' ? 'none' : `transform ${dragTransitionTiming.value}`,
 }));
 
 const rightOverlayProgress = computed(() =>
@@ -177,17 +178,19 @@ function overlayStyle(progress: number) {
   };
 }
 
-/** Cards link straight to their deck (`deckId`) with no intermediate nesting — decks aren't
+/** Cards link straight to their deck (`deckId`) with no intermediate nesting, decks aren't
  *  parented to other decks, so a card's deck is already its top-level/root deck. */
 const rootDeckName = computed(() => deckStore.getById(props.card.deckId)?.name);
 
-/** `backAnswer` may contain rich text HTML from the card editor or AI Auto-Fill — re-sanitized
+/** `backAnswer` may contain rich text HTML from the card editor or AI Auto-Fill, re-sanitized
  *  here (on top of the sanitization already applied where it's written) since it's rendered with
  *  `v-html`, which bypasses Vue's usual text escaping. */
 const backAnswerHtml = computed(() => sanitizeRichText(props.card.backAnswer));
 
-/** Same re-sanitization rationale as `backAnswerHtml` above — also rendered with `v-html`. */
-const extraInfoHtml = computed(() => (props.card.extraInfo ? sanitizeRichText(props.card.extraInfo) : ''));
+/** Same re-sanitization rationale as `backAnswerHtml` above, also rendered with `v-html`. */
+const extraInfoHtml = computed(() =>
+  props.card.extraInfo ? sanitizeRichText(props.card.extraInfo) : '',
+);
 const isExtraInfoExpanded = ref(false);
 
 function toggleExtraInfo() {
@@ -196,9 +199,7 @@ function toggleExtraInfo() {
 }
 
 const cardTags = computed<Tag[]>(() =>
-  props.card.tagIds
-    .map((id) => tagStore.getById(id))
-    .filter((tag): tag is Tag => Boolean(tag)),
+  props.card.tagIds.map((id) => tagStore.getById(id)).filter((tag): tag is Tag => Boolean(tag)),
 );
 
 function playAudio() {
@@ -238,7 +239,7 @@ onBeforeUnmount(() => {
 <template>
   <div
     ref="rootEl"
-    class="relative flex h-full w-full touch-none flex-col overflow-hidden rounded-2xl border border-card-gold/30 bg-card-surface select-none"
+    class="border-card-gold/30 bg-card-surface relative flex h-full w-full touch-none flex-col overflow-hidden rounded-2xl border select-none"
     :style="cardStyle"
     @pointerdown="onPointerDown"
     @pointermove="onPointerMove"
@@ -249,17 +250,27 @@ onBeforeUnmount(() => {
     <!-- Vintage double-line frame: an inset hairline plus four corner accents. Pinned directly to
          the non-scrolling root, above the scrollable body (z-20), so it never shifts, clips, or
          gets crossed by the body's own scrollbar as it scrolls. -->
-    <div class="pointer-events-none absolute inset-2 z-20 rounded-xl border border-card-gold/20" />
-    <span class="pointer-events-none absolute top-3 left-3 z-20 h-4 w-4 rounded-tl border-t border-l border-card-gold/60" />
-    <span class="pointer-events-none absolute top-3 right-3 z-20 h-4 w-4 rounded-tr border-t border-r border-card-gold/60" />
-    <span class="pointer-events-none absolute bottom-3 left-3 z-20 h-4 w-4 rounded-bl border-b border-l border-card-gold/60" />
-    <span class="pointer-events-none absolute right-3 bottom-3 z-20 h-4 w-4 rounded-br border-r border-b border-card-gold/60" />
+    <div class="border-card-gold/20 pointer-events-none absolute inset-2 z-20 rounded-xl border" />
+    <span
+      class="border-card-gold/60 pointer-events-none absolute top-3 left-3 z-20 h-4 w-4 rounded-tl border-t border-l"
+    />
+    <span
+      class="border-card-gold/60 pointer-events-none absolute top-3 right-3 z-20 h-4 w-4 rounded-tr border-t border-r"
+    />
+    <span
+      class="border-card-gold/60 pointer-events-none absolute bottom-3 left-3 z-20 h-4 w-4 rounded-bl border-b border-l"
+    />
+    <span
+      class="border-card-gold/60 pointer-events-none absolute right-3 bottom-3 z-20 h-4 w-4 rounded-br border-r border-b"
+    />
 
     <div
       class="pointer-events-none absolute inset-0 z-30 flex items-center justify-center"
       :style="overlayStyle(leftOverlayProgress)"
     >
-      <div class="flex h-24 w-24 items-center justify-center rounded-full bg-rose-500/20 text-rose-500">
+      <div
+        class="flex h-24 w-24 items-center justify-center rounded-full bg-rose-500/20 text-rose-500"
+      >
         <AppIcon
           icon-name="CloseCircle"
           :size="64"
@@ -271,7 +282,9 @@ onBeforeUnmount(() => {
       class="pointer-events-none absolute inset-0 z-30 flex items-center justify-center"
       :style="overlayStyle(rightOverlayProgress)"
     >
-      <div class="flex h-24 w-24 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-500">
+      <div
+        class="flex h-24 w-24 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-500"
+      >
         <AppIcon
           icon-name="TickCircle"
           :size="64"
@@ -282,31 +295,36 @@ onBeforeUnmount(() => {
 
     <!-- Scrollable body, decoupled from the frame/corner accents above so long content scrolls
          underneath them instead of dragging them along or clipping them. Inset by `mx-1 my-3`
-         (on top of its own padding) so the body's own edge — and its scrollbar — never sits flush
+         (on top of its own padding) so the body's own edge, and its scrollbar, never sits flush
          against the gold inset line, which is what let content/scrollbar visually cross it. -->
-    <div class="card-scroll relative z-10 mx-3 my-3 min-h-0 flex-1 touch-pan-y overflow-y-auto px-3 py-4">
+    <div
+      class="card-scroll relative z-10 mx-3 my-3 min-h-0 flex-1 touch-pan-y overflow-y-auto px-3 py-4"
+    >
       <p
         v-if="rootDeckName"
-        class="mb-1 text-xs font-medium tracking-wider text-card-muted/70 uppercase"
+        class="text-card-muted/70 mb-1 text-xs font-medium tracking-wider uppercase"
       >
         {{ rootDeckName }}
       </p>
-      <div class="flex items-start justify-between gap-3 flex-wrap">
-        <h2 class="font-serif text-3xl font-semibold text-card-gold">{{ card.frontTitle }}</h2>
-        <div class="flex flex-1 justify-end items-center gap-2">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <h2 class="text-card-gold font-serif text-3xl font-semibold">{{ card.frontTitle }}</h2>
+        <div class="flex flex-1 items-center justify-end gap-2">
           <span
             v-if="card.studyCount > 0"
-            class="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
+            class="bg-primary/10 text-primary inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-xs font-medium"
             :title="`Studied ${card.studyCount} time${card.studyCount === 1 ? '' : 's'}`"
           >
-            <AppIcon icon-name="TickCircle" :size="12" />
+            <AppIcon
+              icon-name="TickCircle"
+              :size="12"
+            />
             {{ card.studyCount }}
           </span>
           <button
             v-if="interactive"
             type="button"
             aria-label="Edit card"
-            class="flex h-8 w-8 items-center justify-center rounded-full text-card-muted transition-colors hover:text-primary"
+            class="text-card-muted hover:text-primary flex h-8 w-8 items-center justify-center rounded-full transition-colors"
             @pointerdown.stop
             @click.stop="requestEdit"
           >
@@ -318,7 +336,7 @@ onBeforeUnmount(() => {
           <button
             type="button"
             aria-label="Play pronunciation"
-            class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-card-gold/40 bg-linear-to-b from-card-definition to-card-surface text-primary shadow-[0_2px_6px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.15)] transition hover:brightness-110"
+            class="border-card-gold/40 from-card-definition to-card-surface text-primary flex h-11 w-11 shrink-0 items-center justify-center rounded-full border bg-linear-to-b shadow-[0_2px_6px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.15)] transition hover:brightness-110"
             @pointerdown.stop
             @click.stop="playAudio"
           >
@@ -331,12 +349,12 @@ onBeforeUnmount(() => {
       </div>
       <p
         v-if="card.ipa"
-        class="text-sm text-card-muted"
+        class="text-card-muted text-sm"
       >
         {{ card.ipa }}
       </p>
 
-      <div class="mt-3 border-t border-card-gold/20" />
+      <div class="border-card-gold/20 mt-3 border-t" />
 
       <div
         v-if="cardTags.length > 0"
@@ -364,19 +382,22 @@ onBeforeUnmount(() => {
             <template #front>
               <button
                 type="button"
-                class="flex h-full w-full items-center justify-center rounded-xl border-2 border-dashed border-card-gold/30 p-4 text-center text-sm font-medium text-card-muted hover:border-primary hover:text-primary"
+                class="border-card-gold/30 text-card-muted hover:border-primary hover:text-primary flex h-full w-full items-center justify-center rounded-xl border-2 border-dashed p-4 text-center text-sm font-medium"
                 @pointerdown.stop
                 @click.stop="setAnswerRevealed(true)"
               >
                 <template v-if="wordFamilyChallengeForm">
-                  What is the {{ WORD_FAMILY_POS_LABELS[wordFamilyChallengeForm] }} form of
-                  “{{ card.wordFamily.rootWord }}”?
+                  What is the {{ WORD_FAMILY_POS_LABELS[wordFamilyChallengeForm] }} form of “{{
+                    card.wordFamily.rootWord
+                  }}”?
                 </template>
                 <template v-else>Show Word Family</template>
               </button>
             </template>
             <template #back>
-              <div class="h-full w-full rounded-xl border border-card-gold/20 bg-card-definition p-4">
+              <div
+                class="border-card-gold/20 bg-card-definition h-full w-full rounded-xl border p-4"
+              >
                 <WordFamilyDisplay
                   :data="card.wordFamily"
                   :highlight="wordFamilyChallengeForm ?? undefined"
@@ -395,19 +416,24 @@ onBeforeUnmount(() => {
             <template #front>
               <button
                 type="button"
-                class="flex h-full w-full items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-card-gold/30 p-4 text-sm font-medium text-card-muted hover:border-primary hover:text-primary"
+                class="border-card-gold/30 text-card-muted hover:border-primary hover:text-primary flex h-full w-full items-center justify-center gap-1.5 rounded-xl border-2 border-dashed p-4 text-sm font-medium"
                 @pointerdown.stop
                 @click.stop="setAnswerRevealed(true)"
               >
-                <AppIcon icon-name="Eye" :size="16" />
+                <AppIcon
+                  icon-name="Eye"
+                  :size="16"
+                />
                 Show Answer
               </button>
             </template>
             <template #back>
-              <div class="h-full w-full rounded-xl border border-card-gold/20 bg-card-definition p-4">
+              <div
+                class="border-card-gold/20 bg-card-definition h-full w-full rounded-xl border p-4"
+              >
                 <!-- backAnswerHtml is sanitized via sanitizeRichText above -->
                 <div
-                  class="rich-text-content text-base leading-relaxed text-text"
+                  class="rich-text-content text-text text-base leading-relaxed"
                   v-html="backAnswerHtml"
                 />
               </div>
@@ -416,14 +442,14 @@ onBeforeUnmount(() => {
 
           <div
             v-if="showAnswer && card.examples.length > 0"
-            class="mt-4 rounded-xl border border-card-gold/20 bg-card-definition p-4"
+            class="border-card-gold/20 bg-card-definition mt-4 rounded-xl border p-4"
           >
-            <h2 class=" text-card-gold text-base mb-1">Examples:</h2>
+            <h2 class="text-card-gold mb-1 text-base">Examples:</h2>
             <ul class="space-y-2">
               <li
                 v-for="(example, index) in card.examples"
                 :key="index"
-                class="text-base text-text/90"
+                class="text-text/90 text-base"
               >
                 {{ example }}
               </li>
@@ -432,15 +458,15 @@ onBeforeUnmount(() => {
 
           <p
             v-if="showAnswer && card.synonyms.length > 0"
-            class="mt-4 text-sm text-text/80"
+            class="text-text/80 mt-4 text-sm"
           >
-            <span class="font-semibold text-primary">Synonyms:</span> {{ card.synonyms.join(', ') }}
+            <span class="text-primary font-semibold">Synonyms:</span> {{ card.synonyms.join(', ') }}
           </p>
           <p
             v-if="showAnswer && card.antonyms.length > 0"
-            class="mt-1 text-sm text-text/80"
+            class="text-text/80 mt-1 text-sm"
           >
-            <span class="font-semibold text-primary">Antonyms:</span> {{ card.antonyms.join(', ') }}
+            <span class="text-primary font-semibold">Antonyms:</span> {{ card.antonyms.join(', ') }}
           </p>
 
           <PartsOfSpeechDisplay
@@ -454,11 +480,11 @@ onBeforeUnmount(() => {
 
           <div
             v-if="showAnswer && extraInfoHtml"
-            class="mt-2 mb-2 rounded-xl border border-card-gold/20 bg-card-definition"
+            class="border-card-gold/20 bg-card-definition mt-2 mb-2 rounded-xl border"
           >
             <button
               type="button"
-              class="flex w-full items-center justify-between gap-2 p-4 text-left text-sm font-semibold text-primary"
+              class="text-primary flex w-full items-center justify-between gap-2 p-4 text-left text-sm font-semibold"
               @pointerdown.stop
               @click.stop="toggleExtraInfo"
             >
@@ -473,29 +499,28 @@ onBeforeUnmount(() => {
             <!-- extraInfoHtml is sanitized via sanitizeRichText above -->
             <div
               v-if="isExtraInfoExpanded"
-              class="rich-text-content px-4 pb-4 text-base leading-relaxed text-text"
+              class="rich-text-content text-text px-4 pb-4 text-base leading-relaxed"
               v-html="extraInfoHtml"
             />
           </div>
         </template>
       </BaseExpandableContent>
 
-
       <button
         v-if="card.hint && viewMode !== 'study'"
         type="button"
-        class="mt-1 rounded border border-card-gold/30 px-3 py-2 text-left text-sm text-card-muted hover:border-primary"
+        class="border-card-gold/30 text-card-muted hover:border-primary mt-1 rounded border px-3 py-2 text-left text-sm"
         @pointerdown.stop
         @click.stop="toggleHint"
       >
-        <span class="font-medium text-card-gold">Hint:</span>
+        <span class="text-card-gold font-medium">Hint:</span>
         {{ isHintRevealed ? card.hint : 'Tap to reveal' }}
       </button>
 
       <button
         v-if="imageUrl"
         type="button"
-        class="mt-4 overflow-hidden rounded border border-card-gold/30 transition-[height]"
+        class="border-card-gold/30 mt-4 overflow-hidden rounded border transition-[height]"
         :class="isImageExpanded ? 'h-56' : 'h-24'"
         @pointerdown.stop
         @click.stop="toggleImage"

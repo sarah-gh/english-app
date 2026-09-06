@@ -1,4 +1,4 @@
-/** Local-time 'YYYY-MM-DD' key — deliberately not `toISOString()`, which is UTC and would file
+/** Local-time 'YYYY-MM-DD' key, deliberately not `toISOString()`, which is UTC and would file
  *  a late-night session under the wrong day for users west of UTC. */
 export function dateKey(date: Date): string {
   const year = date.getFullYear();
@@ -28,7 +28,7 @@ export function currentWeekDateKeys(): string[] {
   return keys;
 }
 
-/** e.g. "Just now", "5 min ago", "3 hr ago", "2 days ago" — used for "Last synced: …" feedback. */
+/** e.g. "Just now", "5 min ago", "3 hr ago", "2 days ago", used for "Last synced: …" feedback. */
 export function formatRelativeTime(timestamp: number, now: number = Date.now()): string {
   const seconds = Math.max(0, Math.round((now - timestamp) / 1000));
   if (seconds < 60) return 'Just now';

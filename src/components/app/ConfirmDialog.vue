@@ -8,7 +8,7 @@ withDefaults(
     message?: string;
     confirmLabel?: string;
     cancelLabel?: string;
-    /** 'danger' colors the confirm button red — use for irreversible/destructive actions. */
+    /** 'danger' colors the confirm button red, use for irreversible/destructive actions. */
     variant?: 'primary' | 'danger';
   }>(),
   {
@@ -27,10 +27,10 @@ const emit = defineEmits<{
 
 <template>
   <BaseModal @close="emit('cancel')">
-    <h2 class="text-base font-semibold text-text">{{ title }}</h2>
+    <h2 class="text-text text-base font-semibold">{{ title }}</h2>
     <p
       v-if="message"
-      class="mt-2 text-sm text-text/60"
+      class="text-text/60 mt-2 text-sm"
     >
       {{ message }}
     </p>

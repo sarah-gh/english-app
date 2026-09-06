@@ -49,16 +49,24 @@ async function callProvider<T>(
   const label = PROVIDER_LABEL[provider];
   switch (provider) {
     case 'google':
-      if (!settings.googleApiKey) throw new AiServiceError(`Add a ${label} API key in Settings to continue.`);
+      if (!settings.googleApiKey)
+        throw new AiServiceError(`Add a ${label} API key in Settings to continue.`);
       return callers.google(settings.googleApiKey);
     case 'groq':
-      if (!settings.groqApiKey) throw new AiServiceError(`Add a ${label} API key in Settings to continue.`);
+      if (!settings.groqApiKey)
+        throw new AiServiceError(`Add a ${label} API key in Settings to continue.`);
       return callers.groq(settings.groqApiKey, settings.groqBaseUrl, settings.groqModel);
     case 'openrouter':
-      if (!settings.openrouterApiKey) throw new AiServiceError(`Add an ${label} API key in Settings to continue.`);
-      return callers.openrouter(settings.openrouterApiKey, settings.openrouterBaseUrl, settings.openrouterModel);
+      if (!settings.openrouterApiKey)
+        throw new AiServiceError(`Add an ${label} API key in Settings to continue.`);
+      return callers.openrouter(
+        settings.openrouterApiKey,
+        settings.openrouterBaseUrl,
+        settings.openrouterModel,
+      );
     case 'aihubmix':
-      if (!settings.aihubmixApiKey) throw new AiServiceError(`Add an ${label} API key in Settings to continue.`);
+      if (!settings.aihubmixApiKey)
+        throw new AiServiceError(`Add an ${label} API key in Settings to continue.`);
       return callers.aihubmix(settings.aihubmixApiKey, settings.aihubmixBaseUrl);
   }
 }
@@ -78,7 +86,7 @@ async function attemptProvider<T>(
 }
 
 /**
- * Runs an AI request using the provider(s) configured in Settings — shared by every feature that
+ * Runs an AI request using the provider(s) configured in Settings, shared by every feature that
  * calls out to the AI service layer (quiz generation, card auto-fill, ...). For a single
  * provider, it's called directly. For `'fallback'`, `fallbackPrimaryProvider` is tried first; if
  * it fails, a warning is logged and `fallbackBackupProvider` is retried automatically. An error
@@ -108,7 +116,8 @@ export async function withProviderFallback<T>(
     try {
       return await attemptProvider(settings, backup, callers);
     } catch (backupError) {
-      const backupMessage = backupError instanceof AiServiceError ? backupError.message : 'Request failed.';
+      const backupMessage =
+        backupError instanceof AiServiceError ? backupError.message : 'Request failed.';
       throw new AiServiceError(
         `Both providers failed. ${PROVIDER_LABEL[primary]}: ${primaryError.message} ${PROVIDER_LABEL[backup]}: ${backupMessage}`,
       );

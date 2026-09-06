@@ -5,7 +5,7 @@ const USERINFO_URL = 'https://www.googleapis.com/oauth2/v3/userinfo';
 export const SYNC_FILENAME = 'flashcards_sync.json';
 
 /** Thrown for any non-2xx Drive/userinfo response. `status` drives the 401-retry-once logic in
- *  the sync orchestrator — every other status is treated as non-retryable within a single sync. */
+ *  the sync orchestrator, every other status is treated as non-retryable within a single sync. */
 export class DriveApiError extends Error {
   status: number;
 
@@ -18,7 +18,7 @@ export class DriveApiError extends Error {
 
 /** Google occasionally answers with a bare 502/503/504 (or the connection drops outright) with no
  *  CORS headers on the error response at all, which the browser reports to `fetch` as an opaque
- *  network failure rather than a readable status — those are exactly the transient cases worth
+ *  network failure rather than a readable status, those are exactly the transient cases worth
  *  retrying, since the same request typically succeeds a moment later. */
 const RETRYABLE_STATUSES = new Set([500, 502, 503, 504]);
 const RETRY_DELAYS_MS = [1000, 2000, 4000];
@@ -42,7 +42,7 @@ async function driveFetch(url: string, token: string, init: RequestInit = {}): P
       });
     } catch {
       // Covers both a network-level fetch failure (offline, CORS-opaque 502) and our own abort
-      // timeout — neither carries a usable status, so both retry the same way.
+      // timeout, neither carries a usable status, so both retry the same way.
       if (attempt < RETRY_DELAYS_MS.length) {
         await delay(RETRY_DELAYS_MS[attempt]);
         continue;
@@ -62,7 +62,7 @@ async function driveFetch(url: string, token: string, init: RequestInit = {}): P
     return response;
   }
 
-  // Unreachable — the loop above always returns or throws on its last iteration.
+  // Unreachable, the loop above always returns or throws on its last iteration.
   throw new DriveApiError('Could not reach Google Drive.', 0);
 }
 
@@ -77,7 +77,7 @@ export async function fetchUserProfile(token: string): Promise<GoogleProfile> {
   return response.json();
 }
 
-/** Looks up `flashcards_sync.json` inside the app's private `appDataFolder` — that folder is
+/** Looks up `flashcards_sync.json` inside the app's private `appDataFolder`, that folder is
  *  invisible to the user and to every other app, so this query never collides with anything else
  *  in their Drive. Returns `null` on a first-ever sync, when the file doesn't exist yet. */
 export async function findSyncFileId(token: string): Promise<string | null> {
@@ -93,7 +93,7 @@ export async function downloadSyncFile<T>(token: string, fileId: string): Promis
   return response.json();
 }
 
-/** Multipart upload — the only way the Drive API accepts file metadata (name + parent folder)
+/** Multipart upload, the only way the Drive API accepts file metadata (name + parent folder)
  *  and content together in one request, which is required to create the file inside
  *  `appDataFolder` (a plain media upload has nowhere to say which folder it belongs in). */
 export async function createSyncFile(token: string, payload: unknown): Promise<string> {
@@ -115,8 +115,12 @@ export async function createSyncFile(token: string, payload: unknown): Promise<s
   return data.id;
 }
 
-/** Plain media upload — replaces the existing file's content in place, no metadata change needed. */
-export async function updateSyncFile(token: string, fileId: string, payload: unknown): Promise<void> {
+/** Plain media upload, replaces the existing file's content in place, no metadata change needed. */
+export async function updateSyncFile(
+  token: string,
+  fileId: string,
+  payload: unknown,
+): Promise<void> {
   await driveFetch(`${DRIVE_UPLOAD_URL}/${fileId}?uploadType=media`, token, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },

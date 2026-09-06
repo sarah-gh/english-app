@@ -18,7 +18,7 @@ interface SeedCard {
   partsOfSpeech?: Array<Omit<PartOfSpeechEntry, 'id'>>;
 }
 
-/** Colors for seed tags only — real tags get a color picker in the UI. Falls back to a neutral
+/** Colors for seed tags only, real tags get a color picker in the UI. Falls back to a neutral
  *  gray for any seed tag name not listed here. */
 const SEED_TAG_COLORS: Record<string, string> = {
   Tenses: '#3b82f6',
@@ -92,7 +92,7 @@ const SEED_DECKS: SeedDeck[] = [
         tagNames: ['Advanced'],
       },
       {
-        // Parts of Speech filled — one root word, three grammatical categories.
+        // Parts of Speech filled, one root word, three grammatical categories.
         frontTitle: 'Present',
         backAnswer: 'A word whose meaning and pronunciation change with its part of speech.',
         tagNames: ['Advanced', 'Multi-meaning'],
@@ -127,7 +127,8 @@ const SEED_DECKS: SeedDeck[] = [
     cards: [
       {
         frontTitle: 'Break the ice',
-        backAnswer: 'To do or say something that relieves tension or awkwardness in a social situation.',
+        backAnswer:
+          'To do or say something that relieves tension or awkwardness in a social situation.',
         examples: ['He told a joke to break the ice at the meeting.'],
         tagNames: ['Social'],
       },
@@ -156,8 +157,8 @@ export async function seedInitialDataIfNeeded(): Promise<void> {
   const settings = await settingsRepository.get();
   if (settings.hasSeededInitialData) return;
 
-  // Shared across every deck (tags aren't deck-scoped), so a name reused on a later card — e.g.
-  // "Advanced" on both Ubiquitous and Present — resolves to the same tag instead of a duplicate.
+  // Shared across every deck (tags aren't deck-scoped), so a name reused on a later card, e.g.
+  // "Advanced" on both Ubiquitous and Present, resolves to the same tag instead of a duplicate.
   const tagIdByName = new Map<string, string>();
   async function resolveTagIds(names: string[]): Promise<string[]> {
     const ids: string[] = [];
@@ -190,7 +191,10 @@ export async function seedInitialDataIfNeeded(): Promise<void> {
         synonyms: seedCard.synonyms ?? [],
         antonyms: seedCard.antonyms ?? [],
         quizQuestions: [],
-        partsOfSpeech: seedCard.partsOfSpeech?.map((entry) => ({ ...entry, id: crypto.randomUUID() })),
+        partsOfSpeech: seedCard.partsOfSpeech?.map((entry) => ({
+          ...entry,
+          id: crypto.randomUUID(),
+        })),
       });
     }
   }

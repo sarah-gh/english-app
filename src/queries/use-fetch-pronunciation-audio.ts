@@ -3,7 +3,7 @@ import { dictionaryAudioService } from '@/services/audio/dictionary-audio.servic
 import { queryKeys } from './query-keys';
 
 /** Fetching pronunciation audio is triggered on demand by a button click and writes straight
- *  into the card draft — a mutation, not a cached/subscribed query. */
+ *  into the card draft, a mutation, not a cached/subscribed query. */
 export function useFetchPronunciationAudio() {
   return useMutation({
     mutationKey: queryKeys.pronunciation.all,

@@ -29,7 +29,7 @@ export const QUIZ_EVALUATION_RESPONSE_SCHEMA = {
 };
 
 /** OpenAI-compatible chat APIs (Groq, OpenRouter) don't support Gemini-style JSON Schema
- *  enforcement — their JSON mode only guarantees valid JSON, not a specific shape — so this gets
+ *  enforcement, their JSON mode only guarantees valid JSON, not a specific shape, so this gets
  *  appended to the prompt itself to describe the shape in words. */
 export const QUIZ_EVALUATION_JSON_SHAPE_HINT = `
 

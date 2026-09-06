@@ -42,7 +42,7 @@ import Trash from 'vue-iconsax/dist/components/icons/Trash.vue.js';
 import VolumeHigh from 'vue-iconsax/dist/components/icons/VolumeHigh.vue.js';
 
 /** Statically imported per-icon, so the bundler only ever ships the ~20 Iconsax glyphs this app
- *  actually uses — importing the library's own dynamic `VsxIcon` wrapper instead pulls its whole
+ *  actually uses, importing the library's own dynamic `VsxIcon` wrapper instead pulls its whole
  *  ~2000-icon import map into the build, which the PWA's precache then downloads in full. Add new
  *  icons here (matching an Iconsax name from https://vue-iconsax-preview.vercel.app/) as needed. */
 const ICONS = {
@@ -95,13 +95,13 @@ const props = withDefaults(
     color?: string;
     /** Iconsax style variant. Defaults to the thin-stroke "linear" look used across this app. */
     type?: 'linear' | 'outline' | 'twotone' | 'bulk' | 'broken' | 'bold';
-    viewBox?: string
+    viewBox?: string;
   }>(),
   {
     size: 24,
     color: 'currentColor',
     type: 'linear',
-    viewBox: '0 0 24 24'
+    viewBox: '0 0 24 24',
   },
 );
 

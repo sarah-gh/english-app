@@ -10,7 +10,9 @@ export type ReviewPriorityFilter = 'default' | ReviewStatus;
  *  tier; a card that's never been swiped (still 'new') is treated as the lowest-urgency tier
  *  here, since §3's never-reviewed bucket above already gives it priority once. */
 function tierOf(card: Card): WeightedTier {
-  return card.reviewStatus === 'hard' || card.reviewStatus === 'medium' ? card.reviewStatus : 'easy';
+  return card.reviewStatus === 'hard' || card.reviewStatus === 'medium'
+    ? card.reviewStatus
+    : 'easy';
 }
 
 /**
@@ -18,10 +20,10 @@ function tierOf(card: Card): WeightedTier {
  * 1. Never-studied cards (`reviewStats.timesReviewed === 0`) first.
  * 2. Previously-failed cards (`reviewStats.failedMatches > 0`) next.
  * 3. Everything else, ordered by Hard -> Medium -> Easy tier weighting.
- * The result is capped at `size` — later tiers are simply left out once the cap is hit.
+ * The result is capped at `size`, later tiers are simply left out once the cap is hit.
  *
  * When `priorityFilter` names a concrete status ('new' | 'easy' | 'medium' | 'hard') instead of
- * `'default'`, the candidate pool is narrowed to only cards currently in that status first — the
+ * `'default'`, the candidate pool is narrowed to only cards currently in that status first, the
  * ordering above still applies within that narrowed pool.
  */
 export function buildPriorityQueue(
@@ -30,7 +32,9 @@ export function buildPriorityQueue(
   priorityFilter: ReviewPriorityFilter = 'default',
 ): Card[] {
   const pool =
-    priorityFilter === 'default' ? cards : cards.filter((card) => card.reviewStatus === priorityFilter);
+    priorityFilter === 'default'
+      ? cards
+      : cards.filter((card) => card.reviewStatus === priorityFilter);
 
   const neverStudied: Card[] = [];
   const previouslyFailed: Card[] = [];
@@ -46,6 +50,10 @@ export function buildPriorityQueue(
     }
   }
 
-  const queue = [...shuffle(neverStudied), ...shuffle(previouslyFailed), ...weightedShuffleByTier(rest, tierOf)];
+  const queue = [
+    ...shuffle(neverStudied),
+    ...shuffle(previouslyFailed),
+    ...weightedShuffleByTier(rest, tierOf),
+  ];
   return queue.slice(0, size);
 }

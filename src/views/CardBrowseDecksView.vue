@@ -20,7 +20,11 @@ const browseTreeStore = useBrowseTreeStore();
 const isReady = ref(false);
 
 onMounted(async () => {
-  await Promise.all([cardStore.ensureLoaded(), deckStore.ensureLoaded(), topicStore.ensureLoaded()]);
+  await Promise.all([
+    cardStore.ensureLoaded(),
+    deckStore.ensureLoaded(),
+    topicStore.ensureLoaded(),
+  ]);
   isReady.value = true;
 
   // Arriving from a "deck" link elsewhere (e.g. the dashboard) expands and scrolls to that deck.
@@ -73,10 +77,10 @@ async function confirmDeleteTopic() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-background px-4 pt-6 pb-18.75">
+  <div class="bg-background min-h-screen px-4 pt-6 pb-18.75">
     <RouterLink
       to="/"
-      class="mb-4 inline-flex items-center gap-1 text-sm text-text/50 hover:text-primary"
+      class="text-text/50 hover:text-primary mb-4 inline-flex items-center gap-1 text-sm"
     >
       <AppIcon
         icon-name="ArrowLeft"
@@ -86,7 +90,7 @@ async function confirmDeleteTopic() {
     </RouterLink>
 
     <div class="mb-4 flex items-center justify-between">
-      <h1 class="font-serif text-2xl font-bold text-card-primary">Browse Cards</h1>
+      <h1 class="text-card-primary font-serif text-2xl font-bold">Browse Cards</h1>
       <div class="flex items-center gap-2">
         <BaseButton
           variant="secondary"
@@ -119,32 +123,34 @@ async function confirmDeleteTopic() {
 
     <p
       v-if="!isReady"
-      class="text-sm text-text/50"
+      class="text-text/50 text-sm"
     >
       Loading…
     </p>
     <template v-else>
       <RouterLink
         to="/cards/all"
-        class="mb-3 flex items-center gap-2 rounded-2xl border border-card-gold/20 bg-card-surface px-4 py-3 hover:border-card-gold/40"
+        class="border-card-gold/20 bg-card-surface hover:border-card-gold/40 mb-3 flex items-center gap-2 rounded-2xl border px-4 py-3"
       >
         <AppIcon
           icon-name="Category2"
           :size="16"
-          class="shrink-0 text-card-gold/60"
+          class="text-card-gold/60 shrink-0"
         />
-        <span class="min-w-0 flex-1 truncate text-base font-semibold text-card-gold">All Cards</span>
-        <span class="hidden shrink-0 text-xs text-card-muted sm:inline">
+        <span class="text-card-gold min-w-0 flex-1 truncate text-base font-semibold"
+          >All Cards</span
+        >
+        <span class="text-card-muted hidden shrink-0 text-xs sm:inline">
           {{ cardStore.cards.length }} card{{ cardStore.cards.length === 1 ? '' : 's' }}
         </span>
         <AppIcon
           icon-name="ArrowRight2"
           :size="14"
-          class="shrink-0 text-card-muted"
+          class="text-card-muted shrink-0"
         />
       </RouterLink>
 
-      <p class="mb-3 text-xs text-text/50">Expand a deck to browse its topics.</p>
+      <p class="text-text/50 mb-3 text-xs">Expand a deck to browse its topics.</p>
       <DeckTree
         :decks="deckStore.decks"
         :card-count-for="cardCountFor"
@@ -156,7 +162,7 @@ async function confirmDeleteTopic() {
       />
       <p
         v-if="deckStore.decks.length === 0"
-        class="rounded-lg border border-text/20 py-8 text-center text-sm text-text/35"
+        class="border-text/20 text-text/35 rounded-lg border py-8 text-center text-sm"
       >
         No decks yet. Create a card to get started.
       </p>
@@ -175,7 +181,7 @@ async function confirmDeleteTopic() {
     <ConfirmDialog
       v-if="deletingTopic"
       title="Delete this topic?"
-      :message="`Deleting “${deletingTopic.name}” won't delete its ${cardCountForTopic(deletingTopic.id)} card(s) — they'll move to General.`"
+      :message="`Deleting “${deletingTopic.name}” won't delete its ${cardCountForTopic(deletingTopic.id)} card(s), they'll move to General.`"
       confirm-label="Delete"
       variant="danger"
       @confirm="confirmDeleteTopic"

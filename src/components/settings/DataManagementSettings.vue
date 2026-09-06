@@ -18,7 +18,10 @@ import { useSettingsStore } from '@/stores/settings-store';
 import { useTagStore } from '@/stores/tag-store';
 import { useTopicStore } from '@/stores/topic-store';
 import type { NewCard } from '@/types/card';
-import { parseJsonCardImport, type JsonImportValidationResult } from '@/utils/import/json-card-importer';
+import {
+  parseJsonCardImport,
+  type JsonImportValidationResult,
+} from '@/utils/import/json-card-importer';
 
 const settingsStore = useSettingsStore();
 const cardStore = useCardStore();
@@ -61,7 +64,12 @@ function triggerImportPicker() {
 }
 
 async function refreshStores() {
-  await Promise.all([cardStore.fetchAll(), deckStore.fetchAll(), topicStore.fetchAll(), tagStore.fetchAll()]);
+  await Promise.all([
+    cardStore.fetchAll(),
+    deckStore.fetchAll(),
+    topicStore.fetchAll(),
+    tagStore.fetchAll(),
+  ]);
 }
 
 async function handleFileSelected(event: Event) {
@@ -92,7 +100,7 @@ const isParsingJson = ref(false);
 const isImportingJson = ref(false);
 const jsonImportError = ref('');
 // `shallowRef` (not `ref`) so the parsed cards inside it stay plain objects, never wrapped in
-// reactive Proxies — they get handed to IndexedDB as-is on import, and Dexie/structured-clone
+// reactive Proxies, they get handed to IndexedDB as-is on import, and Dexie/structured-clone
 // can't clone a Proxy (the same DataCloneError pitfall documented in the quiz session store).
 const jsonImportResult = shallowRef<JsonImportValidationResult | null>(null);
 const toastMessage = ref('');
@@ -110,7 +118,7 @@ function triggerJsonImportPicker() {
   jsonFileInput.value?.click();
 }
 
-/** Shared by the file-upload flow and the paste/edit-JSON modal — both need the same up-to-date
+/** Shared by the file-upload flow and the paste/edit-JSON modal, both need the same up-to-date
  *  deck/topic/tag names to tell new names apart from reused ones. */
 async function parseJsonCardImportText(text: string): Promise<JsonImportValidationResult> {
   await Promise.all([
@@ -198,7 +206,7 @@ async function confirmJsonImport() {
 
   isImportingJson.value = true;
   try {
-    // One batch for the whole import run — the same cache lifetime the hand-rolled Maps had.
+    // One batch for the whole import run, the same cache lifetime the hand-rolled Maps had.
     const resolve = createBatch();
     const newCards: NewCard[] = [];
 
@@ -256,18 +264,18 @@ async function handleClearAll() {
 
 <template>
   <BorderedCard class="mb-6">
-    <h2 class="mb-1 font-serif text-lg font-bold text-card-gold">Backup &amp; Data</h2>
-    <p class="mb-4 text-xs text-card-muted">
+    <h2 class="text-card-gold mb-1 font-serif text-lg font-bold">Backup &amp; Data</h2>
+    <p class="text-card-muted mb-4 text-xs">
       Export everything into a single .zip file, or import one to restore or merge data on this or
-      another device. Prefer plain JSON instead? Use "Export All Data (JSON)" to download a
-      readable snapshot of your decks, cards, tags, settings, and study history.
+      another device. Prefer plain JSON instead? Use "Export All Data (JSON)" to download a readable
+      snapshot of your decks, cards, tags, settings, and study history.
     </p>
 
     <div class="mb-3 flex flex-wrap gap-3">
       <BaseButton
         variant="secondary"
         size="sm"
-        class="rounded-full! bg-card-gold/90! text-background! hover:bg-card-gold!"
+        class="bg-card-gold/90! text-background! hover:bg-card-gold! rounded-full!"
         :loading="isExporting"
         @click="handleExport"
       >
@@ -281,7 +289,7 @@ async function handleClearAll() {
       <BaseButton
         variant="secondary"
         size="sm"
-        class="rounded-full! bg-card-gold/90! text-background! hover:bg-card-gold!"
+        class="bg-card-gold/90! text-background! hover:bg-card-gold! rounded-full!"
         :loading="isImporting"
         @click="triggerImportPicker"
       >
@@ -302,7 +310,7 @@ async function handleClearAll() {
       <BaseButton
         variant="secondary"
         size="sm"
-        class="rounded-full! bg-card-gold/90! text-background! hover:bg-card-gold!"
+        class="bg-card-gold/90! text-background! hover:bg-card-gold! rounded-full!"
         :loading="isExportingJson"
         @click="handleExportJson"
       >
@@ -317,30 +325,30 @@ async function handleClearAll() {
 
     <p
       v-if="importSummary"
-      class="text-xs font-medium text-text/70"
+      class="text-text/70 text-xs font-medium"
     >
       Imported {{ importSummary.decks }} deck(s), {{ importSummary.topics }} topic(s),
       {{ importSummary.tags }} tag(s), {{ importSummary.cards }} card(s).
     </p>
     <p
       v-if="importError"
-      class="flex items-center gap-1.5 text-xs font-medium text-danger"
+      class="text-danger flex items-center gap-1.5 text-xs font-medium"
     >
       <WarningIcon />
       {{ importError }}
     </p>
 
-    <hr class="my-4 border-card-gold/10" />
+    <hr class="border-card-gold/10 my-4" />
 
-    <p class="mb-3 text-xs text-card-muted">
-      Bulk-create new cards from a spreadsheet instead of a backup file — useful for adding a
-      batch of vocabulary, grammar, or idiom cards at once.
+    <p class="text-card-muted mb-3 text-xs">
+      Bulk-create new cards from a spreadsheet instead of a backup file, useful for adding a batch
+      of vocabulary, grammar, or idiom cards at once.
     </p>
     <div class="flex flex-wrap gap-3">
       <BaseButton
         variant="secondary"
         size="sm"
-        class="rounded-full! bg-card-gold/90! text-background! hover:bg-card-gold!"
+        class="bg-card-gold/90! text-background! hover:bg-card-gold! rounded-full!"
         to="/cards/import"
       >
         Import Cards (Excel)
@@ -348,7 +356,7 @@ async function handleClearAll() {
       <BaseButton
         variant="secondary"
         size="sm"
-        class="rounded-full! bg-card-gold/90! text-background! hover:bg-card-gold!"
+        class="bg-card-gold/90! text-background! hover:bg-card-gold! rounded-full!"
         :loading="isParsingJson"
         @click="triggerJsonImportPicker"
       >
@@ -369,17 +377,20 @@ async function handleClearAll() {
       <BaseButton
         variant="secondary"
         size="sm"
-        class="rounded-full! bg-card-gold/90! text-background! hover:bg-card-gold!"
+        class="bg-card-gold/90! text-background! hover:bg-card-gold! rounded-full!"
         @click="openJsonTextImport"
       >
-        <AppIcon icon-name="Code" :size="14" />
+        <AppIcon
+          icon-name="Code"
+          :size="14"
+        />
         Paste / Edit Raw JSON
       </BaseButton>
     </div>
 
     <p
       v-if="jsonImportError"
-      class="mt-3 flex items-center gap-1.5 text-xs font-medium text-danger"
+      class="text-danger mt-3 flex items-center gap-1.5 text-xs font-medium"
     >
       <WarningIcon />
       {{ jsonImportError }}
@@ -387,8 +398,8 @@ async function handleClearAll() {
   </BorderedCard>
 
   <BorderedCard>
-    <h2 class="mb-1 font-serif text-lg font-bold text-card-gold">Danger Zone</h2>
-    <p class="mb-3 text-xs text-card-muted">
+    <h2 class="text-card-gold mb-1 font-serif text-lg font-bold">Danger Zone</h2>
+    <p class="text-card-muted mb-3 text-xs">
       Permanently deletes every deck, card, and tag on this device, and resets your settings. This
       can't be undone.
     </p>
@@ -436,7 +447,7 @@ async function handleClearAll() {
   <Transition name="fade">
     <div
       v-if="toastMessage"
-      class="fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded bg-primary px-4 py-2 text-sm font-medium text-background shadow-lg"
+      class="bg-primary text-background fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded px-4 py-2 text-sm font-medium shadow-lg"
       role="status"
     >
       {{ toastMessage }}

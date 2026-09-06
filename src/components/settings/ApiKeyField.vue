@@ -6,7 +6,7 @@ import BaseInput from '@/components/ui/BaseInput.vue';
 const props = defineProps<{
   title: string;
   keyPlaceholder: string;
-  /** The key currently persisted in Settings (not the draft) — drives the "Key Saved" badge and
+  /** The key currently persisted in Settings (not the draft), drives the "Key Saved" badge and
    *  masked preview, so they reflect what's actually saved even mid-edit. */
   storedKey: string | null;
   getKeyLabel?: string;
@@ -26,10 +26,10 @@ const emit = defineEmits<{ clear: [] }>();
 
 /** A subtle "recessed" tint in light mode (`slate-950` has no light-mode token override, so used
  *  bare it renders as a flat, overly heavy gray) and a proper dark inset well once `.dark` is
- *  active — shared by every input in this field for a consistent recessed look. */
+ *  active, shared by every input in this field for a consistent recessed look. */
 const RECESSED_INPUT_CLASS = 'border border-text/10 bg-black/5 dark:bg-slate-950/60';
 
-/** e.g. "sk-•••••••57Ca" — first 3 and last 4 characters, so a saved key is verifiable without
+/** e.g. "sk-•••••••57Ca", first 3 and last 4 characters, so a saved key is verifiable without
  *  fully exposing it. */
 const maskedPreview = computed(() => {
   const key = props.storedKey;
@@ -40,15 +40,15 @@ const maskedPreview = computed(() => {
 </script>
 
 <template>
-  <div class="mt-3 mb-4 rounded-xl border border-text/5 bg-black/3 p-4 dark:bg-slate-950/30">
+  <div class="border-text/5 mt-3 mb-4 rounded-xl border bg-black/3 p-4 dark:bg-slate-950/30">
     <div class="mb-2 flex items-center justify-between gap-2">
-      <p class="text-xs font-medium text-text/60">{{ title }}</p>
+      <p class="text-text/60 text-xs font-medium">{{ title }}</p>
       <a
         v-if="getKeyUrl"
         :href="getKeyUrl"
         target="_blank"
         rel="noopener noreferrer"
-        class="text-xs font-medium text-primary underline underline-offset-2 hover:no-underline"
+        class="text-primary text-xs font-medium underline underline-offset-2 hover:no-underline"
       >
         {{ getKeyLabel ?? 'Get a free API key' }} ↗
       </a>
@@ -58,14 +58,16 @@ const maskedPreview = computed(() => {
       v-if="storedKey"
       class="mb-2 flex items-center gap-1.5 text-xs"
     >
-      <span class="inline-flex items-center gap-1 rounded-lg bg-primary/20 px-2.5 py-1 font-medium text-primary">
+      <span
+        class="bg-primary/20 text-primary inline-flex items-center gap-1 rounded-lg px-2.5 py-1 font-medium"
+      >
         <AppIcon
           icon-name="TickCircle"
           :size="12"
         />
         Key Saved
       </span>
-      <span class="font-mono text-text/50">{{ maskedPreview }}</span>
+      <span class="text-text/50 font-mono">{{ maskedPreview }}</span>
     </div>
 
     <div class="flex gap-2">

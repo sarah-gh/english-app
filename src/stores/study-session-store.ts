@@ -49,11 +49,11 @@ export const useStudySessionStore = defineStore('study-session', () => {
   const lastAction = ref<LastSwipeAction | null>(null);
   const viewMode = ref<CardViewMode>('practice');
 
-  /** The mismatch-retry budget in `submitMatchingResults` — always set to the actual candidate
+  /** The mismatch-retry budget in `submitMatchingResults`, always set to the actual candidate
    *  count (`totalSessionCards`), never the raw requested `sessionSize`, so a request for more
    *  cards than exist can't pad the session with re-queued duplicates past the real card count. */
   const totalSlots = ref(0);
-  /** How many cards this session's progress header should count against — the actual queue size,
+  /** How many cards this session's progress header should count against, the actual queue size,
    *  which can be smaller than the requested session-size cap when the deck/topic has fewer
    *  eligible cards than that cap. */
   const totalSessionCards = ref(0);
@@ -66,14 +66,16 @@ export const useStudySessionStore = defineStore('study-session', () => {
   const finishedAt = ref<number | null>(null);
 
   // `totalSlots` is the uncapped session-size budget, not the actual candidate count (see its own
-  // doc comment) — using it here meant a genuinely empty candidate pool (e.g. a Practice session
+  // doc comment), using it here meant a genuinely empty candidate pool (e.g. a Practice session
   // for a deck with no studied cards yet) still reported `hasCards: true`, so the "Nothing to
   // study here" empty state below never actually triggered for that case.
   const hasCards = computed(() => totalSessionCards.value > 0);
   const currentCard = computed(() => currentChunk.value[chunkCardIndex.value]);
   const nextCard = computed(() => currentChunk.value[chunkCardIndex.value + 1]);
   const canUndo = computed(() => lastAction.value !== null);
-  const accuracy = computed(() => (totalMatched.value > 0 ? totalCorrectMatches.value / totalMatched.value : 0));
+  const accuracy = computed(() =>
+    totalMatched.value > 0 ? totalCorrectMatches.value / totalMatched.value : 0,
+  );
   const elapsedMs = computed(() => (finishedAt.value ?? Date.now()) - startedAt.value);
 
   function start(config: StudySessionConfig, initialViewMode: CardViewMode = 'practice'): void {
@@ -81,16 +83,20 @@ export const useStudySessionStore = defineStore('study-session', () => {
     const candidates = cardStore.cards.filter((card) => {
       if (config.deckId && card.deckId !== config.deckId) return false;
       if (config.topicId && card.topicId !== config.topicId) return false;
-      // Practice tests retention — a card has to have gone through a Study-mode session at least
+      // Practice tests retention, a card has to have gone through a Study-mode session at least
       // once (see `advance` below) before it's eligible to be tested on.
       if (initialViewMode === 'practice' && card.studyCount === 0) return false;
       return true;
     });
 
-    const initialQueue = buildPriorityQueue(candidates, config.sessionSize, config.reviewStatusFilter);
+    const initialQueue = buildPriorityQueue(
+      candidates,
+      config.sessionSize,
+      config.reviewStatusFilter,
+    );
 
     lastConfig.value = config;
-    // Capped to the actual candidate count, not the raw requested `sessionSize` — otherwise a
+    // Capped to the actual candidate count, not the raw requested `sessionSize`, otherwise a
     // request for more cards than exist (e.g. 10 requested, only 7 candidates) leaves `totalSlots`
     // larger than the real queue, and the mismatch-retry logic below keeps re-inserting duplicate
     // cards to "spend" those phantom slots instead of ending the session once the real cards are done.
@@ -150,10 +156,10 @@ export const useStudySessionStore = defineStore('study-session', () => {
     }
   }
 
-  /** Study mode's plain "Next" — moves to the next card without recording a Known/Not Known
+  /** Study mode's plain "Next", moves to the next card without recording a Known/Not Known
    *  assessment (that's Practice mode's job, via `swipe`), but still counts toward the session's
    *  studied total and still hands off to the matching quiz once the chunk is done. Also bumps the
-   *  card just paged past `studyCount` by 1 — reaching `> 0` is what makes a card eligible for a
+   *  card just paged past `studyCount` by 1, reaching `> 0` is what makes a card eligible for a
    *  future Practice session's candidate pool (see `start` above). */
   function advance(): void {
     const card = currentCard.value;
@@ -171,13 +177,13 @@ export const useStudySessionStore = defineStore('study-session', () => {
   }
 
   /**
-   * Study mode's plain "Previous" — steps back within the current chunk only, and rolls back the
+   * Study mode's plain "Previous", steps back within the current chunk only, and rolls back the
    * `studyCount` bump `advance` made for the card being stepped back onto.
    *
    * Without that rollback, paging Next -> Previous -> Next counted the same card twice, and the
    * inflation was permanent: `studyCount` is merged across devices with `Math.max` (see
    * `mergeCards`), so a count that drifts up can never come back down on its own. Practice mode
-   * never reaches this — its cards advance through `swipe`, which doesn't touch `studyCount`.
+   * never reaches this, its cards advance through `swipe`, which doesn't touch `studyCount`.
    */
   function goToPrevious(): void {
     if (chunkCardIndex.value === 0) return;
@@ -205,7 +211,9 @@ export const useStudySessionStore = defineStore('study-session', () => {
    *  session's slot budget still has room, before moving on to the next chunk (or the summary). */
   async function submitMatchingResults(results: MatchResult[]): Promise<void> {
     const cardStore = useCardStore();
-    await Promise.all(results.map((result) => cardStore.recordMatchResult(result.cardId, result.correct)));
+    await Promise.all(
+      results.map((result) => cardStore.recordMatchResult(result.cardId, result.correct)),
+    );
 
     totalMatched.value += results.length;
     totalCorrectMatches.value += results.filter((result) => result.correct).length;

@@ -56,7 +56,7 @@ const isAihubmixKeyVisible = ref(false);
 const aiConfigStatus = ref('');
 
 /** Only the concrete provider(s) actually in play for the current selection get their key/model
- *  fields rendered — a single provider, or both legs of the fallback pair. */
+ *  fields rendered, a single provider, or both legs of the fallback pair. */
 const visibleProviders = computed<ConcreteAiProvider[]>(() => {
   if (aiProviderDraft.value === 'fallback') {
     return [...new Set([fallbackPrimaryDraft.value, fallbackBackupDraft.value])];
@@ -86,7 +86,12 @@ async function runTest(provider: ConcreteAiProvider) {
         await testProviderConnection('google', googleKeyDraft.value, '', '');
         break;
       case 'groq':
-        await testProviderConnection('groq', groqKeyDraft.value, groqBaseUrlDraft.value, groqModelDraft.value);
+        await testProviderConnection(
+          'groq',
+          groqKeyDraft.value,
+          groqBaseUrlDraft.value,
+          groqModelDraft.value,
+        );
         break;
       case 'openrouter':
         await testProviderConnection(
@@ -97,14 +102,20 @@ async function runTest(provider: ConcreteAiProvider) {
         );
         break;
       case 'aihubmix':
-        await testProviderConnection('aihubmix', aihubmixKeyDraft.value, aihubmixBaseUrlDraft.value, '');
+        await testProviderConnection(
+          'aihubmix',
+          aihubmixKeyDraft.value,
+          aihubmixBaseUrlDraft.value,
+          '',
+        );
         break;
     }
     testStatus[provider] = { status: 'success', message: 'Connected' };
   } catch (error) {
     testStatus[provider] = {
       status: 'error',
-      message: error instanceof AiProviderError ? error.message : 'Connection failed. Check your network.',
+      message:
+        error instanceof AiProviderError ? error.message : 'Connection failed. Check your network.',
     };
   }
 }
@@ -135,7 +146,8 @@ watch(() => settingsStore.settings.updatedAt, syncDraftsFromStore);
 /** Pre-fills a provider's standard base URL the moment it's selected, if the field is still
  *  empty (e.g. first time that provider is picked, or the user cleared it). */
 function prefillBaseUrlIfEmpty(provider: ConcreteAiProvider) {
-  if (provider === 'groq' && !groqBaseUrlDraft.value.trim()) groqBaseUrlDraft.value = DEFAULT_GROQ_BASE_URL;
+  if (provider === 'groq' && !groqBaseUrlDraft.value.trim())
+    groqBaseUrlDraft.value = DEFAULT_GROQ_BASE_URL;
   if (provider === 'openrouter' && !openrouterBaseUrlDraft.value.trim()) {
     openrouterBaseUrlDraft.value = DEFAULT_OPENROUTER_BASE_URL;
   }
@@ -222,10 +234,10 @@ async function clearAihubmixKey() {
     />
 
     <template v-if="aiProviderDraft === 'fallback'">
-      <p class="mb-3 text-xs text-text/50">
-        Tries the primary provider first. If it fails (network error, rate limit, server error, or
-        a missing key), a warning is logged and the backup provider is retried automatically using
-        the credentials below.
+      <p class="text-text/50 mb-3 text-xs">
+        Tries the primary provider first. If it fails (network error, rate limit, server error, or a
+        missing key), a warning is logged and the backup provider is retried automatically using the
+        credentials below.
       </p>
       <div class="mb-4 grid grid-cols-2 gap-2">
         <BaseSelect
@@ -267,13 +279,13 @@ async function clearAihubmixKey() {
         </BaseButton>
         <span
           v-if="testStatus.google.status === 'success'"
-          class="text-xs font-medium text-primary"
+          class="text-primary text-xs font-medium"
         >
           ✓ {{ testStatus.google.message }}
         </span>
         <span
           v-if="testStatus.google.status === 'error'"
-          class="text-xs font-medium text-danger"
+          class="text-danger text-xs font-medium"
         >
           ✗ {{ testStatus.google.message }}
         </span>
@@ -305,13 +317,13 @@ async function clearAihubmixKey() {
         </BaseButton>
         <span
           v-if="testStatus.groq.status === 'success'"
-          class="text-xs font-medium text-primary"
+          class="text-primary text-xs font-medium"
         >
           ✓ {{ testStatus.groq.message }}
         </span>
         <span
           v-if="testStatus.groq.status === 'error'"
-          class="text-xs font-medium text-danger"
+          class="text-danger text-xs font-medium"
         >
           ✗ {{ testStatus.groq.message }}
         </span>
@@ -343,13 +355,13 @@ async function clearAihubmixKey() {
         </BaseButton>
         <span
           v-if="testStatus.openrouter.status === 'success'"
-          class="text-xs font-medium text-primary"
+          class="text-primary text-xs font-medium"
         >
           ✓ {{ testStatus.openrouter.message }}
         </span>
         <span
           v-if="testStatus.openrouter.status === 'error'"
-          class="text-xs font-medium text-danger"
+          class="text-danger text-xs font-medium"
         >
           ✗ {{ testStatus.openrouter.message }}
         </span>
@@ -380,13 +392,13 @@ async function clearAihubmixKey() {
         </BaseButton>
         <span
           v-if="testStatus.aihubmix.status === 'success'"
-          class="text-xs font-medium text-primary"
+          class="text-primary text-xs font-medium"
         >
           ✓ {{ testStatus.aihubmix.message }}
         </span>
         <span
           v-if="testStatus.aihubmix.status === 'error'"
-          class="text-xs font-medium text-danger"
+          class="text-danger text-xs font-medium"
         >
           ✗ {{ testStatus.aihubmix.message }}
         </span>
@@ -408,7 +420,7 @@ async function clearAihubmixKey() {
       </BaseButton>
       <span
         v-if="aiConfigStatus"
-        class="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-xs font-medium text-background"
+        class="bg-primary text-background inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium"
       >
         ✓ {{ aiConfigStatus }}
       </span>

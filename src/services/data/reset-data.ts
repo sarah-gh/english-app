@@ -10,7 +10,7 @@ import { DEFAULT_SETTINGS } from '@/types/settings';
 /**
  * Wipes every deck, topic, card, tag, AI quiz result, and daily stat, and resets settings to
  * their defaults. `hasSeededInitialData` is deliberately left `true` so the sample decks don't
- * silently reappear on the next launch — a user who clears everything (often right before
+ * silently reappear on the next launch, a user who clears everything (often right before
  * importing a backup) wants it to stay empty.
  */
 export async function clearAllData(): Promise<void> {
@@ -22,6 +22,11 @@ export async function clearAllData(): Promise<void> {
     aiQuizResultRepository.clear(),
     dailyStatRepository.clear(),
   ]);
-  const { id: _id, updatedAt: _updatedAt, hasSeededInitialData: _seeded, ...defaults } = DEFAULT_SETTINGS;
+  const {
+    id: _id,
+    updatedAt: _updatedAt,
+    hasSeededInitialData: _seeded,
+    ...defaults
+  } = DEFAULT_SETTINGS;
   await settingsRepository.update({ ...defaults, hasSeededInitialData: true });
 }

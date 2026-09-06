@@ -4,7 +4,7 @@ import { useTopicStore } from '@/stores/topic-store';
 import { getRandomTagColor } from '@/utils/tag-color';
 
 /**
- * Normalizes a name for matching only — never for storage. Trimming as well as lowercasing
+ * Normalizes a name for matching only, never for storage. Trimming as well as lowercasing
  * matters: `merge.ts`'s `normalizeName` already trims when Cloud Sync collapses same-named
  * duplicates, so a resolver that only lowercased would happily create `" Grammar"` alongside an
  * existing `"Grammar"`, and the next sync would silently merge the two back together. Matching the
@@ -14,12 +14,12 @@ function normalizeName(name: string): string {
   return name.trim().toLowerCase();
 }
 
-/** One batch of resolutions — see `useEntityResolver` for why the cache is scoped this way. */
+/** One batch of resolutions, see `useEntityResolver` for why the cache is scoped this way. */
 export interface EntityResolverBatch {
   /** Existing deck with this name (case-insensitive), or a newly created one. */
   deckId(name: string): Promise<string>;
   /** Topics are scoped per-deck, so the same topic name can be new under one deck and existing
-   *  under another — the deck id is part of both the lookup and the cache key. */
+   *  under another, the deck id is part of both the lookup and the cache key. */
   topicId(deckId: string, name: string): Promise<string>;
   /** Existing tag with this name (case-insensitive), or a newly created one with a random badge
    *  color from the app's palette. */
@@ -27,7 +27,7 @@ export interface EntityResolverBatch {
 }
 
 /**
- * Resolve-or-create for the entities referenced by *name* rather than by id — what every import
+ * Resolve-or-create for the entities referenced by *name* rather than by id, what every import
  * path and the card editor's AI suggestions need when a file or the AI hands over "Vocabulary"
  * instead of a deck id.
  *

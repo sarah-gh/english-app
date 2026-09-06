@@ -10,7 +10,7 @@ import {
 const VALID_CONCRETE_PROVIDERS: ConcreteAiProvider[] = ['google', 'groq', 'openrouter', 'aihubmix'];
 
 /** Shape of settings records written by builds before the Google/Groq/OpenRouter provider
- *  rename — kept only so `migrateSettings` has something to read the old field names off of. */
+ *  rename, kept only so `migrateSettings` has something to read the old field names off of. */
 interface LegacySettingsFields {
   geminiApiKey?: string | null;
 }
@@ -18,7 +18,7 @@ interface LegacySettingsFields {
 /**
  * Back-fills any field the current schema expects that an older record doesn't have, and remaps
  * the one enum value that was renamed (`'gemini'` -> `'google'`). Without this, a settings
- * record written before a provider rename or new field was added would come back missing data —
+ * record written before a provider rename or new field was added would come back missing data,
  * which looks indistinguishable from "my settings got reset" to the user, even though nothing
  * was actually deleted.
  */
@@ -27,7 +27,8 @@ function migrateSettings(stored: AppSettings): AppSettings {
   const merged: AppSettings = { ...DEFAULT_SETTINGS, ...legacy };
 
   if (![...VALID_CONCRETE_PROVIDERS, 'fallback'].includes(merged.aiProvider)) {
-    merged.aiProvider = (merged.aiProvider as string) === 'gemini' ? 'google' : DEFAULT_SETTINGS.aiProvider;
+    merged.aiProvider =
+      (merged.aiProvider as string) === 'gemini' ? 'google' : DEFAULT_SETTINGS.aiProvider;
   }
   if (!VALID_CONCRETE_PROVIDERS.includes(merged.fallbackPrimaryProvider)) {
     merged.fallbackPrimaryProvider = DEFAULT_SETTINGS.fallbackPrimaryProvider;
@@ -73,7 +74,7 @@ export const settingsRepository = {
   },
 
   /** Used by Cloud Sync only: writes the record as-is, preserving the incoming `updatedAt` instead
-   *  of stamping a new one — the merge that produced `settings` already resolved which side's
+   *  of stamping a new one, the merge that produced `settings` already resolved which side's
    *  timestamp wins (see `mergeSingleton`), and re-stamping here would make this device's copy look
    *  newer than it actually is on the next sync. */
   async replace(settings: AppSettings): Promise<void> {

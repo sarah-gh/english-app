@@ -53,7 +53,7 @@ export const useCardStore = defineStore('cards', () => {
     return created;
   }
 
-  /** Used by bulk import (e.g. Excel) — adds many cards in one go, newest-first. */
+  /** Used by bulk import (e.g. Excel), adds many cards in one go, newest-first. */
   async function addMany(newCards: NewCard[]): Promise<Card[]> {
     const resolved: NewCard[] = [];
     for (const card of newCards) {
@@ -82,7 +82,7 @@ export const useCardStore = defineStore('cards', () => {
     if (card) card.studyCount += 1;
   }
 
-  /** Rolls back one `incrementStudyCount` — see the repository method's doc comment. */
+  /** Rolls back one `incrementStudyCount`, see the repository method's doc comment. */
   async function decrementStudyCount(id: string): Promise<void> {
     await cardRepository.decrementStudyCount(id);
     const card = getById(id);

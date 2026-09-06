@@ -1,4 +1,4 @@
-/** Vibrant, readable badge colors (Tailwind ~500 shades) — matches the palette used for the
+/** Vibrant, readable badge colors (Tailwind ~500 shades), matches the palette used for the
  *  app's own seed-data tags, so auto-created tags fit the existing visual language. */
 const TAG_COLOR_PALETTE = [
   '#3b82f6', // blue

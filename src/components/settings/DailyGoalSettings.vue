@@ -40,7 +40,7 @@ async function saveGoal() {
   <SettingsSectionCard
     title="Daily Goal"
     badge-class="bg-orange-400/10 text-orange-400"
-    description="Number of cards to review each day — shown as a progress ring on your Profile."
+    description="Number of cards to review each day, shown as a progress ring on your Profile."
   >
     <template #icon>
       <AppIcon
@@ -49,11 +49,13 @@ async function saveGoal() {
       />
     </template>
     <div class="flex items-center gap-3">
-      <div class="flex items-center gap-1 rounded-xl border border-text/10 bg-black/5 p-1 dark:bg-slate-950/40">
+      <div
+        class="border-text/10 flex items-center gap-1 rounded-xl border bg-black/5 p-1 dark:bg-slate-950/40"
+      >
         <button
           type="button"
           aria-label="Decrease daily goal"
-          class="flex h-8 w-8 items-center justify-center rounded-lg text-text/60 transition-colors hover:bg-text/10 hover:text-text disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
+          class="text-text/60 hover:bg-text/10 hover:text-text flex h-8 w-8 items-center justify-center rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
           :disabled="!canDecrement"
           @click="decrement"
         >
@@ -62,11 +64,11 @@ async function saveGoal() {
             :size="14"
           />
         </button>
-        <span class="w-10 text-center text-sm font-semibold text-text">{{ goalDraft }}</span>
+        <span class="text-text w-10 text-center text-sm font-semibold">{{ goalDraft }}</span>
         <button
           type="button"
           aria-label="Increase daily goal"
-          class="flex h-8 w-8 items-center justify-center rounded-lg text-text/60 transition-colors hover:bg-text/10 hover:text-text"
+          class="text-text/60 hover:bg-text/10 hover:text-text flex h-8 w-8 items-center justify-center rounded-lg transition-colors"
           @click="increment"
         >
           <AppIcon
@@ -89,7 +91,7 @@ async function saveGoal() {
       </BaseButton>
       <span
         v-if="status"
-        class="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-xs font-medium text-background"
+        class="bg-primary text-background inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium"
       >
         ✓ {{ status }}
       </span>

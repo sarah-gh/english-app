@@ -12,7 +12,7 @@ export type ConcreteAiProvider = 'google' | 'groq' | 'openrouter' | 'aihubmix';
 export type AiProvider = ConcreteAiProvider | 'fallback';
 
 export interface AppSettings {
-  /** Fixed primary key — settings is a single-record ("singleton") table. */
+  /** Fixed primary key, settings is a single-record ("singleton") table. */
   id: 'app-settings';
   speechAccent: SpeechAccent;
 
@@ -21,17 +21,17 @@ export interface AppSettings {
   /** Google AI Studio (Gemini) API key, stored locally only. */
   googleApiKey: string | null;
 
-  /** Groq API key, base URL, and model — all stored locally only. */
+  /** Groq API key, base URL, and model, all stored locally only. */
   groqApiKey: string | null;
   groqBaseUrl: string;
   groqModel: string;
 
-  /** OpenRouter API key, base URL, and model — all stored locally only. */
+  /** OpenRouter API key, base URL, and model, all stored locally only. */
   openrouterApiKey: string | null;
   openrouterBaseUrl: string;
   openrouterModel: string;
 
-  /** AIHubMix API key and base URL — stored locally only. */
+  /** AIHubMix API key and base URL, stored locally only. */
   aihubmixApiKey: string | null;
   aihubmixBaseUrl: string;
 

@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 
-// This file has a top-level `export {}` below, which makes it a module — so augmenting the
+// This file has a top-level `export {}` below, which makes it a module, so augmenting the
 // ambient `ImportMetaEnv`/`ImportMeta` interfaces (declared globally by vite/client) requires an
 // explicit `declare global` block. A bare top-level `interface ImportMetaEnv` here would silently
 // shadow nothing and merge with nothing, just declaring an unused local type.

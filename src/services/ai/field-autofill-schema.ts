@@ -1,5 +1,9 @@
 import { sanitizeRichText, stripHtmlToText } from '@/utils/html';
-import { isGeneratedPosEntry, POS_ENTRY_SCHEMA, type GeneratedPosEntry } from './card-autofill-schema';
+import {
+  isGeneratedPosEntry,
+  POS_ENTRY_SCHEMA,
+  type GeneratedPosEntry,
+} from './card-autofill-schema';
 
 function stringArray(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
@@ -14,17 +18,17 @@ export const DEFINITION_RESPONSE_SCHEMA = {
 };
 
 /** OpenAI-compatible chat APIs (Groq, OpenRouter) don't support Gemini-style JSON Schema
- *  enforcement — their JSON mode only guarantees valid JSON, not a specific shape — so this gets
+ *  enforcement, their JSON mode only guarantees valid JSON, not a specific shape, so this gets
  *  appended to the prompt itself to describe the shape in words. */
 export const DEFINITION_JSON_SHAPE_HINT = `
 
 Respond with ONLY a JSON object of this exact shape, no other text:
-{"backAnswer": string (concise HTML — <p>, <strong>, <em> only), "extraInfo": string (optional — structured HTML with <h3>, <p>, <strong>, <em>, <ul>/<ol>/<li> section headings; no other tags or attributes)}`;
+{"backAnswer": string (concise HTML, <p>, <strong>, <em> only), "extraInfo": string (optional, structured HTML with <h3>, <p>, <strong>, <em>, <ul>/<ol>/<li> section headings; no other tags or attributes)}`;
 
 export interface GeneratedDefinition {
   backAnswer: string;
   /** Extended context (verb forms/tenses, phrasal verbs, collocations, idiom notes, etc) kept
-   *  separate from the concise `backAnswer` — omitted when the AI found nothing worth adding. */
+   *  separate from the concise `backAnswer`, omitted when the AI found nothing worth adding. */
   extraInfo?: string;
 }
 
@@ -65,7 +69,10 @@ export const EXTRA_INFO_JSON_SHAPE_HINT = `
 Respond with ONLY a JSON object of this exact shape, no other text:
 {"extraInfo": string (structured HTML with <h3>, <p>, <strong>, <em>, <ul>/<ol>/<li> section headings; no other tags or attributes)}`;
 
-export function parseExtraInfoResponseText(text: string | undefined, makeError: (message: string) => Error): string {
+export function parseExtraInfoResponseText(
+  text: string | undefined,
+  makeError: (message: string) => Error,
+): string {
   if (!text) throw makeError('The AI provider returned an empty response.');
 
   let parsed: unknown;
@@ -93,7 +100,10 @@ export const IPA_JSON_SHAPE_HINT = `
 Respond with ONLY a JSON object of this exact shape, no other text:
 {"ipa": string}`;
 
-export function parseIpaResponseText(text: string | undefined, makeError: (message: string) => Error): string {
+export function parseIpaResponseText(
+  text: string | undefined,
+  makeError: (message: string) => Error,
+): string {
   if (!text) throw makeError('The AI provider returned an empty response.');
 
   let parsed: unknown;
@@ -121,7 +131,10 @@ export const EXAMPLES_JSON_SHAPE_HINT = `
 Respond with ONLY a JSON object of this exact shape, no other text:
 {"examples": string[]}`;
 
-export function parseExamplesResponseText(text: string | undefined, makeError: (message: string) => Error): string[] {
+export function parseExamplesResponseText(
+  text: string | undefined,
+  makeError: (message: string) => Error,
+): string[] {
   if (!text) throw makeError('The AI provider returned an empty response.');
 
   let parsed: unknown;

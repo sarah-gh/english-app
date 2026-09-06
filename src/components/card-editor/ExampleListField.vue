@@ -11,7 +11,7 @@ const props = withDefaults(
   defineProps<{
     label?: string;
     /** The card's front title/root word to generate from. Only pass this when this list IS the
-     *  card's "Personal Examples" section — omit it (e.g. for per-part-of-speech example lists)
+     *  card's "Personal Examples" section, omit it (e.g. for per-part-of-speech example lists)
      *  to hide the AI button entirely. */
     aiWord?: string;
   }>(),
@@ -21,10 +21,17 @@ const props = withDefaults(
 const examples = defineModel<string[]>('examples', { required: true });
 
 const settingsStore = useSettingsStore();
-const { mutateAsync: requestExamples, isPending: isGenerating, error: generateApiError } = useGenerateExamples();
+const {
+  mutateAsync: requestExamples,
+  isPending: isGenerating,
+  error: generateApiError,
+} = useGenerateExamples();
 
 const canGenerate = computed(
-  () => props.aiWord !== undefined && hasRequiredAiCredentials(settingsStore.settings) && props.aiWord.trim().length > 0,
+  () =>
+    props.aiWord !== undefined &&
+    hasRequiredAiCredentials(settingsStore.settings) &&
+    props.aiWord.trim().length > 0,
 );
 const generateErrorMessage = computed(() => {
   const error = generateApiError.value;
@@ -63,19 +70,23 @@ function moveExample(index: number, direction: -1 | 1) {
 <template>
   <div>
     <div class="mb-1 flex items-center justify-between gap-2">
-      <span class="flex items-center gap-1 text-xs font-medium text-text/60">
+      <span class="text-text/60 flex items-center gap-1 text-xs font-medium">
         {{ label }}
         <AiFieldButton
           v-if="aiWord !== undefined"
           :loading="isGenerating"
           :disabled="!canGenerate"
-          :title="aiWord.trim() ? 'Auto-fill this field with AI' : 'Enter a word first to use AI Auto-Fill'"
+          :title="
+            aiWord.trim()
+              ? 'Auto-fill this field with AI'
+              : 'Enter a word first to use AI Auto-Fill'
+          "
           @click="handleGenerate"
         />
       </span>
       <button
         type="button"
-        class="inline-flex items-center gap-1 text-xs font-medium text-primary underline underline-offset-2 hover:no-underline"
+        class="text-primary inline-flex items-center gap-1 text-xs font-medium underline underline-offset-2 hover:no-underline"
         @click="addExample"
       >
         <AppIcon
@@ -87,7 +98,7 @@ function moveExample(index: number, direction: -1 | 1) {
     </div>
     <p
       v-if="generateErrorMessage"
-      class="mb-1 flex items-center gap-1.5 text-xs font-medium text-danger"
+      class="text-danger mb-1 flex items-center gap-1.5 text-xs font-medium"
     >
       <WarningIcon />
       {{ generateErrorMessage }}
@@ -103,7 +114,7 @@ function moveExample(index: number, direction: -1 | 1) {
           <button
             type="button"
             aria-label="Move example up"
-            class="rounded border border-text/20 px-1.5 text-xs leading-4 text-text/50 hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-text/20 disabled:hover:text-text/50"
+            class="border-text/20 text-text/50 hover:border-primary hover:text-primary disabled:hover:border-text/20 disabled:hover:text-text/50 rounded border px-1.5 text-xs leading-4 disabled:cursor-not-allowed disabled:opacity-30"
             :disabled="index === 0"
             @click="moveExample(index, -1)"
           >
@@ -112,7 +123,7 @@ function moveExample(index: number, direction: -1 | 1) {
           <button
             type="button"
             aria-label="Move example down"
-            class="rounded border border-text/20 px-1.5 text-xs leading-4 text-text/50 hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-text/20 disabled:hover:text-text/50"
+            class="border-text/20 text-text/50 hover:border-primary hover:text-primary disabled:hover:border-text/20 disabled:hover:text-text/50 rounded border px-1.5 text-xs leading-4 disabled:cursor-not-allowed disabled:opacity-30"
             :disabled="index === examples.length - 1"
             @click="moveExample(index, 1)"
           >
@@ -123,11 +134,11 @@ function moveExample(index: number, direction: -1 | 1) {
           v-model="examples[index]"
           type="text"
           placeholder="Write a sentence using this word…"
-          class="w-full rounded border border-text/20 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+          class="border-text/20 focus:border-primary w-full rounded border px-3 py-2 text-sm focus:outline-none"
         />
         <button
           type="button"
-          class="inline-flex shrink-0 items-center gap-1 rounded border border-text/20 px-2 text-xs text-text/50 hover:border-primary hover:text-primary"
+          class="border-text/20 text-text/50 hover:border-primary hover:text-primary inline-flex shrink-0 items-center gap-1 rounded border px-2 text-xs"
           @click="removeExample(index)"
         >
           <AppIcon
@@ -139,7 +150,7 @@ function moveExample(index: number, direction: -1 | 1) {
       </div>
       <p
         v-if="examples.length === 0"
-        class="text-xs text-text/35"
+        class="text-text/35 text-xs"
       >
         No examples added.
       </p>

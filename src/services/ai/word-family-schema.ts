@@ -41,7 +41,7 @@ export const WORD_FAMILY_RESPONSE_SCHEMA = {
 };
 
 /** OpenAI-compatible chat APIs (Groq, OpenRouter) don't support Gemini-style JSON Schema
- *  enforcement — their JSON mode only guarantees valid JSON, not a specific shape — so this gets
+ *  enforcement, their JSON mode only guarantees valid JSON, not a specific shape, so this gets
  *  appended to the prompt itself to describe the shape in words. */
 export const WORD_FAMILY_JSON_SHAPE_HINT = `
 
@@ -63,8 +63,10 @@ function posDetail(value: unknown): GeneratedPOSDetail | undefined {
   if (!isGeneratedPOSDetail(value)) return undefined;
   return {
     word: value.word.trim(),
-    meaning: typeof value.meaning === 'string' && value.meaning.trim() ? value.meaning.trim() : undefined,
-    example: typeof value.example === 'string' && value.example.trim() ? value.example.trim() : undefined,
+    meaning:
+      typeof value.meaning === 'string' && value.meaning.trim() ? value.meaning.trim() : undefined,
+    example:
+      typeof value.example === 'string' && value.example.trim() ? value.example.trim() : undefined,
   };
 }
 
@@ -94,7 +96,10 @@ export function parseWordFamilyResponseText(
     verb: posDetail(obj.verb),
     adjective: posDetail(obj.adjective),
     adverb: posDetail(obj.adverb),
-    usageNotes: typeof obj.usageNotes === 'string' && obj.usageNotes.trim() ? obj.usageNotes.trim() : undefined,
+    usageNotes:
+      typeof obj.usageNotes === 'string' && obj.usageNotes.trim()
+        ? obj.usageNotes.trim()
+        : undefined,
     ipa: typeof obj.ipa === 'string' && obj.ipa.trim() ? obj.ipa.trim() : undefined,
     suggestedTags: stringArray(obj.suggestedTags),
   };

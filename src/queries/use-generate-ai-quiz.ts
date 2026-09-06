@@ -11,7 +11,7 @@ interface GenerateQuizInput {
 }
 
 /** Generating a quiz is a one-shot write-like action (it calls out to a paid third-party AI
- *  provider), not a cacheable resource — so it's modeled as a mutation, not a query. Kept as two
+ *  provider), not a cacheable resource, so it's modeled as a mutation, not a query. Kept as two
  *  separate hooks (rather than one taking a mode flag) so each stays strongly typed to its own
  *  question shape instead of a union the caller would need to narrow. */
 export function useGenerateMultipleChoiceQuiz() {

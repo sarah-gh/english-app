@@ -3,11 +3,11 @@ import { sanitizeRichText, stripHtmlToText } from '@/utils/html';
 
 export interface GeneratedPosEntry {
   pos: PosType;
-  /** The specific spelling for this part of speech — the card's title itself when the spelling
+  /** The specific spelling for this part of speech, the card's title itself when the spelling
    *  doesn't change for this part of speech (e.g. "Book" for both noun and verb), or the distinct
    *  form when it does (e.g. "Decision" for the noun form of "Decide"). The prompt and schema ask
    *  every provider to always include this, but it's typed optional since providers without real
-   *  schema enforcement (Groq/OpenRouter) aren't guaranteed to comply — callers mapping this onto
+   *  schema enforcement (Groq/OpenRouter) aren't guaranteed to comply, callers mapping this onto
    *  form state should fall back to the card's title when it's missing. */
   wordForm?: string;
   definition: string;
@@ -16,23 +16,23 @@ export interface GeneratedPosEntry {
 }
 
 export interface GeneratedCardDetails {
-  /** Concise HTML (<p>, <strong>, <em> only) — sanitized down to that tag set by
+  /** Concise HTML (<p>, <strong>, <em> only), sanitized down to that tag set by
    *  `parseCardAutofillResponseText` before it ever reaches the caller. Just a brief definition,
-   *  primary translation, and one core example — extended context belongs in `extraInfo` instead. */
+   *  primary translation, and one core example, extended context belongs in `extraInfo` instead. */
   backAnswer: string;
   /** Extended context kept separate from the concise `backAnswer`: verb forms/tenses, phrasal
    *  verbs, collocations, idiom notes, etc. Structured HTML (<h3>, <p>, <strong>, <em>,
-   *  <ul>/<ol>/<li> section headings) — sanitized the same way as `backAnswer`. Omitted when the
+   *  <ul>/<ol>/<li> section headings), sanitized the same way as `backAnswer`. Omitted when the
    *  AI found nothing worth adding beyond the concise answer. */
   extraInfo?: string;
   ipa?: string;
   hint?: string;
-  /** Relatable, real-life example sentences — populates the card's own `examples` field (the
+  /** Relatable, real-life example sentences, populates the card's own `examples` field (the
    *  editor's "Personal Examples" section) rather than being embedded in the `backAnswer`/
    *  `extraInfo` HTML. At least 2 for vocabulary/idioms, at least 3 (covering distinct usage
    *  structures) for grammar topics. */
   personalExamples: string[];
-  /** Plain synonym words/phrases for the card's own `synonyms` field — deliberately kept out of
+  /** Plain synonym words/phrases for the card's own `synonyms` field, deliberately kept out of
    *  the `backAnswer`/`extraInfo` HTML so the card never shows them twice. Empty when the term has
    *  no useful synonyms (most grammar topics). */
   synonyms: string[];
@@ -41,17 +41,17 @@ export interface GeneratedCardDetails {
   antonyms: string[];
   /** Present only when the title has more than one common part of speech worth distinguishing. */
   partsOfSpeech?: GeneratedPosEntry[];
-  /** Plain tag names (no leading "#") — the caller resolves these to existing tags or creates
+  /** Plain tag names (no leading "#"), the caller resolves these to existing tags or creates
    *  new ones. */
   suggestedTags: string[];
-  /** Best-fit deck/category name (e.g. "Vocabulary", "Idioms & Expressions", "Grammar") — only
+  /** Best-fit deck/category name (e.g. "Vocabulary", "Idioms & Expressions", "Grammar"), only
    *  applied by the caller when the user hasn't already picked a deck. */
   suggestedDeckCategory?: string;
 }
 
 const POS_TYPES: PosType[] = ['noun', 'verb', 'adjective', 'adverb', 'other'];
 
-/** Gemini Structured Output schema for a single parts-of-speech entry — shared between the
+/** Gemini Structured Output schema for a single parts-of-speech entry, shared between the
  *  full-card autofill schema below and the standalone per-field parts-of-speech endpoint. */
 export const POS_ENTRY_SCHEMA = {
   type: 'OBJECT',
@@ -83,12 +83,12 @@ export const CARD_AUTOFILL_RESPONSE_SCHEMA = {
 };
 
 /** OpenAI-compatible chat APIs (Groq, OpenRouter) don't support Gemini-style JSON Schema
- *  enforcement — their JSON mode only guarantees valid JSON, not a specific shape — so this gets
+ *  enforcement, their JSON mode only guarantees valid JSON, not a specific shape, so this gets
  *  appended to the prompt itself to describe the shape in words. */
 export const CARD_AUTOFILL_JSON_SHAPE_HINT = `
 
 Respond with ONLY a JSON object of this exact shape, no other text:
-{"backAnswer": string (concise HTML — <p>, <strong>, <em> only), "extraInfo": string (optional — structured HTML with <h3>, <p>, <strong>, <em>, <ul>/<ol>/<li> section headings; no other tags or attributes), "ipa": string (optional), "hint": string (optional), "personalExamples": string[], "synonyms": string[], "antonyms": string[], "partsOfSpeech": [{"pos": "noun" | "verb" | "adjective" | "adverb" | "other", "wordForm": string, "definition": string, "ipa": string (optional), "examples": string[] (optional)}] (optional), "suggestedTags": string[], "suggestedDeckCategory": string (optional)}`;
+{"backAnswer": string (concise HTML, <p>, <strong>, <em> only), "extraInfo": string (optional, structured HTML with <h3>, <p>, <strong>, <em>, <ul>/<ol>/<li> section headings; no other tags or attributes), "ipa": string (optional), "hint": string (optional), "personalExamples": string[], "synonyms": string[], "antonyms": string[], "partsOfSpeech": [{"pos": "noun" | "verb" | "adjective" | "adverb" | "other", "wordForm": string, "definition": string, "ipa": string (optional), "examples": string[] (optional)}] (optional), "suggestedTags": string[], "suggestedDeckCategory": string (optional)}`;
 
 export function isGeneratedPosEntry(value: unknown): value is GeneratedPosEntry {
   if (!value || typeof value !== 'object') return false;
@@ -99,7 +99,7 @@ export function isGeneratedPosEntry(value: unknown): value is GeneratedPosEntry 
     typeof entry.definition === 'string' &&
     entry.definition.trim().length > 0 &&
     // Not all providers enforce the schema's `required: wordForm` (Groq/OpenRouter only get a
-    // prompt hint, no real validation) — stay lenient here so a compliant entry missing just this
+    // prompt hint, no real validation), stay lenient here so a compliant entry missing just this
     // one field isn't dropped wholesale; the caller falls back to the card's title instead.
     (entry.wordForm === undefined || typeof entry.wordForm === 'string') &&
     (entry.ipa === undefined || typeof entry.ipa === 'string') &&

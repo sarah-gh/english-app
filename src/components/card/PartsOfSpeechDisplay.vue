@@ -19,7 +19,7 @@ const props = withDefaults(
 
 const revealedIds = ref<Set<string>>(new Set());
 
-/** Practice mode reveals one POS entry at a time — the Role-Specific Recall challenge. Each
+/** Practice mode reveals one POS entry at a time, the Role-Specific Recall challenge. Each
  *  entry's flip card can also be tapped closed again once revealed, independently of the rest. */
 function setRevealed(id: string, revealed: boolean) {
   if (!props.interactive) return;
@@ -39,7 +39,7 @@ function posLabel(pos: string): string {
     v-if="entries.length > 0"
     class="space-y-2 pb-2"
   >
-    <p class="text-xs font-medium text-card-gold uppercase">Parts of Speech</p>
+    <p class="text-card-gold text-xs font-medium uppercase">Parts of Speech</p>
 
     <BaseFlipCard
       v-for="entry in entries"
@@ -51,7 +51,7 @@ function posLabel(pos: string): string {
       <template #front>
         <button
           type="button"
-          class="flex h-full w-full items-center justify-center rounded-lg border border-dashed border-card-gold/30 bg-card-definition py-2 text-xs font-medium text-card-muted hover:border-primary hover:text-primary"
+          class="border-card-gold/30 bg-card-definition text-card-muted hover:border-primary hover:text-primary flex h-full w-full items-center justify-center rounded-lg border border-dashed py-2 text-xs font-medium"
           @pointerdown.stop
           @click.stop="setRevealed(entry.id, true)"
         >
@@ -59,25 +59,27 @@ function posLabel(pos: string): string {
         </button>
       </template>
       <template #back>
-        <div class="h-full w-full rounded-lg border border-card-gold/20 bg-card-definition p-3">
+        <div class="border-card-gold/20 bg-card-definition h-full w-full rounded-lg border p-3">
           <div class="flex items-center gap-2">
-            <span class="rounded bg-card-gold/20 px-1.5 py-0.5 text-[10px] font-bold text-card-gold uppercase">
+            <span
+              class="bg-card-gold/20 text-card-gold rounded px-1.5 py-0.5 text-[10px] font-bold uppercase"
+            >
               {{ entry.pos }}
             </span>
             <span
               v-if="entry.wordForm"
-              class="text-sm font-semibold text-text"
+              class="text-text text-sm font-semibold"
             >
               {{ entry.wordForm }}
             </span>
             <span
               v-if="entry.ipa"
-              class="text-xs text-card-muted"
+              class="text-card-muted text-xs"
             >
               {{ entry.ipa }}
             </span>
           </div>
-          <p class="mt-1 text-sm text-text">{{ entry.definition }}</p>
+          <p class="text-text mt-1 text-sm">{{ entry.definition }}</p>
           <ul
             v-if="entry.examples && entry.examples.length > 0"
             class="mt-1 space-y-0.5"
@@ -85,7 +87,7 @@ function posLabel(pos: string): string {
             <li
               v-for="(example, index) in entry.examples"
               :key="index"
-              class="text-xs text-card-muted"
+              class="text-card-muted text-xs"
             >
               “{{ example }}”
             </li>

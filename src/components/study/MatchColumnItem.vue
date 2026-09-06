@@ -3,14 +3,16 @@ import { computed } from 'vue';
 
 const props = defineProps<{
   text: string;
-  /** 'hint' briefly marks the correct meaning when the user asks for a hint — clickable like
+  /** 'hint' briefly marks the correct meaning when the user asks for a hint, clickable like
    *  'pending'/'selected', just visually nudged, and never implies the pair is actually matched. */
   status: 'pending' | 'selected' | 'correct' | 'incorrect' | 'matched' | 'hint';
 }>();
 
 defineEmits<{ click: [] }>();
 
-const isClickable = computed(() => props.status === 'pending' || props.status === 'selected' || props.status === 'hint');
+const isClickable = computed(
+  () => props.status === 'pending' || props.status === 'selected' || props.status === 'hint',
+);
 const isFilled = computed(() => props.status === 'correct' || props.status === 'matched');
 
 const statusClasses = computed(() => {
@@ -33,7 +35,7 @@ const statusClasses = computed(() => {
 <template>
   <button
     type="button"
-    class="flex w-full items-center gap-3 relative rounded-xl bg-card-definition px-2 py-3.5 text-left text-sm text-text transition-colors duration-150"
+    class="bg-card-definition text-text relative flex w-full items-center gap-3 rounded-xl px-2 py-3.5 text-left text-sm transition-colors duration-150"
     :class="[statusClasses, isClickable ? 'cursor-pointer' : 'cursor-default']"
     :disabled="!isClickable"
     @click="$emit('click')"
@@ -42,12 +44,22 @@ const statusClasses = computed(() => {
     <span
       class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border"
       :class="isFilled ? 'border-primary bg-primary' : 'border-slate-600'"
-      style="position: absolute;
-    top: calc(50% - 12px);
-    right: 10px;"
+      style="position: absolute; top: calc(50% - 12px); right: 10px"
     >
-      <svg v-if="isFilled" viewBox="0 0 24 24" fill="none" class="h-3.5 w-3.5" aria-hidden="true">
-        <path d="M5 13l4 4L19 7" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+      <svg
+        v-if="isFilled"
+        viewBox="0 0 24 24"
+        fill="none"
+        class="h-3.5 w-3.5"
+        aria-hidden="true"
+      >
+        <path
+          d="M5 13l4 4L19 7"
+          stroke="white"
+          stroke-width="3"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
       </svg>
     </span>
   </button>
@@ -59,15 +71,18 @@ const statusClasses = computed(() => {
   90% {
     transform: translateX(-1px);
   }
+
   20%,
   80% {
     transform: translateX(2px);
   }
+
   30%,
   50%,
   70% {
     transform: translateX(-4px);
   }
+
   40%,
   60% {
     transform: translateX(4px);

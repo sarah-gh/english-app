@@ -36,9 +36,9 @@ async function handleInstallClick() {
     </BaseButton>
     <p
       v-if="!isInstallable"
-      class="mt-2 text-xs text-text/35"
+      class="text-text/35 mt-2 text-xs"
     >
-      Not available right now — your browser may not support installation, or it may already be
+      Not available right now, your browser may not support installation, or it may already be
       installed.
     </p>
   </SettingsSectionCard>

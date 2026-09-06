@@ -7,7 +7,7 @@ import { useSyncStore } from '@/stores/sync-store';
 
 /** Study/quiz session routes go into "focus mode": the bottom nav hides so nothing but the
  *  session itself competes for attention, on both their setup and in-progress screens. The card
- *  creator/editor are here too — their own fixed bottom action bar (Save/Cancel) would otherwise
+ *  creator/editor are here too, their own fixed bottom action bar (Save/Cancel) would otherwise
  *  overlap the nav. */
 const FOCUS_MODE_ROUTE_NAMES = new Set([
   'study-setup',
@@ -27,7 +27,7 @@ onMounted(() => syncStore.initOnStartup());
 
 <template>
   <div
-    class="max-w-lg mx-auto"
+    class="mx-auto max-w-lg"
     :class="showBottomNav ? 'pb-0' : ''"
   >
     <RouterView v-slot="{ Component }">

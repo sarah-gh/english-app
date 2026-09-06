@@ -13,7 +13,8 @@ function messageForError(error: unknown): string {
   // `refresh_required` is not a failure the user needs to read about: the session is intact, the
   // sync simply declined to open a sign-in window nobody asked for (see `getAccessToken`). It's
   // surfaced through `needsRefresh` as a quiet prompt instead of an error line.
-  if (error instanceof SyncAuthError) return error.reason === 'refresh_required' ? '' : error.message;
+  if (error instanceof SyncAuthError)
+    return error.reason === 'refresh_required' ? '' : error.message;
   if (error instanceof SyncOfflineError) return 'Sync failed. Changes saved locally.';
   if (error instanceof SyncNotConfiguredError) return error.message;
   return 'Sync failed. Changes saved locally.';
@@ -29,7 +30,7 @@ export const useSyncStore = defineStore('sync', () => {
   const isDeletingCloudData = ref(false);
   const lastError = ref('');
   /** True when the last sync failed specifically because Google auth needs the user present
-   *  again (an expired/revoked session, or a browser-blocked background refresh) — distinct from
+   *  again (an expired/revoked session, or a browser-blocked background refresh), distinct from
    *  a generic/offline failure so the UI can offer a direct "Reconnect" action instead of just an
    *  error message. Cleared on every successful sync/connect and on disconnect. */
   const needsReauth = ref(false);
@@ -43,7 +44,7 @@ export const useSyncStore = defineStore('sync', () => {
 
   let onlineRetryArmed = false;
 
-  /** Routes an auth failure to the right UI state — see `needsRefresh`'s doc comment for why a
+  /** Routes an auth failure to the right UI state, see `needsRefresh`'s doc comment for why a
    *  paused session must never be shown as an expired sign-in. */
   function applyAuthFailure(error: unknown): void {
     if (!(error instanceof SyncAuthError)) return;
@@ -52,7 +53,7 @@ export const useSyncStore = defineStore('sync', () => {
   }
 
   /** Every store here caches Dexie reads in memory, so a sync that changed IndexedDB behind their
-   *  back needs an explicit refetch or the UI keeps showing stale/deleted records — including the
+   *  back needs an explicit refetch or the UI keeps showing stale/deleted records, including the
    *  AI Quiz History list on the Profile page, now that it syncs too. */
   async function refreshEntityStores(): Promise<void> {
     await Promise.all([
@@ -88,7 +89,7 @@ export const useSyncStore = defineStore('sync', () => {
       await googleDriveSync.connect();
     } catch (error) {
       // `googleDriveSync.connect()` persists the connected flag to localStorage as soon as
-      // OAuth succeeds, then immediately runs the first sync — so a failure here can mean
+      // OAuth succeeds, then immediately runs the first sync, so a failure here can mean
       // either "never authorized" (cancelled popup, bad client id) or "authorized fine, but
       // that first sync itself failed" (e.g. a network drop right after the consent screen
       // closes). Re-reading `isGoogleConnected()` below (rather than only setting it on the
@@ -96,7 +97,7 @@ export const useSyncStore = defineStore('sync', () => {
       // gets shown as "not connected" just because the sync after it hiccuped.
       // Deliberately no `applyAuthFailure` here: a cancelled or blocked *interactive* sign-in is
       // already fully described by `lastError`, and flipping `needsReauth` on top of it would
-      // show "Sign-in expired — reconnect" to someone who has never connected in the first place.
+      // show "Sign-in expired, reconnect" to someone who has never connected in the first place.
       lastError.value = messageForError(error);
       if (error instanceof SyncOfflineError) armOnlineRetry();
     } finally {
@@ -118,11 +119,11 @@ export const useSyncStore = defineStore('sync', () => {
     needsRefresh.value = false;
   }
 
-  /** `userInitiated` must be set only from a direct user action (the "Sync Now" button) — it's
+  /** `userInitiated` must be set only from a direct user action (the "Sync Now" button), it's
    *  what lets `googleDriveSync.syncNow` fall through to one interactive popup if a silent
    *  refresh comes back needing the user present, instead of just failing. Background callers
    *  (`initOnStartup`, the back-online retry below) leave it unset, so a stale session there
-   *  surfaces as `needsReauth` for the user to act on — never an unrequested popup. */
+   *  surfaces as `needsReauth` for the user to act on, never an unrequested popup. */
   async function syncNow(options: { userInitiated?: boolean } = {}): Promise<void> {
     if (!isConnected.value || isSyncing.value) return;
     isSyncing.value = true;
@@ -130,7 +131,9 @@ export const useSyncStore = defineStore('sync', () => {
     needsReauth.value = false;
     needsRefresh.value = false;
     try {
-      const summary = await googleDriveSync.syncNow({ allowInteractiveFallback: options.userInitiated });
+      const summary = await googleDriveSync.syncNow({
+        allowInteractiveFallback: options.userInitiated,
+      });
       lastSyncedAt.value = summary.syncedAt;
       await refreshEntityStores();
     } catch (error) {
@@ -142,7 +145,7 @@ export const useSyncStore = defineStore('sync', () => {
     }
   }
 
-  /** Testing-only — see `googleDriveSync.deleteCloudSyncData`'s own doc comment. Leaves
+  /** Testing-only, see `googleDriveSync.deleteCloudSyncData`'s own doc comment. Leaves
    *  `isConnected`/`profile` untouched; only `lastSyncedAt` resets, since the backup file itself
    *  (not this device's connection) is what's gone. */
   async function deleteCloudData(): Promise<void> {

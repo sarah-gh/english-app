@@ -13,7 +13,7 @@ const EXPORT_VERSION = 1;
  * history, daily study log, and user setting into a single downloadable JSON file. Unlike
  * `exportBackup`, this is a plain-data snapshot for reading/archiving rather than a restorable
  * backup, so card audio/image Blobs (which can't survive `JSON.stringify`) are dropped, and API
- * keys are intentionally excluded — including them would turn a shared export into a leaked
+ * keys are intentionally excluded, including them would turn a shared export into a leaked
  * credential.
  */
 export async function exportDataAsJson(): Promise<void> {

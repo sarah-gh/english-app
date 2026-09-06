@@ -67,22 +67,44 @@ function validationSnapshot(): CardEditorValidationValues {
   };
 }
 
-const { handleSubmit, setValues, resetForm, meta: formMeta, errors: formErrors } = useForm<CardEditorValidationValues>({
+const {
+  handleSubmit,
+  setValues,
+  resetForm,
+  meta: formMeta,
+  errors: formErrors,
+} = useForm<CardEditorValidationValues>({
   validationSchema: toTypedSchema(cardEditorSchema),
   initialValues: validationSnapshot(),
 });
 
-const { errorMessage: frontTitleError, meta: frontTitleMeta, handleBlur: touchFrontTitle } = useField<string>('frontTitle');
-const { errorMessage: deckIdError, meta: deckIdMeta, handleBlur: touchDeckId } = useField<string>('deckId');
-const { errorMessage: backAnswerError, meta: backAnswerMeta, handleBlur: touchBackAnswer } = useField<string>('backAnswer');
+const {
+  errorMessage: frontTitleError,
+  meta: frontTitleMeta,
+  handleBlur: touchFrontTitle,
+} = useField<string>('frontTitle');
+const {
+  errorMessage: deckIdError,
+  meta: deckIdMeta,
+  handleBlur: touchDeckId,
+} = useField<string>('deckId');
+const {
+  errorMessage: backAnswerError,
+  meta: backAnswerMeta,
+  handleBlur: touchBackAnswer,
+} = useField<string>('backAnswer');
 /** `useField('wordFamily')` doesn't surface schema errors attached to this object-typed (non-leaf)
- *  path — vee-validate's per-field validate only resolves leaf paths — so this reads the same
+ *  path, vee-validate's per-field validate only resolves leaf paths, so this reads the same
  *  error straight off the form's schema-validation result instead. */
 const wordFamilyError = computed(() => formErrors.value.wordFamily);
 
-/** Keeps the Zod-backed validation state in sync with `draft` — including AI Auto-Fill, which
+/** Keeps the Zod-backed validation state in sync with `draft`, including AI Auto-Fill, which
  *  writes straight into `draft` rather than going through vee-validate's own setters. */
-watch(() => validationSnapshot(), (values) => setValues(values, true), { deep: true });
+watch(
+  () => validationSnapshot(),
+  (values) => setValues(values, true),
+  { deep: true },
+);
 
 /** Called by the parent after it resets `draft` for "Save & Add Another", so the next card starts
  *  with a clean, untouched form instead of immediately showing errors for the fields just cleared. */
@@ -99,7 +121,7 @@ function selectCardMode(mode: CardMode) {
   draft.value.cardMode = mode;
 }
 
-/** Picking the "Word Families" deck switches the card into Word Family mode automatically — the
+/** Picking the "Word Families" deck switches the card into Word Family mode automatically, the
  *  user can still switch back manually afterward. */
 watch(
   () => draft.value.deckId,
@@ -120,14 +142,27 @@ const canAutofill = computed(
   () => hasAiCredentials.value && draft.value.frontTitle.trim().length > 0 && !isAutofilling.value,
 );
 
-const { mutateAsync: requestCardAutofill, isPending: isCardAutofilling, error: cardAutofillApiError } = useAutofillCardDetails();
-const { mutateAsync: requestWordFamilyAutofill, isPending: isWordFamilyAutofilling, error: wordFamilyAutofillApiError } = useAutofillWordFamily();
+const {
+  mutateAsync: requestCardAutofill,
+  isPending: isCardAutofilling,
+  error: cardAutofillApiError,
+} = useAutofillCardDetails();
+const {
+  mutateAsync: requestWordFamilyAutofill,
+  isPending: isWordFamilyAutofilling,
+  error: wordFamilyAutofillApiError,
+} = useAutofillWordFamily();
 
 const isAutofilling = computed(() => isCardAutofilling.value || isWordFamilyAutofilling.value);
 
-const { mutateAsync: requestDefinition, isPending: isGeneratingDefinition, error: definitionApiError } =
-  useGenerateDefinition();
-const canAutofillField = computed(() => hasAiCredentials.value && draft.value.frontTitle.trim().length > 0);
+const {
+  mutateAsync: requestDefinition,
+  isPending: isGeneratingDefinition,
+  error: definitionApiError,
+} = useGenerateDefinition();
+const canAutofillField = computed(
+  () => hasAiCredentials.value && draft.value.frontTitle.trim().length > 0,
+);
 const definitionErrorMessage = computed(() => {
   const error = definitionApiError.value;
   if (!error) return '';
@@ -146,8 +181,11 @@ async function handleGenerateDefinition() {
   }
 }
 
-const { mutateAsync: requestExtraInfo, isPending: isGeneratingExtraInfo, error: extraInfoApiError } =
-  useGenerateExtraInfo();
+const {
+  mutateAsync: requestExtraInfo,
+  isPending: isGeneratingExtraInfo,
+  error: extraInfoApiError,
+} = useGenerateExtraInfo();
 const extraInfoErrorMessage = computed(() => {
   const error = extraInfoApiError.value;
   if (!error) return '';
@@ -159,7 +197,11 @@ async function handleGenerateExtraInfo() {
   if (!front) return;
   try {
     const back = draft.value.backAnswer.trim();
-    draft.value.extraInfo = await requestExtraInfo({ settings: settingsStore.settings, front, back: back || undefined });
+    draft.value.extraInfo = await requestExtraInfo({
+      settings: settingsStore.settings,
+      front,
+      back: back || undefined,
+    });
   } catch {
     // extraInfoErrorMessage (computed above) already reflects the mutation's error state.
   }
@@ -170,7 +212,10 @@ const autofillLocalError = ref('');
 
 const autofillErrorMessage = computed(() => {
   if (autofillLocalError.value) return autofillLocalError.value;
-  const error = draft.value.cardMode === 'word-family' ? wordFamilyAutofillApiError.value : cardAutofillApiError.value;
+  const error =
+    draft.value.cardMode === 'word-family'
+      ? wordFamilyAutofillApiError.value
+      : cardAutofillApiError.value;
   if (!error) return '';
   return error instanceof AiServiceError ? error.message : 'Auto-fill failed. Please try again.';
 });
@@ -182,11 +227,18 @@ async function handleAutofill() {
   autofillLocalError.value = '';
   try {
     if (draft.value.cardMode === 'word-family') {
-      const result = await requestWordFamilyAutofill({ settings: settingsStore.settings, rootWord: title });
+      const result = await requestWordFamilyAutofill({
+        settings: settingsStore.settings,
+        rootWord: title,
+      });
       applyWordFamilyResult(result);
     } else {
       const deckName = deckStore.getById(draft.value.deckId)?.name;
-      const result = await requestCardAutofill({ settings: settingsStore.settings, title, deckName });
+      const result = await requestCardAutofill({
+        settings: settingsStore.settings,
+        title,
+        deckName,
+      });
       await applyAutofillResult(result);
     }
   } catch {
@@ -205,16 +257,14 @@ async function applyAutofillResult(result: GeneratedCardDetails): Promise<void> 
 
   if (result.partsOfSpeech && result.partsOfSpeech.length > 0) {
     const rootWord = draft.value.frontTitle.trim();
-    draft.value.partsOfSpeech = result.partsOfSpeech.map(
-      (entry): PosEntryFormState => ({
-        id: crypto.randomUUID(),
-        pos: entry.pos,
-        wordForm: entry.wordForm?.trim() || rootWord,
-        definition: entry.definition,
-        ipa: entry.ipa ?? '',
-        examples: entry.examples ?? [],
-      }),
-    );
+    draft.value.partsOfSpeech = result.partsOfSpeech.map((entry): PosEntryFormState => ({
+      id: crypto.randomUUID(),
+      pos: entry.pos,
+      wordForm: entry.wordForm?.trim() || rootWord,
+      definition: entry.definition,
+      ipa: entry.ipa ?? '',
+      examples: entry.examples ?? [],
+    }));
   }
 
   await applySuggestedDeck(result.suggestedDeckCategory);
@@ -234,14 +284,14 @@ function applyWordFamilyResult(result: GeneratedWordFamily): void {
   if (result.usageNotes) draft.value.wordFamily.usageNotes = result.usageNotes;
   if (result.ipa) draft.value.ipa = result.ipa;
 
-  // The card is already known to be a Word Family card, so the category is deterministic —
+  // The card is already known to be a Word Family card, so the category is deterministic,
   // no need to ask the AI to (re-)classify it the way `applySuggestedDeck` does for standard cards.
   void applySuggestedDeck('Word Families');
   void applySuggestedTags(result.suggestedTags);
 }
 
 /** Auto-selects a deck matching the AI-suggested category when the user hasn't already picked
- *  one — reusing an existing deck of that name if one exists, otherwise creating it. The
+ *  one, reusing an existing deck of that name if one exists, otherwise creating it. The
  *  resolve-or-create rules themselves live in `useEntityResolver`, shared with both importers. */
 async function applySuggestedDeck(categoryName: string | undefined): Promise<void> {
   if (draft.value.deckId || !categoryName?.trim()) return;
@@ -270,7 +320,7 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
     @submit.prevent="isEditing ? submitExit() : submitAddAnother()"
   >
     <div>
-      <p class="mb-1 text-xs font-medium text-text/60">Card Type</p>
+      <p class="text-text/60 mb-1 text-xs font-medium">Card Type</p>
       <BaseSegmentedToggle
         :model-value="draft.cardMode"
         :options="[
@@ -285,8 +335,10 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
       <div class="mb-1 flex items-center justify-between gap-2">
         <label
           for="front-title"
-          class="block text-sm font-medium text-text/70"
-          >{{ draft.cardMode === 'word-family' ? 'Root / Base Word *' : 'Front Title / Question *' }}</label
+          class="text-text/70 block text-sm font-medium"
+          >{{
+            draft.cardMode === 'word-family' ? 'Root / Base Word *' : 'Front Title / Question *'
+          }}</label
         >
         <BaseButton
           type="button"
@@ -315,7 +367,7 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
             {{ item.value }}
             <span
               v-if="item.source === 'existing'"
-              class="shrink-0 rounded-full border border-text/20 px-1.5 py-0.5 text-[10px] font-medium text-text/50"
+              class="border-text/20 text-text/50 shrink-0 rounded-full border px-1.5 py-0.5 text-[10px] font-medium"
             >
               Your card
             </span>
@@ -324,25 +376,25 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
       </BaseAutocomplete>
       <p
         v-if="!hasAiCredentials"
-        class="mt-1 text-xs text-text/50"
+        class="text-text/50 mt-1 text-xs"
       >
         <RouterLink
           to="/settings"
           class="underline hover:no-underline"
-          >Configure an AI provider in Settings</RouterLink
-        >
+          >Configure an AI provider in Settings
+        </RouterLink>
         to use Auto-Fill.
       </p>
       <p
         v-if="frontTitleMeta.touched && frontTitleError"
-        class="mt-1 flex items-center gap-1.5 text-xs font-medium text-danger"
+        class="text-danger mt-1 flex items-center gap-1.5 text-xs font-medium"
       >
         <WarningIcon />
         {{ frontTitleError }}
       </p>
       <p
         v-if="autofillErrorMessage"
-        class="mt-1 flex items-center gap-1.5 text-xs font-medium text-danger"
+        class="text-danger mt-1 flex items-center gap-1.5 text-xs font-medium"
       >
         <WarningIcon />
         {{ autofillErrorMessage }}
@@ -360,13 +412,17 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
         <div class="mb-1 flex items-center justify-between gap-2">
           <label
             for="back-answer"
-            class="block text-sm font-medium text-text/70"
+            class="text-text/70 block text-sm font-medium"
             >Back Answer / Explanation *</label
           >
           <AiFieldButton
             :loading="isGeneratingDefinition"
             :disabled="!canAutofillField"
-            :title="draft.frontTitle.trim() ? 'Auto-fill this field with AI' : 'Enter a word first to use AI Auto-Fill'"
+            :title="
+              draft.frontTitle.trim()
+                ? 'Auto-fill this field with AI'
+                : 'Enter a word first to use AI Auto-Fill'
+            "
             @click="handleGenerateDefinition"
           />
         </div>
@@ -379,14 +435,14 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
         />
         <p
           v-if="backAnswerMeta.touched && backAnswerError"
-          class="mt-1 flex items-center gap-1.5 text-xs font-medium text-danger"
+          class="text-danger mt-1 flex items-center gap-1.5 text-xs font-medium"
         >
           <WarningIcon />
           {{ backAnswerError }}
         </p>
         <p
           v-if="definitionErrorMessage"
-          class="mt-1 flex items-center gap-1.5 text-xs font-medium text-danger"
+          class="text-danger mt-1 flex items-center gap-1.5 text-xs font-medium"
         >
           <WarningIcon />
           {{ definitionErrorMessage }}
@@ -397,13 +453,17 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
         <div class="mb-1 flex items-center justify-between gap-2">
           <label
             for="extra-info"
-            class="block text-sm font-medium text-text/70"
+            class="text-text/70 block text-sm font-medium"
             >Extra Information (optional)</label
           >
           <AiFieldButton
             :loading="isGeneratingExtraInfo"
             :disabled="!canAutofillField"
-            :title="draft.frontTitle.trim() ? 'Auto-fill this field with AI' : 'Enter a word first to use AI Auto-Fill'"
+            :title="
+              draft.frontTitle.trim()
+                ? 'Auto-fill this field with AI'
+                : 'Enter a word first to use AI Auto-Fill'
+            "
             @click="handleGenerateExtraInfo"
           />
         </div>
@@ -414,7 +474,7 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
         />
         <p
           v-if="extraInfoErrorMessage"
-          class="mt-1 flex items-center gap-1.5 text-xs font-medium text-danger"
+          class="text-danger mt-1 flex items-center gap-1.5 text-xs font-medium"
         >
           <WarningIcon />
           {{ extraInfoErrorMessage }}
@@ -448,7 +508,7 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
     <div>
       <label
         for="hint"
-        class="mb-1 block text-xs font-medium text-text/60"
+        class="text-text/60 mb-1 block text-xs font-medium"
         >Hint / Hidden Section (optional)</label
       >
       <input
@@ -456,7 +516,7 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
         v-model="draft.hint"
         type="text"
         placeholder="Revealed via tap during review"
-        class="w-full rounded bg-card-surface border border-text/20 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+        class="bg-card-surface border-text/20 focus:border-primary w-full rounded border px-3 py-2 text-sm focus:outline-none"
       />
     </div>
 
@@ -479,10 +539,10 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
     <QuizQuestionListField v-model:quiz-questions="draft.quizQuestions" />
     <ImageUploadField v-model:image-blob="draft.imageBlob" />
 
-    <div class="fixed inset-x-0 bottom-0 flex gap-3 border-t border-text/10 bg-background p-4">
+    <div class="border-text/10 bg-background fixed inset-x-0 bottom-0 flex gap-3 border-t p-4">
       <button
         type="button"
-        class="flex-1 rounded border border-text/20 py-2.5 text-sm font-medium text-text/70 hover:border-primary hover:text-primary"
+        class="border-text/20 text-text/70 hover:border-primary hover:text-primary flex-1 rounded border py-2.5 text-sm font-medium"
         @click="emit('cancel')"
       >
         Cancel
@@ -491,7 +551,7 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
         v-if="!isEditing"
         type="button"
         :disabled="isSaving || (formMeta.touched && !formMeta.valid)"
-        class="flex-1 rounded border border-primary py-2.5 text-sm font-medium text-primary hover:bg-primary hover:text-background disabled:cursor-not-allowed disabled:border-text/20 disabled:text-text/30 disabled:hover:bg-transparent"
+        class="border-primary text-primary hover:bg-primary hover:text-background disabled:border-text/20 disabled:text-text/30 flex-1 rounded border py-2.5 text-sm font-medium disabled:cursor-not-allowed disabled:hover:bg-transparent"
         @click="submitExit"
       >
         {{ isSaving ? 'Saving…' : 'Save & Exit' }}
@@ -499,7 +559,7 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
       <button
         type="submit"
         :disabled="isSaving || (formMeta.touched && !formMeta.valid)"
-        class="flex-1 rounded bg-secondary py-2.5 text-sm font-medium text-text hover:bg-secondary/90 disabled:bg-secondary/30 disabled:text-text/30"
+        class="bg-secondary text-text hover:bg-secondary/90 disabled:bg-secondary/30 disabled:text-text/30 flex-1 rounded py-2.5 text-sm font-medium"
       >
         {{ isSaving ? 'Saving…' : isEditing ? 'Save Changes' : 'Save & Add Another' }}
       </button>

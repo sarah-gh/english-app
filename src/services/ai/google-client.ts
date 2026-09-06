@@ -5,7 +5,11 @@ import {
   type GeneratedCardDetails,
 } from './card-autofill-schema';
 import { AiProviderError } from './errors';
-import { parseWordFamilyResponseText, WORD_FAMILY_RESPONSE_SCHEMA, type GeneratedWordFamily } from './word-family-schema';
+import {
+  parseWordFamilyResponseText,
+  WORD_FAMILY_RESPONSE_SCHEMA,
+  type GeneratedWordFamily,
+} from './word-family-schema';
 
 const MODEL = 'gemini-flash-latest';
 const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
@@ -15,7 +19,7 @@ type GenerateContentResponse = {
 };
 
 /** Low-level call to Google AI Studio's Gemini Structured JSON Output endpoint. Returns the raw
- *  JSON text the model produced — callers validate/parse it into their own feature-specific
+ *  JSON text the model produced, callers validate/parse it into their own feature-specific
  *  shape. */
 export async function callGoogleStructured(
   apiKey: string,
@@ -50,7 +54,10 @@ export async function autoFillCardViaGoogle(
   prompt: string,
 ): Promise<GeneratedCardDetails> {
   const text = await callGoogleStructured(apiKey, prompt, CARD_AUTOFILL_RESPONSE_SCHEMA);
-  return parseCardAutofillResponseText(text, (message) => new AiProviderError('google', message, false));
+  return parseCardAutofillResponseText(
+    text,
+    (message) => new AiProviderError('google', message, false),
+  );
 }
 
 export async function autoFillWordFamilyViaGoogle(
@@ -58,5 +65,8 @@ export async function autoFillWordFamilyViaGoogle(
   prompt: string,
 ): Promise<GeneratedWordFamily> {
   const text = await callGoogleStructured(apiKey, prompt, WORD_FAMILY_RESPONSE_SCHEMA);
-  return parseWordFamilyResponseText(text, (message) => new AiProviderError('google', message, false));
+  return parseWordFamilyResponseText(
+    text,
+    (message) => new AiProviderError('google', message, false),
+  );
 }

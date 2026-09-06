@@ -9,7 +9,7 @@ type ChatCompletionsResponse = {
 /**
  * Low-level call to an OpenAI-compatible `/chat/completions` endpoint (Groq, OpenRouter, ...).
  * Requests JSON-object mode; unlike Google AI Studio's Structured Output, these APIs only
- * guarantee the response is valid JSON, not that it matches a specific shape — callers describe
+ * guarantee the response is valid JSON, not that it matches a specific shape, callers describe
  * the desired shape in the prompt itself (see `*_JSON_SHAPE_HINT` in the schema modules) and
  * validate the result the same way as every other provider.
  */

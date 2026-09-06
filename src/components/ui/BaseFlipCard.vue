@@ -2,7 +2,7 @@
 withDefaults(
   defineProps<{
     flipped: boolean;
-    /** false only for the non-interactive "peek" card behind the active one in the review stack —
+    /** false only for the non-interactive "peek" card behind the active one in the review stack,
      *  disables tapping the revealed back face to flip it closed again. */
     interactive?: boolean;
   }>(),
@@ -40,7 +40,7 @@ const emit = defineEmits<{
 }
 
 /* Both faces are stacked in the same grid cell instead of absolutely positioned, so the grid row
- * sizes itself to the taller of the two — the front trigger and the back content rarely match in
+ * sizes itself to the taller of the two, the front trigger and the back content rarely match in
  * height, and absolute positioning would clip whichever face is taller to the shorter one's box. */
 .flip-inner {
   display: grid;
@@ -63,7 +63,7 @@ const emit = defineEmits<{
   transform: rotateY(180deg);
 }
 
-/* Only pointer-events is toggled here — never `visibility` or `display`. Both would apply the
+/* Only pointer-events is toggled here, never `visibility` or `display`. Both would apply the
  * instant the `is-flipped` class changes (neither is part of the animated `transform` transition),
  * hiding the front face at the very start of the click instead of letting `backface-visibility`
  * fade it out naturally as the rotation crosses 90deg mid-animation. */

@@ -2,7 +2,7 @@
 @import "tailwindcss";
 
 /* Makes `dark:` utilities respond to a `.dark` class on <html> (toggled by the theme store),
- * rather than only `prefers-color-scheme` — required for a user-selectable Light/Dark/System
+ * rather than only `prefers-color-scheme`, required for a user-selectable Light/Dark/System
  * setting instead of pure OS-driven dark mode. */
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -19,7 +19,7 @@
   /* Editorial serif, used only for the study/practice card's word title. */
   --font-serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
 
-  /* Study/Practice "Editorial" card theme — scoped to the review card and its page background
+  /* Study/Practice "Editorial" card theme, scoped to the review card and its page background
    * rather than the shared --color-background/--color-secondary tokens, so this redesign doesn't
    * ripple into buttons, toggles, and badges elsewhere in the app. Light-mode values just match
    * the app's existing look; the .dark overrides below are where the editorial theme actually
@@ -32,11 +32,11 @@
   --color-card-muted: #5b6b6d;
 }
 
-/* Dark theme token overrides — every `bg-background`/`text-text`/`border-text/*` utility across
+/* Dark theme token overrides, every `bg-background`/`text-text`/`border-text/*` utility across
  * the app is generated from these same CSS variables, so redefining them here instantly re-themes
  * the whole app with no per-component changes needed. Surfaces that use a literal `bg-white/*`
  * instead of the `background` token (cards, modals, dropdowns) still need an explicit `dark:`
- * class alongside them — see BaseCard/BaseModal/BaseAutocomplete. */
+ * class alongside them, see BaseCard/BaseModal/BaseAutocomplete. */
 .dark {
   --color-text: #f0fdfd;
   --color-background: #0b1719;
@@ -57,8 +57,8 @@
 }
 
 body {
-  /* `overflow-x-hidden` only ever clips horizontal overflow — never vertical scrolling on any
-   * page — so it's safe as a global safety net against a stray transform (e.g. the study/practice
+  /* `overflow-x-hidden` only ever clips horizontal overflow, never vertical scrolling on any
+   * page, so it's safe as a global safety net against a stray transform (e.g. the study/practice
    * card's swipe-away translateX) briefly widening the document and popping a horizontal
    * scrollbar. */
   @apply bg-background text-text antialiased transition-colors duration-150 overflow-x-hidden;

@@ -2,12 +2,12 @@ import { db } from '@/db';
 import { tombstonedTable } from '@/db/repositories/tombstoned-table';
 import type { NewTag, Tag, TagUpdate } from '@/types/tag';
 
-/** See `tombstoned-table.ts` — one shared implementation of the "deleted rows stay, and only
+/** See `tombstoned-table.ts`, one shared implementation of the "deleted rows stay, and only
  *  Cloud Sync sees them" rule, in place of a per-repository `excludeDeleted` copy. */
 const tombstones = tombstonedTable(db.tags);
 
 export const tagRepository = {
-  /** `orderBy('name')` reads through the Dexie index rather than sorting in JS — the tombstone
+  /** `orderBy('name')` reads through the Dexie index rather than sorting in JS, the tombstone
    *  filter is applied to the rows that come back, leaving the query plan untouched. */
   async getAll(): Promise<Tag[]> {
     return tombstones.live(await db.tags.orderBy('name').toArray());
@@ -52,7 +52,7 @@ export const tagRepository = {
     });
   },
 
-  /** Used by backup import and Cloud Sync — writes records as-is, preserving ids and timestamps. */
+  /** Used by backup import and Cloud Sync, writes records as-is, preserving ids and timestamps. */
   async bulkPut(tags: Tag[]): Promise<void> {
     await db.tags.bulkPut(tags);
   },

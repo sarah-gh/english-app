@@ -4,19 +4,19 @@ import type { Card } from '@/types/card';
 
 /**
  * Collapses Deck/Topic/Tag rows that share a normalized name but different ids, and Cards that
- * share a deck and normalized front text but different ids — the situation two independently
+ * share a deck and normalized front text but different ids, the situation two independently
  * seeded or independently created devices produce (e.g. both create a "Grammar" deck, or both get
  * the same default card), which the id-based sync merge can't detect on its own since it only ever
  * reconciles records that already share an id. Redundant rows are soft-deleted (never hard-removed
- * — the usual 30-day tombstone GC still applies to them), and every Card/Topic that referenced a
+ *, the usual 30-day tombstone GC still applies to them), and every Card/Topic that referenced a
  * deduplicated Deck/Topic/Tag is re-pointed to the surviving row.
  *
  * Card deduplication runs *after* the Deck/Topic/Tag dedup and reference healing below, against
- * the healed `deckId`s — otherwise two duplicate cards that each still point at a different,
+ * the healed `deckId`s, otherwise two duplicate cards that each still point at a different,
  * not-yet-collapsed duplicate deck id would look like they belong to different decks and never get
  * grouped together.
  *
- * Purely local — reads and writes only this device's IndexedDB, no network involved. `syncNow`
+ * Purely local, reads and writes only this device's IndexedDB, no network involved. `syncNow`
  * calls this right after merging local and remote data (so cross-device duplicates are visible to
  * it), but it's just as meaningful to call standalone: it also cleans up duplicates that predate
  * Cloud Sync entirely, e.g. from a bug or a messy import, on a device that never syncs at all.
@@ -35,7 +35,9 @@ export async function deduplicateLocalData(): Promise<void> {
   const now = Date.now();
   const healedTopics = topics.map((topic) => {
     const healedDeckId = healReference(decksById, topic.deckId) ?? topic.deckId;
-    return healedDeckId === topic.deckId ? topic : { ...topic, deckId: healedDeckId, updatedAt: now };
+    return healedDeckId === topic.deckId
+      ? topic
+      : { ...topic, deckId: healedDeckId, updatedAt: now };
   });
   const dedupedTopics = deduplicateByName(healedTopics, { scopeKey: (topic) => topic.deckId });
   const topicsById = new Map(dedupedTopics.map((topic) => [topic.id, topic]));
@@ -45,7 +47,9 @@ export async function deduplicateLocalData(): Promise<void> {
 
   const healedCards = cards.map((card): Card => {
     const healedDeckId = healReference(decksById, card.deckId) ?? card.deckId;
-    const healedTopicId = healReference(topicsById, card.topicId, { scopeKey: (topic) => topic.deckId });
+    const healedTopicId = healReference(topicsById, card.topicId, {
+      scopeKey: (topic) => topic.deckId,
+    });
     const healedTagIds = card.tagIds.map((tagId) => healReference(tagsById, tagId) ?? tagId);
 
     const unchanged =
@@ -55,12 +59,18 @@ export async function deduplicateLocalData(): Promise<void> {
       healedTagIds.every((tagId, index) => tagId === card.tagIds[index]);
     if (unchanged) return card;
 
-    return { ...card, deckId: healedDeckId, topicId: healedTopicId, tagIds: healedTagIds, updatedAt: now };
+    return {
+      ...card,
+      deckId: healedDeckId,
+      topicId: healedTopicId,
+      tagIds: healedTagIds,
+      updatedAt: now,
+    };
   });
   const dedupedCards = deduplicateCards(healedCards);
 
   // Index-aligned with the original reads throughout (every transform above preserves order and
-  // length), and every unchanged entity kept its original object reference — so a plain `!==`
+  // length), and every unchanged entity kept its original object reference, so a plain `!==`
   // finds exactly what changed, without writing back rows that didn't need it.
   const changedDecks = dedupedDecks.filter((deck, index) => deck !== decks[index]);
   const changedTopics = dedupedTopics.filter((topic, index) => topic !== topics[index]);

@@ -14,7 +14,7 @@ const BACKUP_VERSION = 2;
  * Bundles all decks, topics, tags, cards, AI quiz history, and daily stats into data.json,
  * moving each card's audio/image Blob out into a media/ directory (JSON can't hold binary data)
  * and leaving a relative path reference in its place. The Gemini API key is intentionally never
- * included — exporting it would turn a shared backup file into a leaked credential.
+ * included, exporting it would turn a shared backup file into a leaked credential.
  */
 export async function exportBackup(): Promise<void> {
   const [cards, decks, topics, tags, aiQuizResults, dailyStats, settings] = await Promise.all([

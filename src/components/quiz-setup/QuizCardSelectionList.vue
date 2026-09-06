@@ -41,34 +41,59 @@ function deselectAll() {
 <template>
   <div>
     <div class="mb-3 flex items-center justify-between">
-      <p class="text-xs text-card-muted">
+      <p class="text-card-muted text-xs">
         Selected: {{ modelValue.size }} / {{ cards.length }} card{{ cards.length === 1 ? '' : 's' }}
       </p>
       <div class="flex gap-3">
-        <BaseButton variant="link" size="sm" @click="selectAll">
+        <BaseButton
+          variant="link"
+          size="sm"
+          @click="selectAll"
+        >
           Select All
         </BaseButton>
-        <BaseButton variant="link" size="sm" muted @click="deselectAll">
+        <BaseButton
+          variant="link"
+          size="sm"
+          muted
+          @click="deselectAll"
+        >
           Deselect All
         </BaseButton>
       </div>
     </div>
 
-    <div class="rounded-xl border border-card-gold/20 bg-card-surface">
-      <ul class="max-h-72 divide-y divide-card-gold/10 overflow-y-auto">
-        <li v-for="card in cards" :key="card.id">
-          <label class="flex cursor-pointer items-center gap-3 px-4 py-3 hover:bg-card-definition">
+    <div class="border-card-gold/20 bg-card-surface rounded-xl border">
+      <ul class="divide-card-gold/10 max-h-72 divide-y overflow-y-auto">
+        <li
+          v-for="card in cards"
+          :key="card.id"
+        >
+          <label class="hover:bg-card-definition flex cursor-pointer items-center gap-3 px-4 py-3">
             <input
               type="checkbox"
-              class="h-4 w-4 rounded border-card-gold/40 bg-card-surface accent-card-gold"
+              class="border-card-gold/40 bg-card-surface accent-card-gold h-4 w-4 rounded"
               :checked="modelValue.has(card.id)"
               @change="toggleCard(card.id)"
             />
-            <span class="min-w-fit flex-1 truncate text-sm text-text">{{ card.frontTitle }}</span>
-            <span class="shrink-0 text-xs text-card-muted">{{ cardLocationLabel(card) }}</span>
+            <span class="text-text min-w-fit flex-1 truncate text-sm">
+              {{
+                card.frontTitle.length > 20 ? card.frontTitle.slice(0, 20) + '...' : card.frontTitle
+              }}
+            </span>
+            <span class="text-card-muted shrink-0 text-xs">
+              {{
+                cardLocationLabel(card).length > 30
+                  ? cardLocationLabel(card).slice(0, 30) + '...'
+                  : cardLocationLabel(card)
+              }}
+            </span>
           </label>
         </li>
-        <li v-if="cards.length === 0" class="px-4 py-3 text-sm text-card-muted">
+        <li
+          v-if="cards.length === 0"
+          class="text-card-muted px-4 py-3 text-sm"
+        >
           No cards match these filters.
         </li>
       </ul>

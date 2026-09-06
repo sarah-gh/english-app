@@ -1,22 +1,44 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8">
-    <link rel="icon" href="/favicon.ico" sizes="any">
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-    <link rel="apple-touch-icon" href="/pwa-192x192.png">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#000000">
-    <meta name="description" content="A serverless, offline-first flashcard manager with Google Drive sync support.">
+    <meta charset="UTF-8" />
+    <link
+      rel="icon"
+      href="/favicon.ico"
+      sizes="any"
+    />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="/favicon.svg"
+    />
+    <link
+      rel="apple-touch-icon"
+      href="/pwa-192x192.png"
+    />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <meta
+      name="theme-color"
+      content="#000000"
+    />
+    <meta
+      name="description"
+      content="A serverless, offline-first flashcard manager with Google Drive sync support."
+    />
     <title>Vocabulary Flashcards App</title>
     <script type="text/javascript">
       // Applied inline, before any CSS/JS module loads, so a dark-mode user never sees a flash of
-      // the light theme on first paint — `src/main.ts` re-applies the same logic once Vue boots,
+      // the light theme on first paint, `src/main.ts` re-applies the same logic once Vue boots,
       // this is purely about beating the very first paint.
       (function () {
         try {
           var stored = localStorage.getItem('theme-mode');
-          var isDark = stored === 'dark' || (stored !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          var isDark =
+            stored === 'dark' ||
+            (stored !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
           document.documentElement.classList.toggle('dark', isDark);
         } catch (e) {}
       })();
@@ -32,14 +54,17 @@
             .slice(1)
             .split('&')
             .map(function (s) {
-              return s.replace(/~and~/g, '&')
+              return s.replace(/~and~/g, '&');
             })
-            .join('?')
-          window.history.replaceState(null, null, l.pathname.slice(0, -1) + decoded + l.hash)
+            .join('?');
+          window.history.replaceState(null, null, l.pathname.slice(0, -1) + decoded + l.hash);
         }
-      })(window.location)
+      })(window.location);
     </script>
     <div id="app"></div>
-    <script type="module" src="/src/main.ts"></script>
+    <script
+      type="module"
+      src="/src/main.ts"
+    ></script>
   </body>
 </html>

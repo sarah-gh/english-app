@@ -17,11 +17,13 @@ export interface MatchingQuizChunk {
   meanings: MatchMeaningItem[];
 }
 
-/** Builds the 2-column matching quiz for one chunk of studied cards — words and meanings are
+/** Builds the 2-column matching quiz for one chunk of studied cards, words and meanings are
  *  shuffled independently so neither column's order gives away the pairing. */
 export function buildMatchingQuizChunk(cards: Card[]): MatchingQuizChunk {
   return {
     words: shuffle(cards.map((card) => ({ cardId: card.id, word: card.frontTitle }))),
-    meanings: shuffle(cards.map((card) => ({ cardId: card.id, meaning: stripHtmlToText(card.backAnswer) }))),
+    meanings: shuffle(
+      cards.map((card) => ({ cardId: card.id, meaning: stripHtmlToText(card.backAnswer) })),
+    ),
   };
 }

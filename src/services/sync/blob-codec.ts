@@ -1,5 +1,5 @@
 /** Encodes a Blob as a `data:` URL (base64 payload + its own MIME type) so it can travel inside
- *  the JSON sync payload — Google Drive's `appDataFolder` file is plain JSON, which can't hold
+ *  the JSON sync payload, Google Drive's `appDataFolder` file is plain JSON, which can't hold
  *  binary data directly. */
 export function blobToDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -10,7 +10,7 @@ export function blobToDataUrl(blob: Blob): Promise<string> {
   });
 }
 
-/** Inverse of `blobToDataUrl` — `fetch()` on a `data:` URL decodes it back into a Blob without
+/** Inverse of `blobToDataUrl`, `fetch()` on a `data:` URL decodes it back into a Blob without
  *  any manual base64 handling.
  *
  *  The `data:` prefix is checked before the string ever reaches `fetch`, because `fetch` would

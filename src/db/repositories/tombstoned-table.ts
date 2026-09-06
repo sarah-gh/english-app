@@ -10,8 +10,8 @@ export interface Tombstoneable {
 /**
  * Builds the tombstone-aware read/delete surface each soft-deletable repository is made of.
  *
- * The invariant these repositories rely on — "a deleted row still exists, and only Cloud Sync may
- * see it" — used to be a three-line `excludeDeleted` helper copy-pasted into four files, applied
+ * The invariant these repositories rely on, "a deleted row still exists, and only Cloud Sync may
+ * see it", used to be a three-line `excludeDeleted` helper copy-pasted into four files, applied
  * by hand at each read. That worked until it didn't: every repository's `getById` went straight to
  * `table.get(id)` and returned tombstones, quietly contradicting the sibling reads right next to
  * it. Building the surface from one factory means a repository can't be written that forgets, and
@@ -35,7 +35,7 @@ export function tombstonedTable<T extends Tombstoneable>(table: Table<T, string>
     },
 
     /** Resolves to `undefined` for a tombstoned row: to every caller except Cloud Sync, a deleted
-     *  record is simply not found — the same answer they'd get from `getAll`. */
+     *  record is simply not found, the same answer they'd get from `getAll`. */
     async getById(id: string): Promise<T | undefined> {
       const row = await table.get(id);
       return row && !row.isDeleted ? row : undefined;
@@ -46,7 +46,7 @@ export function tombstonedTable<T extends Tombstoneable>(table: Table<T, string>
      *  the tombstone is 30+ days old. */
     async softDelete(id: string, timestamp = Date.now()): Promise<void> {
       // Dexie's `UpdateSpec<T>` is built from `KeyPaths<Required<T>>`, a recursive template-literal
-      // type TypeScript can't evaluate while `T` is still an unresolved generic — so it can't see
+      // type TypeScript can't evaluate while `T` is still an unresolved generic, so it can't see
       // that `isDeleted`/`updatedAt` are valid paths even though the `Tombstoneable` constraint
       // guarantees both exist. The double assertion is the narrowest way to say so; the constraint
       // above, not this cast, is what actually keeps it sound.

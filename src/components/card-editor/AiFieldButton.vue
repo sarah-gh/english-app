@@ -5,7 +5,7 @@ withDefaults(
   defineProps<{
     loading?: boolean;
     disabled?: boolean;
-    /** Tooltip shown on hover — swaps to a "enter a word first" hint when disabled for that reason. */
+    /** Tooltip shown on hover, swaps to a "enter a word first" hint when disabled for that reason. */
     title?: string;
   }>(),
   {
@@ -24,7 +24,7 @@ const emit = defineEmits<{ click: [] }>();
     :disabled="disabled || loading"
     :title="title"
     :aria-label="title"
-    class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded text-accent transition-colors hover:bg-accent/10 disabled:cursor-not-allowed disabled:text-text/25 disabled:hover:bg-transparent"
+    class="text-accent hover:bg-accent/10 disabled:text-text/25 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded transition-colors disabled:cursor-not-allowed disabled:hover:bg-transparent"
     @click="emit('click')"
   >
     <svg

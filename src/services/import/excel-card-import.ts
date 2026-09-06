@@ -22,7 +22,7 @@ export class ExcelImportError extends Error {
 
 type FieldKey = 'frontTitle' | 'backAnswer' | 'deckName' | 'tagNames' | 'hint' | 'ipa' | 'examples';
 
-/** Recognized header spellings, normalized (lowercased, alphanumeric-only) — lets a variety of
+/** Recognized header spellings, normalized (lowercased, alphanumeric-only), lets a variety of
  *  spreadsheet layouts ("Word", "Term", "Front Title", …) map onto the same card field without
  *  forcing the user to match an exact template. */
 const HEADER_ALIASES: Record<string, FieldKey> = {
@@ -49,7 +49,10 @@ const HEADER_ALIASES: Record<string, FieldKey> = {
 };
 
 function normalizeHeader(header: string): string {
-  return header.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+  return header
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
 }
 
 function cellToString(value: unknown): string {
@@ -67,7 +70,7 @@ function splitList(value: string): string[] {
 
 /**
  * Parses a user-selected .xlsx file's first sheet into card rows. Photos/videos aren't part of
- * this — a spreadsheet cell can't carry binary media, so imported cards are text-only and any
+ * this, a spreadsheet cell can't carry binary media, so imported cards are text-only and any
  * image/audio can be attached afterwards from the card editor.
  */
 export async function parseCardsWorkbook(file: File): Promise<ParsedCardRow[]> {
@@ -83,7 +86,9 @@ export async function parseCardsWorkbook(file: File): Promise<ParsedCardRow[]> {
   }
 
   const [headerRow, ...dataRows] = rows;
-  const columnFields = headerRow.map((header) => HEADER_ALIASES[normalizeHeader(cellToString(header))]);
+  const columnFields = headerRow.map(
+    (header) => HEADER_ALIASES[normalizeHeader(cellToString(header))],
+  );
 
   if (!columnFields.includes('frontTitle') || !columnFields.includes('backAnswer')) {
     throw new ExcelImportError(
@@ -139,5 +144,7 @@ const TEMPLATE_EXAMPLE_ROW = [
 
 /** Downloads a starter .xlsx with the expected headers and one filled-in example row. */
 export async function downloadImportTemplate(): Promise<void> {
-  await writeExcelFile([TEMPLATE_HEADERS, TEMPLATE_EXAMPLE_ROW]).toFile('card-import-template.xlsx');
+  await writeExcelFile([TEMPLATE_HEADERS, TEMPLATE_EXAMPLE_ROW]).toFile(
+    'card-import-template.xlsx',
+  );
 }

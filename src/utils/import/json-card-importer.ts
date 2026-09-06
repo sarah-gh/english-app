@@ -14,7 +14,7 @@ export interface ParsedImportCard {
   sourceIndex: number;
   frontTitle: string;
   backAnswer: string;
-  /** Optional — extended context (verb forms/tenses, phrasal verbs, collocations, idiom notes,
+  /** Optional, extended context (verb forms/tenses, phrasal verbs, collocations, idiom notes,
    *  etc) kept separate from the concise `backAnswer`, same as the AI-generated field it mirrors. */
   extraInfo?: string;
   deckName: string;
@@ -31,7 +31,7 @@ export interface ParsedImportCard {
 }
 
 /** What already exists in the app, so the parser can tell which deck/topic/tag names in the file
- *  are new versus reused by a case-insensitive name match — the same resolve-or-create rule the
+ *  are new versus reused by a case-insensitive name match, the same resolve-or-create rule the
  *  Excel importer and card editor use. */
 export interface JsonImportExistingData {
   deckNames: string[];
@@ -63,7 +63,7 @@ function asStringArray(value: unknown): string[] {
     .filter((item) => item.length > 0);
 }
 
-/** Malformed entries are dropped individually rather than rejecting the whole list — mirrors
+/** Malformed entries are dropped individually rather than rejecting the whole list, mirrors
  *  `parsePartsOfSpeech` in the backup importer. */
 function parsePartsOfSpeech(raw: unknown): Omit<PartOfSpeechEntry, 'id'>[] | undefined {
   if (!Array.isArray(raw)) return undefined;
@@ -73,7 +73,11 @@ function parsePartsOfSpeech(raw: unknown): Omit<PartOfSpeechEntry, 'id'>[] | und
       if (!item || typeof item !== 'object') return null;
       const entry = item as Record<string, unknown>;
       const definition = asString(entry.definition);
-      if (typeof entry.pos !== 'string' || !VALID_POS_TYPES.includes(entry.pos as PosType) || !definition) {
+      if (
+        typeof entry.pos !== 'string' ||
+        !VALID_POS_TYPES.includes(entry.pos as PosType) ||
+        !definition
+      ) {
         return null;
       }
 
@@ -99,7 +103,7 @@ function parsePosDetail(raw: unknown): POSDetail | undefined {
   return { word, meaning: asString(detail.meaning), example: asString(detail.example) };
 }
 
-/** Requires a `rootWord` — a Word Family entry without one has nothing to anchor it, so it's
+/** Requires a `rootWord`, a Word Family entry without one has nothing to anchor it, so it's
  *  dropped entirely rather than importing a blank shell. */
 function parseWordFamily(raw: unknown): WordFamilyData | undefined {
   if (!raw || typeof raw !== 'object') return undefined;
@@ -125,7 +129,7 @@ function parseCard(
   errors: string[],
 ): ParsedImportCard | null {
   if (!raw || typeof raw !== 'object') {
-    errors.push(`Entry #${sourceIndex}: not a valid card object — skipped.`);
+    errors.push(`Entry #${sourceIndex}: not a valid card object, skipped.`);
     return null;
   }
 
@@ -134,11 +138,11 @@ function parseCard(
   const backAnswer = asString(card.backAnswer);
 
   if (!frontTitle) {
-    errors.push(`Entry #${sourceIndex}: missing "frontTitle" — skipped.`);
+    errors.push(`Entry #${sourceIndex}: missing "frontTitle", skipped.`);
     return null;
   }
   if (!backAnswer) {
-    errors.push(`Entry #${sourceIndex} ("${frontTitle}"): missing "backAnswer" — skipped.`);
+    errors.push(`Entry #${sourceIndex} ("${frontTitle}"): missing "backAnswer", skipped.`);
     return null;
   }
 
@@ -166,8 +170,14 @@ interface DeckGroup {
   cards: unknown[];
 }
 
-function looksLikeDeckGroup(value: unknown): value is Record<string, unknown> & { cards: unknown[] } {
-  return Boolean(value) && typeof value === 'object' && Array.isArray((value as Record<string, unknown>).cards);
+function looksLikeDeckGroup(
+  value: unknown,
+): value is Record<string, unknown> & { cards: unknown[] } {
+  return (
+    Boolean(value) &&
+    typeof value === 'object' &&
+    Array.isArray((value as Record<string, unknown>).cards)
+  );
 }
 
 function toDeckGroup(value: Record<string, unknown> & { cards: unknown[] }): DeckGroup {
@@ -194,7 +204,9 @@ function extractDeckGroups(data: unknown): DeckGroup[] | null {
   if (data && typeof data === 'object') {
     const obj = data as Record<string, unknown>;
     if (Array.isArray(obj.decks)) {
-      return obj.decks.map((item) => (looksLikeDeckGroup(item) ? toDeckGroup(item) : { cards: [] }));
+      return obj.decks.map((item) =>
+        looksLikeDeckGroup(item) ? toDeckGroup(item) : { cards: [] },
+      );
     }
     if (Array.isArray(obj.cards)) return [{ cards: obj.cards }];
   }
@@ -203,12 +215,15 @@ function extractDeckGroups(data: unknown): DeckGroup[] | null {
 }
 
 /**
- * Parses and validates a JSON card-import file's contents. Never throws — structural problems
+ * Parses and validates a JSON card-import file's contents. Never throws, structural problems
  * (unparseable JSON, an unrecognized top-level shape) and per-card problems (missing required
  * fields) are both reported via `errors`/`isValid` rather than exceptions, so the caller can
  * always render a preview of whatever *did* parse.
  */
-export function parseJsonCardImport(jsonText: string, existing: JsonImportExistingData): JsonImportValidationResult {
+export function parseJsonCardImport(
+  jsonText: string,
+  existing: JsonImportExistingData,
+): JsonImportValidationResult {
   let data: unknown;
   try {
     data = JSON.parse(jsonText);
@@ -270,7 +285,7 @@ export function parseJsonCardImport(jsonText: string, existing: JsonImportExisti
     if (isNewDeck) decksToCreate.add(card.deckName);
 
     // A newly-created deck needs its topic created too, regardless of whether that topic name
-    // happens to already exist under some OTHER deck — topics are scoped per-deck.
+    // happens to already exist under some OTHER deck, topics are scoped per-deck.
     const existingTopicsForDeck = existingTopicsByDeck.get(card.deckName.toLowerCase());
     const isNewTopic = isNewDeck || !existingTopicsForDeck?.has(card.topicName.toLowerCase());
     if (isNewTopic) topicsToCreate.add(`${card.deckName} › ${card.topicName}`);

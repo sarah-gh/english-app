@@ -70,7 +70,13 @@ async function runQuizRequest<T>(
       return parse(text, (message) => new AiProviderError('openrouter', message, false));
     },
     aihubmix: async (apiKey, baseUrl) => {
-      const text = await callAihubmixStructured(apiKey, baseUrl, prompt, responseSchema, temperature);
+      const text = await callAihubmixStructured(
+        apiKey,
+        baseUrl,
+        prompt,
+        responseSchema,
+        temperature,
+      );
       return parse(text, (message) => new AiProviderError('aihubmix', message, false));
     },
   });
@@ -78,12 +84,12 @@ async function runQuizRequest<T>(
 
 /** Sampling temperature used for quiz *generation* (higher than each provider's default so
  *  repeated generations from the same cards produce more varied questions/wording). Grading
- *  (`evaluateDescriptiveQuiz`) intentionally leaves this unset — consistent scoring matters more
+ *  (`evaluateDescriptiveQuiz`) intentionally leaves this unset, consistent scoring matters more
  *  there than lexical variety. */
 const QUIZ_GENERATION_TEMPERATURE = 0.7;
 
 /** Generates a 4-option multiple-choice quiz grounded in the given flashcards, using the
- *  provider(s) configured in Settings — see `withProviderFallback` for the fallback semantics. */
+ *  provider(s) configured in Settings, see `withProviderFallback` for the fallback semantics. */
 export async function generateMultipleChoiceQuiz(
   settings: AppSettings,
   cards: Card[],
@@ -100,7 +106,7 @@ export async function generateMultipleChoiceQuiz(
   );
 }
 
-/** Generates an open-ended/descriptive quiz grounded in the given flashcards — answers are typed
+/** Generates an open-ended/descriptive quiz grounded in the given flashcards, answers are typed
  *  free-text and graded afterward by `evaluateDescriptiveQuiz`, not exact-matched. */
 export async function generateDescriptiveQuiz(
   settings: AppSettings,
@@ -124,7 +130,7 @@ export interface DescriptiveQuizAnswer {
 }
 
 /** Grades a batch of free-text answers to a descriptive quiz, returning a 0-100 score, short
- *  feedback, and a sample answer for each — indexed back to `items` via `sourceIndex`. */
+ *  feedback, and a sample answer for each, indexed back to `items` via `sourceIndex`. */
 export async function evaluateDescriptiveQuiz(
   settings: AppSettings,
   items: DescriptiveQuizAnswer[],

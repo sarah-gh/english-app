@@ -12,23 +12,27 @@ const emit = defineEmits<{ complete: [results: MatchResult[]] }>();
 
 type ItemStatus = 'pending' | 'selected' | 'correct' | 'incorrect' | 'matched';
 
-const wordStatus = ref<Map<string, ItemStatus>>(new Map(props.chunk.words.map((item) => [item.cardId, 'pending'])));
+const wordStatus = ref<Map<string, ItemStatus>>(
+  new Map(props.chunk.words.map((item) => [item.cardId, 'pending'])),
+);
 const meaningStatus = ref<Map<string, ItemStatus>>(
   new Map(props.chunk.meanings.map((item) => [item.cardId, 'pending'])),
 );
 const selectedWordId = ref<string | null>(null);
 const isResolving = ref(false);
-/** Cards that got at least one wrong attempt this round — tried-until-correct still finishes the
+/** Cards that got at least one wrong attempt this round, tried-until-correct still finishes the
  *  quiz, but any card that ever missed is reported as failed so it's requeued later. */
 const failedCardIds = ref<Set<string>>(new Set());
-/** The meaning briefly nudged by "Need a hint?" — purely a presentation overlay over 'pending',
+/** The meaning briefly nudged by "Need a hint?", purely a presentation overlay over 'pending',
  *  never written into `meaningStatus` itself, so it can't be mistaken for an actual match. */
 const hintMeaningCardId = ref<string | null>(null);
 
 const matchedCount = computed(
   () => [...wordStatus.value.values()].filter((status) => status === 'correct').length,
 );
-const progressPercent = computed(() => Math.round((matchedCount.value / props.chunk.words.length) * 100));
+const progressPercent = computed(() =>
+  Math.round((matchedCount.value / props.chunk.words.length) * 100),
+);
 
 function wordStatusFor(cardId: string): ItemStatus | 'hint' {
   const status = wordStatus.value.get(cardId) ?? 'pending';
@@ -51,7 +55,12 @@ function selectWord(cardId: string) {
 }
 
 function selectMeaning(meaningCardId: string) {
-  if (isResolving.value || !selectedWordId.value || meaningStatus.value.get(meaningCardId) === 'matched') return;
+  if (
+    isResolving.value ||
+    !selectedWordId.value ||
+    meaningStatus.value.get(meaningCardId) === 'matched'
+  )
+    return;
 
   const wordCardId = selectedWordId.value;
   const isCorrect = meaningCardId === wordCardId;
@@ -68,7 +77,7 @@ function selectMeaning(meaningCardId: string) {
   }
 
   window.setTimeout(() => {
-    // Wrong guesses are never locked — both the word and the meaning reset to pending so the
+    // Wrong guesses are never locked, both the word and the meaning reset to pending so the
     // user can keep trying until they find the right pair.
     if (!isCorrect) {
       wordStatus.value.set(wordCardId, 'pending');
@@ -87,7 +96,7 @@ function selectMeaning(meaningCardId: string) {
   }, 450);
 }
 
-/** Briefly highlights the correct meaning for the currently selected word — the highlight is
+/** Briefly highlights the correct meaning for the currently selected word, the highlight is
  *  purely visual (see `hintMeaningCardId`) and never auto-completes the match. */
 function requestHint() {
   if (!selectedWordId.value || isResolving.value) return;
@@ -100,26 +109,33 @@ function requestHint() {
 
 <template>
   <div class="mx-auto w-full max-w-xl">
-    <p class="mb-1 text-center text-2xl font-bold text-text">Match the words</p>
-    <p class="mb-4 text-center text-sm text-primary/80">Tap a word, then choose its matching meaning.</p>
+    <p class="text-text mb-1 text-center text-2xl font-bold">Match the words</p>
+    <p class="text-primary/80 mb-4 text-center text-sm">
+      Tap a word, then choose its matching meaning.
+    </p>
 
     <div class="mx-auto mb-6 max-w-xs">
-      <p class="mb-1.5 text-center text-sm text-text/70">
-        <span class="font-semibold text-primary">{{ matchedCount }}</span> / {{ chunk.words.length }} matched
+      <p class="text-text/70 mb-1.5 text-center text-sm">
+        <span class="text-primary font-semibold">{{ matchedCount }}</span> /
+        {{ chunk.words.length }} matched
       </p>
-      <div class="h-1.5 w-full overflow-hidden rounded-full bg-text/10">
+      <div class="bg-text/10 h-1.5 w-full overflow-hidden rounded-full">
         <div
-          class="h-full rounded-full bg-primary transition-[width] duration-300 ease-out"
+          class="bg-primary h-full rounded-full transition-[width] duration-300 ease-out"
           :style="{ width: `${progressPercent}%` }"
         />
       </div>
     </div>
 
     <div class="grid grid-cols-2 gap-2 sm:gap-3">
-      <div class="rounded-2xl bg-card-surface py-3 p-2">
+      <div class="bg-card-surface rounded-2xl p-2 py-3">
         <div class="mb-3 flex items-center gap-1.5 px-1">
-          <AppIcon icon-name="Book1" :size="14" class="text-primary" />
-          <span class="text-xs font-semibold tracking-wider text-primary">WORDS</span>
+          <AppIcon
+            icon-name="Book1"
+            :size="14"
+            class="text-primary"
+          />
+          <span class="text-primary text-xs font-semibold tracking-wider">WORDS</span>
         </div>
         <div class="flex flex-col gap-2.5">
           <MatchColumnItem
@@ -131,10 +147,14 @@ function requestHint() {
           />
         </div>
       </div>
-      <div class="rounded-2xl bg-card-surface py-3 p-2">
+      <div class="bg-card-surface rounded-2xl p-2 py-3">
         <div class="mb-3 flex items-center gap-1.5 px-1">
-          <AppIcon icon-name="DocumentText" :size="14" class="text-primary" />
-          <span class="text-xs font-semibold tracking-wider text-primary">MEANINGS</span>
+          <AppIcon
+            icon-name="DocumentText"
+            :size="14"
+            class="text-primary"
+          />
+          <span class="text-primary text-xs font-semibold tracking-wider">MEANINGS</span>
         </div>
         <div class="flex flex-col gap-2.5">
           <MatchColumnItem
@@ -151,7 +171,7 @@ function requestHint() {
     <div class="mt-6 flex justify-center">
       <button
         type="button"
-        class="rounded-full border border-slate-600/50 bg-card-surface/60 px-5 py-2.5 text-sm font-medium text-primary transition-colors duration-150 hover:bg-card-surface disabled:cursor-not-allowed disabled:opacity-40"
+        class="bg-card-surface/60 text-primary hover:bg-card-surface rounded-full border border-slate-600/50 px-5 py-2.5 text-sm font-medium transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-40"
         :disabled="!selectedWordId || isResolving"
         @click="requestHint"
       >

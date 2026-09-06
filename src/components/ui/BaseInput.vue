@@ -16,7 +16,7 @@ withDefaults(
     /** Iconsax icon name shown as a leading glyph inside the field (e.g. "SearchNormal1"). */
     icon?: string;
     /** Overrides the field's border/background classes (default: `border-text/20`, transparent
-     *  background) — e.g. a darker "recessed" look for the Settings view's redesign. */
+     *  background), e.g. a darker "recessed" look for the Settings view's redesign. */
     inputClass?: string;
   }>(),
   {
@@ -42,9 +42,10 @@ const inputId = useId();
     <label
       v-if="label"
       :for="inputId"
-      class="mb-1 block text-xs font-medium text-text/60"
+      class="text-text/60 mb-1 block text-xs font-medium"
     >
-      {{ label }}<span
+      {{ label
+      }}<span
         v-if="required"
         class="text-danger"
       >
@@ -59,8 +60,8 @@ const inputId = useId();
       :disabled="disabled"
       :required="required"
       :rows="rows"
-      class="w-full rounded px-3 py-2 text-sm focus:border-primary focus:outline-none disabled:bg-text/5"
-      :class="inputClass ?? 'border border-text/20'"
+      class="focus:border-primary disabled:bg-text/5 w-full rounded px-3 py-2 text-sm focus:outline-none"
+      :class="inputClass ?? 'border-text/20 border'"
       @input="$emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)"
     />
     <div
@@ -71,7 +72,7 @@ const inputId = useId();
         v-if="icon"
         :icon-name="icon"
         :size="16"
-        class="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-text/40"
+        class="text-text/40 pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2"
       />
       <input
         :id="inputId"
@@ -80,14 +81,14 @@ const inputId = useId();
         :placeholder="placeholder"
         :disabled="disabled"
         :required="required"
-        class="w-full rounded py-2 text-sm focus:border-primary focus:outline-none disabled:bg-text/5"
-        :class="[icon ? 'pl-8 pr-3' : 'px-3', inputClass ?? 'border border-text/20']"
+        class="focus:border-primary disabled:bg-text/5 w-full rounded py-2 text-sm focus:outline-none"
+        :class="[icon ? 'pr-3 pl-8' : 'px-3', inputClass ?? 'border-text/20 border']"
         @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
       />
     </div>
     <p
       v-if="error"
-      class="mt-1 flex items-center gap-1.5 text-xs font-medium text-danger"
+      class="text-danger mt-1 flex items-center gap-1.5 text-xs font-medium"
     >
       <WarningIcon />
       {{ error }}

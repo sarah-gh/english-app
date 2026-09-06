@@ -89,7 +89,7 @@ export class AppDatabase extends Dexie {
 
     // v4: adds `updatedAt`/`isDeleted` to Deck/Topic/Tag (Card already had `updatedAt`) so Cloud
     // Sync can resolve conflicts by recency and replicate deletions as tombstones instead of
-    // silently vanishing rows a device hasn't synced yet. Kept off the index list deliberately —
+    // silently vanishing rows a device hasn't synced yet. Kept off the index list deliberately,
     // IndexedDB can't index boolean values, so `isDeleted` is filtered with `.filter()` at read
     // time rather than `.where()`.
     this.version(4)
@@ -155,7 +155,7 @@ export class AppDatabase extends Dexie {
           });
       });
 
-    // v6: adds `isStudied` to Card — a one-way flag set once a card has been paged through in a
+    // v6: adds `isStudied` to Card, a one-way flag set once a card has been paged through in a
     // Study-mode session, gating whether it can appear in a Practice-mode session. Existing cards
     // default to `false` (nothing "studied" them under this new tracking yet), matching how a
     // brand-new card starts.
@@ -179,10 +179,10 @@ export class AppDatabase extends Dexie {
       });
 
     // v7: replaces Card's `isStudied` boolean (added in v6, moments before this app ever shipped
-    // with it) with a `studyCount` counter — incremented once per Study-mode completion instead of
+    // with it) with a `studyCount` counter, incremented once per Study-mode completion instead of
     // just flipped true, so Cloud Sync can merge two devices' independent study reps with
     // `Math.max` instead of one device's count winning outright and the other's being discarded
-    // (see `mergeCards`). `isStudied: true` becomes `studyCount: 1` — "has been studied" with no
+    // (see `mergeCards`). `isStudied: true` becomes `studyCount: 1`, "has been studied" with no
     // way to know how many times under the old tracking, so 1 is the honest floor.
     this.version(7)
       .stores({
@@ -207,7 +207,7 @@ export class AppDatabase extends Dexie {
     // v8: every deck now always has a "General" topic, and new cards fall back to it instead of
     // being left without a topic. Decks created (or topics deleted) before that existed could
     // still have cards with no `topicId`, or a `topicId` pointing at a topic that no longer exists
-    // — this backfills both: every deck gets a "General" topic (reusing a same-named one instead
+    //, this backfills both: every deck gets a "General" topic (reusing a same-named one instead
     // of creating a duplicate), and every such orphaned card is reassigned to its deck's.
     this.version(8)
       .stores({
@@ -227,7 +227,9 @@ export class AppDatabase extends Dexie {
 
         const decks = await decksTable.toArray();
         const topics = await topicsTable.toArray();
-        const validTopicIds = new Set(topics.filter((topic) => !topic.isDeleted).map((topic) => topic.id));
+        const validTopicIds = new Set(
+          topics.filter((topic) => !topic.isDeleted).map((topic) => topic.id),
+        );
 
         const generalTopicIdByDeck = new Map<string, string>();
         for (const topic of topics) {

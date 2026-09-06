@@ -7,15 +7,18 @@ import type { Card } from '@/types/card';
  *
  * A single unreadable blob must never fail a whole sync. `syncNow` wraps everything in a catch-all
  * that maps any unrecognized error to `SyncOfflineError`, so one corrupt audio or image payload
- * used to surface to the user as "Sync failed. Changes saved locally." — a network problem they
- * don't actually have — and, because the bad record stays in the payload, every later sync failed
+ * used to surface to the user as "Sync failed. Changes saved locally.", a network problem they
+ * don't actually have, and, because the bad record stays in the payload, every later sync failed
  * the same way with the same misleading message.
  *
  * Dropping just the media keeps the card itself, which is the part that carries the learning
  * content; the audio can be re-fetched or re-recorded, and the alternative is losing the card and
  * every other card alongside it.
  */
-async function withoutMediaOnFailure<T>(convert: () => Promise<T>, description: string): Promise<T | undefined> {
+async function withoutMediaOnFailure<T>(
+  convert: () => Promise<T>,
+  description: string,
+): Promise<T | undefined> {
   try {
     return await convert();
   } catch (error) {

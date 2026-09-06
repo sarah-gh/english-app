@@ -56,7 +56,7 @@ function isNonEmptyString(value: unknown): value is string {
 }
 
 /** Parses a card's `partsOfSpeech` from an archive that may predate this field (older backups),
- *  or predate the `wordForm` sub-field — malformed/incomplete entries are dropped individually
+ *  or predate the `wordForm` sub-field, malformed/incomplete entries are dropped individually
  *  rather than failing the whole card, so a partially-corrupt list doesn't lose the rest. */
 function parsePartsOfSpeech(raw: unknown): PartOfSpeechEntry[] | undefined {
   if (!Array.isArray(raw)) return undefined;
@@ -111,7 +111,7 @@ function parseWordFamily(raw: unknown): WordFamilyData | undefined {
 }
 
 /** Parses a card's `reviewStats` from an archive that may predate this field entirely (v1
- *  backups) — falls back to zeroed stats rather than failing the card. */
+ *  backups), falls back to zeroed stats rather than failing the card. */
 function parseReviewStats(raw: unknown): CardReviewStats {
   if (!raw || typeof raw !== 'object') return { ...DEFAULT_REVIEW_STATS };
   const stats = raw as Record<string, unknown>;
@@ -155,7 +155,11 @@ function validateManifest(data: unknown): asserts data is BackupManifest {
     }
   }
   for (const card of manifest.cards as Record<string, unknown>[]) {
-    if (!isNonEmptyString(card.id) || !isNonEmptyString(card.frontTitle) || !isNonEmptyString(card.deckId)) {
+    if (
+      !isNonEmptyString(card.id) ||
+      !isNonEmptyString(card.frontTitle) ||
+      !isNonEmptyString(card.deckId)
+    ) {
       throw new BackupImportError('One or more cards are missing required fields.');
     }
   }
@@ -163,7 +167,7 @@ function validateManifest(data: unknown): asserts data is BackupManifest {
 
 /**
  * Restores/merges a .zip produced by exportBackup(). Records use `bulkPut`, which upserts by
- * id — since ids are UUIDs, importing the same backup twice is idempotent, importing onto a
+ * id, since ids are UUIDs, importing the same backup twice is idempotent, importing onto a
  * fresh device is a pure insert, and importing alongside existing local data merges the two,
  * only overwriting records that share an id with the archive.
  */
@@ -242,14 +246,17 @@ export async function importBackup(file: File): Promise<ImportSummary> {
   const dailyStats = Array.isArray(manifest.dailyStats) ? manifest.dailyStats : [];
 
   // Backups from before Cloud Sync (BACKUP_VERSION < 2's deck/topic/tag records) predate
-  // `updatedAt`/`isDeleted` — back-fill both so older archives still import cleanly.
+  // `updatedAt`/`isDeleted`, back-fill both so older archives still import cleanly.
   const now = Date.now();
-  const backfillSyncFields = <T extends { createdAt: number; updatedAt?: number; isDeleted?: boolean }>(
+  const backfillSyncFields = <
+    T extends { createdAt: number; updatedAt?: number; isDeleted?: boolean },
+  >(
     records: T[],
   ): T[] =>
     records.map((record) => ({
       ...record,
-      updatedAt: typeof record.updatedAt === 'number' ? record.updatedAt : (record.createdAt ?? now),
+      updatedAt:
+        typeof record.updatedAt === 'number' ? record.updatedAt : (record.createdAt ?? now),
       isDeleted: Boolean(record.isDeleted),
     }));
 

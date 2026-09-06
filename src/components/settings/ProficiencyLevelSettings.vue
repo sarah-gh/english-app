@@ -24,7 +24,7 @@ async function selectLevel(level: ProficiencyLevel) {
   <SettingsSectionCard
     title="English Level"
     badge-class="bg-indigo-600/10 text-indigo-600"
-    description="Your CEFR proficiency level — matches the AI Quiz Generator's questions and explanations to this level."
+    description="Your CEFR proficiency level, matches the AI Quiz Generator's questions and explanations to this level."
   >
     <template #icon>
       <AppIcon

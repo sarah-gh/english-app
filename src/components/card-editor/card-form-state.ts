@@ -1,5 +1,13 @@
 import { toRaw } from 'vue';
-import type { Card, NewCard, PartOfSpeechEntry, POSDetail, PosType, QuizQuestion, WordFamilyData } from '@/types/card';
+import type {
+  Card,
+  NewCard,
+  PartOfSpeechEntry,
+  POSDetail,
+  PosType,
+  QuizQuestion,
+  WordFamilyData,
+} from '@/types/card';
 
 /** Form-editable mirror of PartOfSpeechEntry, with `ipa`/`examples`/`wordForm` normalized to plain
  *  strings/arrays. */
@@ -22,7 +30,7 @@ export interface POSDetailFormState {
 }
 
 /** Form-editable mirror of WordFamilyData. `rootWord` is kept in sync with `frontTitle` rather
- *  than edited separately — the root word IS the card's front title in Word Family mode. */
+ *  than edited separately, the root word IS the card's front title in Word Family mode. */
 export interface WordFamilyFormState {
   noun: POSDetailFormState;
   verb: POSDetailFormState;
@@ -146,24 +154,29 @@ function posDetailFrom(detail: POSDetailFormState): POSDetail | undefined {
   };
 }
 
-const POS_LABELS = { noun: 'Noun', verb: 'Verb', adjective: 'Adjective', adverb: 'Adverb' } as const;
+const POS_LABELS = {
+  noun: 'Noun',
+  verb: 'Verb',
+  adjective: 'Adjective',
+  adverb: 'Adverb',
+} as const;
 
-/** A word-family card still needs a non-empty `backAnswer` (every other feature — search, quiz
- *  generation prompts — reads it unconditionally), so it's derived from whichever forms were
+/** A word-family card still needs a non-empty `backAnswer` (every other feature, search, quiz
+ *  generation prompts, reads it unconditionally), so it's derived from whichever forms were
  *  filled in rather than shown as its own editable field. */
 function summarizeWordFamily(rootWord: string, wordFamily: WordFamilyData): string {
   const parts = (Object.keys(POS_LABELS) as Array<keyof typeof POS_LABELS>)
     .map((pos) => {
       const detail = wordFamily[pos];
       if (!detail) return null;
-      return `${POS_LABELS[pos]}: ${detail.word}${detail.meaning ? ` — ${detail.meaning}` : ''}`;
+      return `${POS_LABELS[pos]}: ${detail.word}${detail.meaning ? `, ${detail.meaning}` : ''}`;
     })
     .filter((part): part is string => part !== null);
   return parts.length > 0 ? parts.join('; ') : `Word family for "${rootWord}".`;
 }
 
 /**
- * `state` is typically a Vue `reactive()` object — its nested arrays/objects are Proxy-wrapped,
+ * `state` is typically a Vue `reactive()` object, its nested arrays/objects are Proxy-wrapped,
  * and IndexedDB's structured-clone algorithm cannot store Proxies (throws DataCloneError).
  * `toRaw` unwraps back to the plain underlying data before it's handed to the repository.
  */
@@ -219,7 +232,11 @@ export function cardFormStateToNewCard(state: CardFormState): NewCard {
       .filter((question) => question.question.trim() && question.correctAnswer.trim())
       .map((question) => ({ ...question })),
     partsOfSpeech:
-      raw.cardMode === 'word-family' ? undefined : partsOfSpeech.length > 0 ? partsOfSpeech : undefined,
+      raw.cardMode === 'word-family'
+        ? undefined
+        : partsOfSpeech.length > 0
+          ? partsOfSpeech
+          : undefined,
     wordFamily,
     imageBlob: raw.imageBlob,
   };

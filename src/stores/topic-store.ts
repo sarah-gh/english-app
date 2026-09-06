@@ -36,8 +36,8 @@ export const useTopicStore = defineStore('topics', () => {
     return topic.name.trim().toLowerCase() === GENERAL_TOPIC_NAME.toLowerCase();
   }
 
-  /** Returns the deck's "General" topic — the fallback every card without an explicit topic is
-   *  assigned to — creating one if the deck doesn't already have one, so a deck (and any card
+  /** Returns the deck's "General" topic, the fallback every card without an explicit topic is
+   *  assigned to, creating one if the deck doesn't already have one, so a deck (and any card
    *  inside it) is never left without somewhere to land. */
   async function ensureGeneral(deckId: string): Promise<Topic> {
     await ensureLoaded();
@@ -52,7 +52,7 @@ export const useTopicStore = defineStore('topics', () => {
   }
 
   /** Deletes the topic and reassigns every card that referenced it to the deck's "General" topic
-   *  (creating one if needed — even if the deleted topic was itself "General") instead of leaving
+   *  (creating one if needed, even if the deleted topic was itself "General") instead of leaving
    *  them topic-less. */
   async function remove(id: string): Promise<void> {
     const topic = getById(id);
@@ -66,8 +66,22 @@ export const useTopicStore = defineStore('topics', () => {
     if (orphanedCards.length === 0) return;
 
     const general = await ensureGeneral(topic.deckId);
-    await Promise.all(orphanedCards.map((card) => cardStore.edit(card.id, { topicId: general.id })));
+    await Promise.all(
+      orphanedCards.map((card) => cardStore.edit(card.id, { topicId: general.id })),
+    );
   }
 
-  return { topics, isLoaded, fetchAll, ensureLoaded, getById, byDeck, add, isGeneral, ensureGeneral, edit, remove };
+  return {
+    topics,
+    isLoaded,
+    fetchAll,
+    ensureLoaded,
+    getById,
+    byDeck,
+    add,
+    isGeneral,
+    ensureGeneral,
+    edit,
+    remove,
+  };
 });

@@ -15,7 +15,7 @@ export interface QuizSessionQuestion {
   question: string;
   /** Multiple-choice only. */
   options?: string[];
-  /** Multiple-choice only — 0-based index into `options`. */
+  /** Multiple-choice only, 0-based index into `options`. */
   correctOptionIndex?: number;
 }
 
@@ -47,17 +47,22 @@ export const useQuizSessionStore = defineStore('quiz-session', () => {
     return evaluations.value[question.id];
   }
 
-  /** Multiple-choice: count of correct answers. Open-ended: sum of 0-100 AI scores — paired with
+  /** Multiple-choice: count of correct answers. Open-ended: sum of 0-100 AI scores, paired with
    *  `total` below, which scales to match (question count vs. question count * 100). */
   const score = computed(() => {
     if (!isSubmitted.value) return 0;
     if (mode.value === 'multiple-choice') {
       return questions.value.filter((question) => isCorrect(question)).length;
     }
-    return questions.value.reduce((sum, question) => sum + (evaluationFor(question)?.score ?? 0), 0);
+    return questions.value.reduce(
+      (sum, question) => sum + (evaluationFor(question)?.score ?? 0),
+      0,
+    );
   });
 
-  const total = computed(() => (mode.value === 'multiple-choice' ? questions.value.length : questions.value.length * 100));
+  const total = computed(() =>
+    mode.value === 'multiple-choice' ? questions.value.length : questions.value.length * 100,
+  );
 
   function setQuestions(newMode: QuizMode, newQuestions: QuizSessionQuestion[]): void {
     mode.value = newMode;
@@ -77,7 +82,7 @@ export const useQuizSessionStore = defineStore('quiz-session', () => {
 
   /**
    * `question` and its `evaluationFor` result are reactive Proxies (read from this store's
-   * `questions`/`evaluations` refs) — their nested arrays (`options`) must be unwrapped with
+   * `questions`/`evaluations` refs), their nested arrays (`options`) must be unwrapped with
    * `toRaw` before the built detail is handed to IndexedDB, the same DataCloneError pitfall
    * documented on `saveQuestionToCard` below.
    */
@@ -108,7 +113,7 @@ export const useQuizSessionStore = defineStore('quiz-session', () => {
     };
   }
 
-  /** Persists an `AiQuizResult` so the score/date/deck survive navigation — shown later in the
+  /** Persists an `AiQuizResult` so the score/date/deck survive navigation, shown later in the
    *  Dashboard's AI Quiz History, separate from mini matching quizzes run during study sessions. */
   async function persistResult(): Promise<void> {
     if (isResultSaved.value || questions.value.length === 0) return;
@@ -177,14 +182,19 @@ export const useQuizSessionStore = defineStore('quiz-session', () => {
   }
 
   /**
-   * Appends the question onto its source card's `quizQuestions` — multiple-choice only, since
+   * Appends the question onto its source card's `quizQuestions`, multiple-choice only, since
    * open-ended questions have no single fixed `correctAnswer` to save. Both `card` (read from the
    * card store) and `question` (read from this store's reactive `questions` array via `.find()`)
-   * are reactive Proxies — their nested arrays/objects must be unwrapped with `toRaw` before
+   * are reactive Proxies, their nested arrays/objects must be unwrapped with `toRaw` before
    * they're handed to IndexedDB, the same DataCloneError pitfall hit earlier in the card editor.
    */
   async function saveQuestionToCard(question: QuizSessionQuestion): Promise<void> {
-    if (mode.value !== 'multiple-choice' || !question.options || question.correctOptionIndex === undefined) return;
+    if (
+      mode.value !== 'multiple-choice' ||
+      !question.options ||
+      question.correctOptionIndex === undefined
+    )
+      return;
 
     const cardStore = useCardStore();
     const card = cardStore.getById(question.cardId);

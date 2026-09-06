@@ -5,7 +5,11 @@ import {
   type GeneratedCardDetails,
 } from './card-autofill-schema';
 import { AiProviderError } from './errors';
-import { parseWordFamilyResponseText, WORD_FAMILY_RESPONSE_SCHEMA, type GeneratedWordFamily } from './word-family-schema';
+import {
+  parseWordFamilyResponseText,
+  WORD_FAMILY_RESPONSE_SCHEMA,
+  type GeneratedWordFamily,
+} from './word-family-schema';
 
 const MODEL = 'gemini-flash-latest';
 
@@ -41,7 +45,7 @@ async function postToAihubmix(
 }
 
 /** Low-level call to AIHubMix's Structured JSON Output endpoint. Returns the raw JSON text the
- *  model produced — callers validate/parse it into their own feature-specific shape. */
+ *  model produced, callers validate/parse it into their own feature-specific shape. */
 export async function callAihubmixStructured(
   apiKey: string,
   baseUrl: string,
@@ -53,13 +57,20 @@ export async function callAihubmixStructured(
 
   let data: GenerateContentResponse;
   try {
-    ({ data } = await postToAihubmix(normalizedBaseUrl, apiKey, prompt, responseSchema, temperature));
+    ({ data } = await postToAihubmix(
+      normalizedBaseUrl,
+      apiKey,
+      prompt,
+      responseSchema,
+      temperature,
+    ));
   } catch (error) {
-    // `status` is only set once a response actually came back — undefined means the request
+    // `status` is only set once a response actually came back, undefined means the request
     // never reached the server (DNS/connection failure), which is when the mirror is worth a try.
     const isNetworkFailure = error instanceof ApiError && error.status === undefined;
     if (!isNetworkFailure || normalizedBaseUrl === PREFERRED_FALLBACK_BASE_URL) {
-      if (error instanceof ApiError) throw new AiProviderError('aihubmix', error.message, error.retryable);
+      if (error instanceof ApiError)
+        throw new AiProviderError('aihubmix', error.message, error.retryable);
       throw error;
     }
 
@@ -67,7 +78,13 @@ export async function callAihubmixStructured(
       `[aihubmix-client] Could not reach ${normalizedBaseUrl}; retrying via preferred base URL ${PREFERRED_FALLBACK_BASE_URL}.`,
     );
     try {
-      ({ data } = await postToAihubmix(PREFERRED_FALLBACK_BASE_URL, apiKey, prompt, responseSchema, temperature));
+      ({ data } = await postToAihubmix(
+        PREFERRED_FALLBACK_BASE_URL,
+        apiKey,
+        prompt,
+        responseSchema,
+        temperature,
+      ));
     } catch (retryError) {
       if (retryError instanceof ApiError) {
         throw new AiProviderError(
@@ -89,7 +106,10 @@ export async function autoFillCardViaAihubmix(
   prompt: string,
 ): Promise<GeneratedCardDetails> {
   const text = await callAihubmixStructured(apiKey, baseUrl, prompt, CARD_AUTOFILL_RESPONSE_SCHEMA);
-  return parseCardAutofillResponseText(text, (message) => new AiProviderError('aihubmix', message, false));
+  return parseCardAutofillResponseText(
+    text,
+    (message) => new AiProviderError('aihubmix', message, false),
+  );
 }
 
 export async function autoFillWordFamilyViaAihubmix(
@@ -98,5 +118,8 @@ export async function autoFillWordFamilyViaAihubmix(
   prompt: string,
 ): Promise<GeneratedWordFamily> {
   const text = await callAihubmixStructured(apiKey, baseUrl, prompt, WORD_FAMILY_RESPONSE_SCHEMA);
-  return parseWordFamilyResponseText(text, (message) => new AiProviderError('aihubmix', message, false));
+  return parseWordFamilyResponseText(
+    text,
+    (message) => new AiProviderError('aihubmix', message, false),
+  );
 }

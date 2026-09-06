@@ -54,7 +54,7 @@ export function weightedShuffleByTier<T>(items: T[], tierOf: (item: T) => Weight
 }
 
 /**
- * Builds a review queue from Hard/Medium/Easy cards — New cards are excluded, since this mode
+ * Builds a review queue from Hard/Medium/Easy cards, New cards are excluded, since this mode
  * reinforces previously-seen material rather than introducing new ones.
  */
 export function buildWeightedQueue(cards: Card[]): Card[] {

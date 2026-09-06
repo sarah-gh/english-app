@@ -30,7 +30,7 @@ async function handleDeleteCloudData() {
 }
 
 // A one-off confirmation for the deliberate "Connect" action, mirroring the "✓ Saved
-// successfully" badge AiProviderSettings shows after a save — connecting is important enough
+// successfully" badge AiProviderSettings shows after a save, connecting is important enough
 // to deserve the same explicit acknowledgement, on top of the profile card and "Last synced"
 // line that appear right after it.
 const showConnectedConfirmation = ref(false);
@@ -44,7 +44,7 @@ async function handleConnect() {
 </script>
 
 <template>
-  <div class="mb-6 rounded-2xl border border-slate-600 bg-card-surface p-4">
+  <div class="bg-card-surface mb-6 rounded-2xl border border-slate-600 p-4">
     <div class="mb-1 flex items-center justify-between gap-2">
       <div class="flex items-center gap-2">
         <AppIcon
@@ -52,23 +52,26 @@ async function handleConnect() {
           :size="18"
           :class="syncStore.isConnected ? 'text-primary' : 'text-card-muted'"
         />
-        <h2 class="text-sm font-semibold text-text">Cloud Sync</h2>
+        <h2 class="text-text text-sm font-semibold">Cloud Sync</h2>
       </div>
       <span
         v-if="syncStore.isConnected"
-        class="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
+        class="bg-primary/10 text-primary inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium"
       >
         Connected
-        <AppIcon icon-name="TickCircle" :size="14" />
+        <AppIcon
+          icon-name="TickCircle"
+          :size="14"
+        />
       </span>
     </div>
-    <p class="mb-4 text-xs text-card-muted">
-      Back up and sync your decks, cards, and tags to your personal Google Drive — no account with
-      us required. Storage lives in your Drive's private app data, invisible to other apps.
+    <p class="text-card-muted mb-4 text-xs">
+      Back up and sync your decks, cards, and tags to your personal Google Drive, no account with us
+      required. Storage lives in your Drive's private app data, invisible to other apps.
     </p>
 
     <template v-if="!syncStore.isConfigured">
-      <p class="flex items-center gap-1.5 text-xs font-medium text-card-muted">
+      <p class="text-card-muted flex items-center gap-1.5 text-xs font-medium">
         <AppIcon
           icon-name="Danger"
           :size="14"
@@ -94,17 +97,23 @@ async function handleConnect() {
       </BaseButton>
       <p
         v-if="syncStore.isOffline"
-        class="mt-2 text-xs font-medium text-card-muted"
+        class="text-card-muted mt-2 text-xs font-medium"
       >
-        You're offline — connect once you're back online.
+        You're offline, connect once you're back online.
       </p>
 
-      <div class="mt-3 flex items-start gap-2 rounded-xl border border-slate-600 bg-background/40 p-3">
-        <AppIcon icon-name="InfoCircle" :size="14" class="mt-0.5 shrink-0 text-card-muted" />
-        <p class="text-xs text-card-muted">
-          <span class="font-medium text-text">Note:</span> On first login, click
-          <span class="font-medium text-text">"Advanced"</span> →
-          <span class="font-medium text-text">"Proceed to Vocabulary Flashcards App"</span>
+      <div
+        class="bg-background/40 mt-3 flex items-start gap-2 rounded-xl border border-slate-600 p-3"
+      >
+        <AppIcon
+          icon-name="InfoCircle"
+          :size="14"
+          class="text-card-muted mt-0.5 shrink-0"
+        />
+        <p class="text-card-muted text-xs">
+          <span class="text-text font-medium">Note:</span> On first login, click
+          <span class="text-text font-medium">"Advanced"</span> →
+          <span class="text-text font-medium">"Proceed to Vocabulary Flashcards App"</span>
           if prompted by Google.
         </p>
       </div>
@@ -122,23 +131,27 @@ async function handleConnect() {
           v-else
           icon-name="ProfileCircle"
           :size="36"
-          class="shrink-0 text-card-muted"
+          class="text-card-muted shrink-0"
         />
         <div class="min-w-0 flex-1">
-          <p class="truncate text-xs font-medium text-text">
+          <p class="text-text truncate text-xs font-medium">
             {{ syncStore.profile?.name ?? syncStore.profile?.email ?? 'Connected' }}
           </p>
           <p
             v-if="syncStore.profile?.name && syncStore.profile?.email"
-            class="truncate text-xs text-card-muted"
+            class="text-card-muted truncate text-xs"
           >
             {{ syncStore.profile.email }}
           </p>
         </div>
-        <AppIcon icon-name="CloudConnection" :size="20" class="shrink-0 text-primary" />
+        <AppIcon
+          icon-name="CloudConnection"
+          :size="20"
+          class="text-primary shrink-0"
+        />
       </div>
 
-      <p class="mb-3 flex items-center gap-2 text-xs text-card-muted">
+      <p class="text-card-muted mb-3 flex items-center gap-2 text-xs">
         <AppIcon
           v-if="!syncStore.isSyncing && lastSyncedLabel"
           icon-name="TickCircle"
@@ -150,7 +163,7 @@ async function handleConnect() {
         <template v-else>Not synced yet.</template>
         <span
           v-if="showConnectedConfirmation"
-          class="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-background"
+          class="bg-primary text-background inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
         >
           ✓ Connected
         </span>
@@ -177,32 +190,38 @@ async function handleConnect() {
           danger
           @click="isConfirmingDisconnect = true"
         >
-          <AppIcon icon-name="Logout" :size="14" />
+          <AppIcon
+            icon-name="Logout"
+            :size="14"
+          />
           Disconnect
         </BaseButton>
       </div>
 
       <p
         v-if="syncStore.isOffline"
-        class="mt-3 flex items-center gap-1.5 text-xs font-medium text-card-muted"
+        class="text-card-muted mt-3 flex items-center gap-1.5 text-xs font-medium"
       >
         <AppIcon
           icon-name="CloudCross"
           :size="14"
         />
-        You're offline — changes are saved locally and will sync automatically once you're back
+        You're offline, changes are saved locally and will sync automatically once you're back
         online.
       </p>
 
-      <div class="mt-4 rounded-xl border border-dashed border-danger/30 p-3">
-        <p class="mb-2 flex items-center gap-1.5 text-xs font-medium text-danger">
-          <AppIcon icon-name="Danger" :size="14" />
+      <div class="border-danger/30 mt-4 rounded-xl border border-dashed p-3">
+        <p class="text-danger mb-2 flex items-center gap-1.5 text-xs font-medium">
+          <AppIcon
+            icon-name="Danger"
+            :size="14"
+          />
           Testing Only
         </p>
-        <p class="mb-3 text-xs text-card-muted">
-          Permanently deletes the synced backup file from Google Drive. This device's local data
-          and connection are untouched, but every device sharing this account loses the backup
-          until the next sync recreates it.
+        <p class="text-card-muted mb-3 text-xs">
+          Permanently deletes the synced backup file from Google Drive. This device's local data and
+          connection are untouched, but every device sharing this account loses the backup until the
+          next sync recreates it.
         </p>
         <BaseButton
           variant="ghost"
@@ -212,7 +231,11 @@ async function handleConnect() {
           :disabled="syncStore.isOffline"
           @click="isConfirmingDeleteCloudData = true"
         >
-          <AppIcon v-if="!syncStore.isDeletingCloudData" icon-name="Trash" :size="14" />
+          <AppIcon
+            v-if="!syncStore.isDeletingCloudData"
+            icon-name="Trash"
+            :size="14"
+          />
           Delete Cloud Sync Data
         </BaseButton>
       </div>
@@ -220,14 +243,14 @@ async function handleConnect() {
 
     <div
       v-if="syncStore.needsReauth"
-      class="mt-3 flex items-center justify-between gap-3 rounded-xl border border-slate-600 bg-background/40 p-3"
+      class="bg-background/40 mt-3 flex items-center justify-between gap-3 rounded-xl border border-slate-600 p-3"
     >
-      <p class="flex items-center gap-1.5 text-xs font-medium text-text">
+      <p class="text-text flex items-center gap-1.5 text-xs font-medium">
         <AppIcon
           icon-name="CloudCross"
           :size="14"
         />
-        Sign-in expired — reconnect to keep syncing.
+        Sign-in expired, reconnect to keep syncing.
       </p>
       <BaseButton
         variant="ghost"
@@ -240,11 +263,14 @@ async function handleConnect() {
     </div>
     <div
       v-else-if="syncStore.needsRefresh"
-      class="mt-3 flex items-center justify-between gap-3 rounded-xl border border-slate-600 bg-background/40 p-3"
+      class="bg-background/40 mt-3 flex items-center justify-between gap-3 rounded-xl border border-slate-600 p-3"
     >
-      <p class="flex items-center gap-1.5 text-xs font-medium text-card-muted">
-        <AppIcon icon-name="Refresh" :size="14" />
-        Sync paused — resume it whenever you're ready.
+      <p class="text-card-muted flex items-center gap-1.5 text-xs font-medium">
+        <AppIcon
+          icon-name="Refresh"
+          :size="14"
+        />
+        Sync paused, resume it whenever you're ready.
       </p>
       <BaseButton
         variant="ghost"
@@ -258,7 +284,7 @@ async function handleConnect() {
     </div>
     <p
       v-else-if="syncStore.lastError"
-      class="mt-3 flex items-center gap-1.5 text-xs font-medium text-danger"
+      class="text-danger mt-3 flex items-center gap-1.5 text-xs font-medium"
     >
       <AppIcon
         icon-name="Danger"
@@ -269,11 +295,11 @@ async function handleConnect() {
 
     <div
       v-if="isConfirmingDisconnect"
-      class="mt-4 rounded-lg border border-danger/30 bg-danger/5 p-3"
+      class="border-danger/30 bg-danger/5 mt-4 rounded-lg border p-3"
     >
-      <p class="mb-3 text-xs text-card-muted">
-        Disconnect this device from Google Drive? Your data stays on this device and in Drive —
-        only automatic syncing stops.
+      <p class="text-card-muted mb-3 text-xs">
+        Disconnect this device from Google Drive? Your data stays on this device and in Drive, only
+        automatic syncing stops.
       </p>
       <div class="flex gap-2">
         <BaseButton

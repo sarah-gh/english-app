@@ -1,7 +1,7 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import type { ConcreteAiProvider } from '@/types/settings';
 
-/** Which backend a request targets — used to attribute/format errors consistently. */
+/** Which backend a request targets, used to attribute/format errors consistently. */
 export type ApiProvider = ConcreteAiProvider | 'dictionary' | 'datamuse';
 
 declare module 'axios' {
@@ -23,7 +23,7 @@ declare module 'axios' {
 export class ApiError extends Error {
   provider?: ApiProvider;
   status?: number;
-  /** True for failures worth retrying — network errors, 429, 5xx. False for 4xx client errors
+  /** True for failures worth retrying, network errors, 429, 5xx. False for 4xx client errors
    *  (bad key, bad request) that would fail identically on a retry. */
   retryable: boolean;
 
@@ -83,7 +83,7 @@ apiClient.interceptors.response.use(
 
     if (status === 400 || status === 401 || status === 403) {
       return Promise.reject(
-        new ApiError(`${label} rejected the request — check that your API key is valid.`, {
+        new ApiError(`${label} rejected the request, check that your API key is valid.`, {
           provider,
           status,
           retryable: false,

@@ -16,7 +16,7 @@ const wordFamilyDataSchema = z.object({
 });
 
 /**
- * Validates only the subset of CardFormState that has real save-blocking constraints — the rest
+ * Validates only the subset of CardFormState that has real save-blocking constraints, the rest
  * of the form (tags, examples, quiz questions, pronunciation, image) stays optional by design.
  */
 export const cardEditorSchema = z

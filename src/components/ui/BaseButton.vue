@@ -75,9 +75,11 @@ const sizeClasses = computed(() => {
   return props.size === 'sm' ? 'px-3 py-1.5 text-xs' : 'px-4 py-2.5 text-sm';
 });
 
-/** "link" stays flat — a shadow/press-scale on underlined text doesn't read as a button. */
+/** "link" stays flat, a shadow/press-scale on underlined text doesn't read as a button. */
 const tactileClasses = computed(() =>
-  props.variant === 'link' ? '' : 'shadow-sm hover:shadow active:scale-[0.98] disabled:shadow-none disabled:active:scale-100',
+  props.variant === 'link'
+    ? ''
+    : 'shadow-sm hover:shadow active:scale-[0.98] disabled:shadow-none disabled:active:scale-100',
 );
 </script>
 

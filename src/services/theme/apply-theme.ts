@@ -8,7 +8,7 @@ const VALID_MODES: ThemeMode[] = ['light', 'dark', 'system'];
  *  choose a theme in Settings. */
 const DEFAULT_THEME_MODE: ThemeMode = 'dark';
 
-/** Reads the persisted preference straight from localStorage — synchronous and available before
+/** Reads the persisted preference straight from localStorage, synchronous and available before
  *  Vue/Pinia boot, so the very first paint can already be in the right theme. */
 export function readStoredThemeMode(): ThemeMode {
   try {

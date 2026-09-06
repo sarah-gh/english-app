@@ -8,7 +8,10 @@ import QuizCardSelectionList from '@/components/quiz-setup/QuizCardSelectionList
 import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseInput from '@/components/ui/BaseInput.vue';
 import BaseSegmentedToggle from '@/components/ui/BaseSegmentedToggle.vue';
-import { useGenerateDescriptiveQuiz, useGenerateMultipleChoiceQuiz } from '@/queries/use-generate-ai-quiz';
+import {
+  useGenerateDescriptiveQuiz,
+  useGenerateMultipleChoiceQuiz,
+} from '@/queries/use-generate-ai-quiz';
 import { hasRequiredAiCredentials } from '@/services/ai/ai-quiz-service';
 import { AiServiceError } from '@/services/ai/errors';
 import { useCardStore } from '@/stores/card-store';
@@ -18,7 +21,12 @@ import { useSettingsStore } from '@/stores/settings-store';
 import { useTagStore } from '@/stores/tag-store';
 import { useTopicStore } from '@/stores/topic-store';
 import type { QuizMode } from '@/types/ai-quiz-result';
-import type { DifficultyFilter, PosFilter, SortOption, StudyStatusFilter } from '@/types/card-filters';
+import type {
+  DifficultyFilter,
+  PosFilter,
+  SortOption,
+  StudyStatusFilter,
+} from '@/types/card-filters';
 import { stripHtmlToText } from '@/utils/html';
 
 const router = useRouter();
@@ -56,7 +64,7 @@ const isGenerating = computed(() =>
 const generationApiError = computed(() =>
   quizMode.value === 'multiple-choice' ? mcMutation.error.value : descMutation.error.value,
 );
-/** Distinct from `generationApiError`: not an API failure, but a mapping failure — the provider
+/** Distinct from `generationApiError`: not an API failure, but a mapping failure, the provider
  *  responded successfully but its questions couldn't be matched back to the selected cards. */
 const mappingError = ref('');
 
@@ -64,7 +72,9 @@ const generationError = computed(() => {
   if (mappingError.value) return mappingError.value;
   const error = generationApiError.value;
   if (!error) return '';
-  return error instanceof AiServiceError ? error.message : 'Quiz generation failed. Please try again.';
+  return error instanceof AiServiceError
+    ? error.message
+    : 'Quiz generation failed. Please try again.';
 });
 
 onMounted(async () => {
@@ -99,9 +109,11 @@ const filteredCards = computed(() => {
     if (studyStatus.value === 'studied' && card.studyCount === 0) return false;
     if (studyStatus.value === 'unstudied' && card.studyCount > 0) return false;
     if (difficulty.value !== 'all' && card.reviewStatus !== difficulty.value) return false;
-    if (pos.value !== 'all' && !card.partsOfSpeech?.some((entry) => entry.pos === pos.value)) return false;
+    if (pos.value !== 'all' && !card.partsOfSpeech?.some((entry) => entry.pos === pos.value))
+      return false;
     if (query) {
-      const haystack = `${card.frontTitle} ${stripHtmlToText(card.backAnswer)} ${card.hint ?? ''}`.toLowerCase();
+      const haystack =
+        `${card.frontTitle} ${stripHtmlToText(card.backAnswer)} ${card.hint ?? ''}`.toLowerCase();
       if (!haystack.includes(query)) return false;
     }
     return true;
@@ -116,7 +128,9 @@ const sortedCards = computed(() => {
     case 'study-count':
       return list.sort((a, b) => b.studyCount - a.studyCount);
     case 'last-reviewed':
-      return list.sort((a, b) => (b.reviewStats.lastReviewedAt ?? 0) - (a.reviewStats.lastReviewedAt ?? 0));
+      return list.sort(
+        (a, b) => (b.reviewStats.lastReviewedAt ?? 0) - (a.reviewStats.lastReviewedAt ?? 0),
+      );
     case 'created-desc':
     default:
       return list.sort((a, b) => b.createdAt - a.createdAt);
@@ -145,15 +159,20 @@ const POS_LABELS: Record<Exclude<PosFilter, 'all'>, string> = {
 
 const activeChips = computed(() => {
   const chips: { key: string; label: string }[] = [];
-  if (searchQuery.value.trim()) chips.push({ key: 'search', label: `Search: "${searchQuery.value.trim()}"` });
-  if (selectedDeckId.value) chips.push({ key: 'deck', label: deckStore.getById(selectedDeckId.value)?.name ?? 'Deck' });
-  if (selectedTopicId.value) chips.push({ key: 'topic', label: topicStore.getById(selectedTopicId.value)?.name ?? 'Topic' });
+  if (searchQuery.value.trim())
+    chips.push({ key: 'search', label: `Search: "${searchQuery.value.trim()}"` });
+  if (selectedDeckId.value)
+    chips.push({ key: 'deck', label: deckStore.getById(selectedDeckId.value)?.name ?? 'Deck' });
+  if (selectedTopicId.value)
+    chips.push({ key: 'topic', label: topicStore.getById(selectedTopicId.value)?.name ?? 'Topic' });
   for (const id of selectedTagIds.value) {
     const tag = tagStore.getById(id);
     if (tag) chips.push({ key: `tag:${id}`, label: tag.name });
   }
-  if (studyStatus.value !== 'all') chips.push({ key: 'studyStatus', label: STUDY_STATUS_LABELS[studyStatus.value] });
-  if (difficulty.value !== 'all') chips.push({ key: 'difficulty', label: DIFFICULTY_LABELS[difficulty.value] });
+  if (studyStatus.value !== 'all')
+    chips.push({ key: 'studyStatus', label: STUDY_STATUS_LABELS[studyStatus.value] });
+  if (difficulty.value !== 'all')
+    chips.push({ key: 'difficulty', label: DIFFICULTY_LABELS[difficulty.value] });
   if (pos.value !== 'all') chips.push({ key: 'pos', label: POS_LABELS[pos.value] });
   return chips;
 });
@@ -164,7 +183,8 @@ function removeFilter(key: string) {
     selectedDeckId.value = '';
     selectedTopicId.value = '';
   } else if (key === 'topic') selectedTopicId.value = '';
-  else if (key.startsWith('tag:')) selectedTagIds.value = selectedTagIds.value.filter((id) => id !== key.slice(4));
+  else if (key.startsWith('tag:'))
+    selectedTagIds.value = selectedTagIds.value.filter((id) => id !== key.slice(4));
   else if (key === 'studyStatus') studyStatus.value = 'all';
   else if (key === 'difficulty') difficulty.value = 'all';
   else if (key === 'pos') pos.value = 'all';
@@ -211,7 +231,8 @@ async function handleGenerate() {
         .filter((question): question is QuizSessionQuestion => question !== null);
 
       if (questions.length === 0) {
-        mappingError.value = "The AI's response couldn't be matched back to your selected cards. Please try again.";
+        mappingError.value =
+          "The AI's response couldn't be matched back to your selected cards. Please try again.";
         return;
       }
 
@@ -237,7 +258,8 @@ async function handleGenerate() {
         .filter((question): question is QuizSessionQuestion => question !== null);
 
       if (questions.length === 0) {
-        mappingError.value = "The AI's response couldn't be matched back to your selected cards. Please try again.";
+        mappingError.value =
+          "The AI's response couldn't be matched back to your selected cards. Please try again.";
         return;
       }
 
@@ -252,52 +274,84 @@ async function handleGenerate() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-background px-4 py-6">
-    <RouterLink to="/" class="mb-4 inline-flex items-center gap-1 text-sm text-text/50 hover:text-primary">
-      <AppIcon icon-name="ArrowLeft" :size="14" />
+  <div class="bg-background min-h-screen px-4 py-6">
+    <RouterLink
+      to="/"
+      class="text-text/50 hover:text-primary mb-4 inline-flex items-center gap-1 text-sm"
+    >
+      <AppIcon
+        icon-name="ArrowLeft"
+        :size="14"
+      />
       Dashboard
     </RouterLink>
-    <h1 class="mb-6 font-serif text-3xl font-bold text-card-gold">AI Quiz Generator</h1>
+    <h1 class="text-card-gold mb-6 font-serif text-3xl font-bold">AI Quiz Generator</h1>
 
-    <p v-if="!isReady" class="text-sm text-text/50">
+    <p
+      v-if="!isReady"
+      class="text-text/50 text-sm"
+    >
       Loading…
     </p>
 
     <template v-else>
       <div
         v-if="!hasApiKey"
-        class="relative mb-6 rounded-2xl border border-primary/30 bg-card-definition px-6 py-5"
+        class="border-primary/30 bg-card-definition relative mb-6 rounded-2xl border px-6 py-5"
       >
-        <span class="pointer-events-none absolute top-3 left-3 h-4 w-4 rounded-tl border-t border-l border-primary/60" />
-        <span class="pointer-events-none absolute top-3 right-3 h-4 w-4 rounded-tr border-t border-r border-primary/60" />
-        <span class="pointer-events-none absolute bottom-3 left-3 h-4 w-4 rounded-bl border-b border-l border-primary/60" />
-        <span class="pointer-events-none absolute right-3 bottom-3 h-4 w-4 rounded-br border-r border-b border-primary/60" />
+        <span
+          class="border-primary/60 pointer-events-none absolute top-3 left-3 h-4 w-4 rounded-tl border-t border-l"
+        />
+        <span
+          class="border-primary/60 pointer-events-none absolute top-3 right-3 h-4 w-4 rounded-tr border-t border-r"
+        />
+        <span
+          class="border-primary/60 pointer-events-none absolute bottom-3 left-3 h-4 w-4 rounded-bl border-b border-l"
+        />
+        <span
+          class="border-primary/60 pointer-events-none absolute right-3 bottom-3 h-4 w-4 rounded-br border-r border-b"
+        />
 
-        <p class="mb-1 text-sm font-semibold text-text">An AI provider API key is required</p>
-        <p class="mb-3 text-xs text-card-muted">
+        <p class="text-text mb-1 text-sm font-semibold">An AI provider API key is required</p>
+        <p class="text-card-muted mb-3 text-xs">
           The AI Quiz Generator sends your selected cards to your configured AI provider (Gemini
           and/or AIHubMix) using your own key. Add one in Settings to continue.
         </p>
-        <BaseButton variant="primary" size="sm" class="rounded-full!" to="/settings">
-          <AppIcon icon-name="Setting2" :size="14" />
+        <BaseButton
+          variant="primary"
+          size="sm"
+          class="rounded-full!"
+          to="/settings"
+        >
+          <AppIcon
+            icon-name="Setting2"
+            :size="14"
+          />
           Go to Settings
         </BaseButton>
       </div>
 
       <div class="mb-4">
-        <p class="mb-1.5 font-serif text-sm font-bold text-card-gold">Quiz Mode</p>
-        <BaseSegmentedToggle v-model="quizMode" class="bg-card-definition" :options="QUIZ_MODE_OPTIONS" />
-        <p class="mt-1.5 text-xs text-card-muted">
+        <p class="text-card-gold mb-1.5 font-serif text-sm font-bold">Quiz Mode</p>
+        <BaseSegmentedToggle
+          v-model="quizMode"
+          class="bg-card-definition"
+          :options="QUIZ_MODE_OPTIONS"
+        />
+        <p class="text-card-muted mt-1.5 text-xs">
           {{
             quizMode === 'multiple-choice'
-              ? 'Instantly scored — pick from 4 options per question.'
-              : 'Type your own answers — an AI grades each one and gives feedback.'
+              ? 'Instantly scored, pick from 4 options per question.'
+              : 'Type your own answers, an AI grades each one and gives feedback.'
           }}
         </p>
       </div>
 
       <div class="mb-4 max-w-40">
-        <label for="question-count" class="mb-1.5 block font-serif text-sm font-bold text-card-gold">
+        <label
+          for="question-count"
+          class="text-card-gold mb-1.5 block font-serif text-sm font-bold"
+        >
           Questions
         </label>
         <input
@@ -306,7 +360,7 @@ async function handleGenerate() {
           min="1"
           max="30"
           :value="questionCount"
-          class="w-full rounded border border-text/20 bg-background px-3 py-2 text-sm text-text focus:border-primary focus:outline-none"
+          class="border-text/20 bg-background text-text focus:border-primary w-full rounded border px-3 py-2 text-sm focus:outline-none"
           @input="setQuestionCount(($event.target as HTMLInputElement).value)"
         />
       </div>
@@ -338,27 +392,41 @@ async function handleGenerate() {
         @clear-all="clearAllFilters"
       />
 
-      <p class="mb-3 text-xs text-card-muted">
+      <p class="text-card-muted mb-3 text-xs">
         {{ sortedCards.length }} card{{ sortedCards.length === 1 ? '' : 's' }} match these filters
       </p>
 
       <div class="mb-6">
-        <QuizCardSelectionList v-model="selectedCardIds" :cards="sortedCards" />
+        <QuizCardSelectionList
+          v-model="selectedCardIds"
+          :cards="sortedCards"
+        />
       </div>
 
       <BaseButton
         variant="ghost"
         block
-        class="relative rounded-full! border-primary/50! text-primary! hover:border-primary! hover:bg-primary/10!"
+        class="border-primary/50! text-primary! hover:border-primary! hover:bg-primary/10! relative rounded-full!"
         :disabled="!hasApiKey || selectedCount === 0"
         :loading="isGenerating"
         @click="handleGenerate"
       >
-        <AppIcon v-if="!isGenerating" icon-name="Flash" :size="16" />
-        {{ isGenerating ? 'Generating…' : `Generate Quiz (${selectedCount} card${selectedCount === 1 ? '' : 's'})` }}
+        <AppIcon
+          v-if="!isGenerating"
+          icon-name="Flash"
+          :size="16"
+        />
+        {{
+          isGenerating
+            ? 'Generating…'
+            : `Generate Quiz (${selectedCount} card${selectedCount === 1 ? '' : 's'})`
+        }}
       </BaseButton>
 
-      <p v-if="generationError" class="mt-3 flex items-center gap-1.5 text-xs font-medium text-danger">
+      <p
+        v-if="generationError"
+        class="text-danger mt-3 flex items-center gap-1.5 text-xs font-medium"
+      >
         <WarningIcon />
         {{ generationError }}
       </p>
