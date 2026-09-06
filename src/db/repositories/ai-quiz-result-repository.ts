@@ -1,5 +1,6 @@
 import { db } from '@/db';
 import type { AiQuizResult, NewAiQuizResult } from '@/types/ai-quiz-result';
+import { generateUUID } from '@/utils/uuid';
 
 export const aiQuizResultRepository = {
   /** Newest-first, for the Dashboard's AI Quiz History list. */
@@ -11,7 +12,7 @@ export const aiQuizResultRepository = {
     const timestamp = Date.now();
     const record: AiQuizResult = {
       ...result,
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       createdAt: timestamp,
       updatedAt: timestamp,
     };

@@ -5,6 +5,7 @@ import { tagRepository } from './repositories/tag-repository';
 import { topicRepository } from './repositories/topic-repository';
 import type { PartOfSpeechEntry } from '@/types/card';
 import { GENERAL_TOPIC_NAME } from '@/types/topic';
+import { generateUUID } from '@/utils/uuid';
 
 interface SeedCard {
   frontTitle: string;
@@ -193,7 +194,7 @@ export async function seedInitialDataIfNeeded(): Promise<void> {
         quizQuestions: [],
         partsOfSpeech: seedCard.partsOfSpeech?.map((entry) => ({
           ...entry,
-          id: crypto.randomUUID(),
+          id: generateUUID(),
         })),
       });
     }

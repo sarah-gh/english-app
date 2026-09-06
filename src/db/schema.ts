@@ -6,6 +6,7 @@ import type { Deck } from '@/types/deck';
 import type { AppSettings } from '@/types/settings';
 import type { Tag } from '@/types/tag';
 import type { Topic } from '@/types/topic';
+import { generateUUID } from '@/utils/uuid';
 
 export class AppDatabase extends Dexie {
   cards!: Table<Card, string>;
@@ -49,7 +50,7 @@ export class AppDatabase extends Dexie {
         const generalTopicIdByDeck = new Map<string, string>();
         for (const deck of decks) {
           const topic: Topic = {
-            id: crypto.randomUUID(),
+            id: generateUUID(),
             deckId: deck.id,
             name: 'General',
             createdAt: now,
@@ -245,7 +246,7 @@ export class AppDatabase extends Dexie {
         for (const deck of decks) {
           if (deck.isDeleted || generalTopicIdByDeck.has(deck.id)) continue;
           const topic: Topic = {
-            id: crypto.randomUUID(),
+            id: generateUUID(),
             deckId: deck.id,
             name: 'General',
             createdAt: now,

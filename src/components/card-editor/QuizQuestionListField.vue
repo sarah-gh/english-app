@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import type { QuizQuestion } from '@/types/card';
+import { generateUUID } from '@/utils/uuid';
 
 const quizQuestions = defineModel<QuizQuestion[]>('quizQuestions', { required: true });
 
 function addQuestion() {
   quizQuestions.value = [
     ...quizQuestions.value,
-    { id: crypto.randomUUID(), question: '', correctAnswer: '' },
+    { id: generateUUID(), question: '', correctAnswer: '' },
   ];
 }
 

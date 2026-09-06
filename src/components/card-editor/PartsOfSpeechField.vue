@@ -12,6 +12,7 @@ import AiFieldButton from './AiFieldButton.vue';
 import type { PosEntryFormState } from './card-form-state';
 import ExampleListField from './ExampleListField.vue';
 import type { PosType } from '@/types/card';
+import { generateUUID } from '@/utils/uuid';
 
 const props = defineProps<{
   /** For the "Word Form" placeholder, e.g. "Decision" for a "Decide" root word. */
@@ -40,7 +41,7 @@ async function handleGenerate() {
     const result = await requestPartsOfSpeech({ settings: settingsStore.settings, title });
     entries.value = result.map(
       (entry): PosEntryFormState => ({
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         pos: entry.pos,
         wordForm: entry.wordForm?.trim() || title,
         definition: entry.definition,
@@ -64,7 +65,7 @@ const POS_OPTIONS: { value: PosType; label: string }[] = [
 function addEntry() {
   entries.value = [
     ...entries.value,
-    { id: crypto.randomUUID(), pos: 'noun', wordForm: '', definition: '', ipa: '', examples: [] },
+    { id: generateUUID(), pos: 'noun', wordForm: '', definition: '', ipa: '', examples: [] },
   ];
 }
 

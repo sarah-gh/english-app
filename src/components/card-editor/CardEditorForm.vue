@@ -28,6 +28,7 @@ import DeckSelectField from './DeckSelectField.vue';
 import ExampleListField from './ExampleListField.vue';
 import ImageUploadField from './ImageUploadField.vue';
 import PartsOfSpeechField from './PartsOfSpeechField.vue';
+import { generateUUID } from '@/utils/uuid';
 import PronunciationField from './PronunciationField.vue';
 import QuizQuestionListField from './QuizQuestionListField.vue';
 import TagMultiSelectField from './TagMultiSelectField.vue';
@@ -258,7 +259,7 @@ async function applyAutofillResult(result: GeneratedCardDetails): Promise<void> 
   if (result.partsOfSpeech && result.partsOfSpeech.length > 0) {
     const rootWord = draft.value.frontTitle.trim();
     draft.value.partsOfSpeech = result.partsOfSpeech.map((entry): PosEntryFormState => ({
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       pos: entry.pos,
       wordForm: entry.wordForm?.trim() || rootWord,
       definition: entry.definition,

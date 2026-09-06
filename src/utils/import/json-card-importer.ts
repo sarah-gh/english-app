@@ -25,7 +25,7 @@ export interface ParsedImportCard {
   synonyms: string[];
   antonyms: string[];
   tagNames: string[];
-  /** Ids are assigned at creation time (`crypto.randomUUID()`), same as `seedInitialDataIfNeeded()`. */
+  /** Ids are assigned at creation time (`generateUUID()`), same as `seedInitialDataIfNeeded()`. */
   partsOfSpeech?: Omit<PartOfSpeechEntry, 'id'>[];
   wordFamily?: WordFamilyData;
 }

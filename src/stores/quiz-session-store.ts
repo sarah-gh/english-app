@@ -7,6 +7,7 @@ import { useCardStore } from '@/stores/card-store';
 import { useSettingsStore } from '@/stores/settings-store';
 import type { AiQuizResultQuestionDetail, QuizMode } from '@/types/ai-quiz-result';
 import type { QuizQuestion } from '@/types/card';
+import { generateUUID } from '@/utils/uuid';
 
 export interface QuizSessionQuestion {
   id: string;
@@ -203,7 +204,7 @@ export const useQuizSessionStore = defineStore('quiz-session', () => {
     const rawCard = toRaw(card);
     const rawQuestion = toRaw(question);
     const newQuizQuestion: QuizQuestion = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       question: rawQuestion.question,
       options: rawQuestion.options,
       correctAnswer: rawQuestion.options![rawQuestion.correctOptionIndex!],

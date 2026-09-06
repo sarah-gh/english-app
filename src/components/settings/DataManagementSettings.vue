@@ -22,6 +22,7 @@ import {
   parseJsonCardImport,
   type JsonImportValidationResult,
 } from '@/utils/import/json-card-importer';
+import { generateUUID } from '@/utils/uuid';
 
 const settingsStore = useSettingsStore();
 const cardStore = useCardStore();
@@ -232,7 +233,7 @@ async function confirmJsonImport() {
         synonyms: card.synonyms,
         antonyms: card.antonyms,
         quizQuestions: [],
-        partsOfSpeech: card.partsOfSpeech?.map((entry) => ({ ...entry, id: crypto.randomUUID() })),
+        partsOfSpeech: card.partsOfSpeech?.map((entry) => ({ ...entry, id: generateUUID() })),
         wordFamily: card.wordFamily,
       });
     }

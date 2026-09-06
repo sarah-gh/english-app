@@ -1,6 +1,7 @@
 import { db } from '@/db';
 import { tombstonedTable } from '@/db/repositories/tombstoned-table';
 import type { Deck, DeckUpdate, NewDeck } from '@/types/deck';
+import { generateUUID } from '@/utils/uuid';
 
 /** See `tombstoned-table.ts`, one shared implementation of the "deleted rows stay, and only
  *  Cloud Sync sees them" rule, in place of a per-repository `excludeDeleted` copy. */
@@ -21,7 +22,7 @@ export const deckRepository = {
     const timestamp = Date.now();
     const record: Deck = {
       ...deck,
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       createdAt: timestamp,
       updatedAt: timestamp,
       isDeleted: false,

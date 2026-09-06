@@ -7,6 +7,7 @@ import {
   type NewCard,
   type ReviewStatus,
 } from '@/types/card';
+import { generateUUID } from '@/utils/uuid';
 
 /** Cloud Sync needs tombstones (`isDeleted: true` rows) to replicate deletions to other devices,
  *  every other reader wants live rows only. `tombstones.live` is the one filter every normal read
@@ -53,7 +54,7 @@ export const cardRepository = {
     const timestamp = Date.now();
     const record: Card = {
       ...card,
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       reviewStatus: 'new',
       reviewStats: { ...DEFAULT_REVIEW_STATS },
       studyCount: 0,
@@ -70,7 +71,7 @@ export const cardRepository = {
     const timestamp = Date.now();
     const records: Card[] = newCards.map((card) => ({
       ...card,
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       reviewStatus: 'new',
       reviewStats: { ...DEFAULT_REVIEW_STATS },
       studyCount: 0,

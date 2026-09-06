@@ -28,6 +28,7 @@ import type {
   StudyStatusFilter,
 } from '@/types/card-filters';
 import { stripHtmlToText } from '@/utils/html';
+import { generateUUID } from '@/utils/uuid';
 
 const router = useRouter();
 const cardStore = useCardStore();
@@ -220,7 +221,7 @@ async function handleGenerate() {
           const sourceCard = selectedCards[question.sourceIndex - 1];
           if (!sourceCard) return null;
           return {
-            id: crypto.randomUUID(),
+            id: generateUUID(),
             cardId: sourceCard.id,
             cardTitle: sourceCard.frontTitle,
             question: question.question,
@@ -249,7 +250,7 @@ async function handleGenerate() {
           const sourceCard = selectedCards[question.sourceIndex - 1];
           if (!sourceCard) return null;
           return {
-            id: crypto.randomUUID(),
+            id: generateUUID(),
             cardId: sourceCard.id,
             cardTitle: sourceCard.frontTitle,
             question: question.question,

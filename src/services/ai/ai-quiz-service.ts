@@ -88,6 +88,25 @@ async function runQuizRequest<T>(
  *  there than lexical variety. */
 const QUIZ_GENERATION_TEMPERATURE = 0.7;
 
+/** Reshuffles one question's options so the correct answer's position is uniformly random,
+ *  regardless of where the AI placed it. Models tend to default the correct option to the same
+ *  slot (usually first) even when told to vary it, so the prompt instruction alone can't
+ *  guarantee an even distribution, this makes it certain. */
+function shuffleQuestionOptions(
+  question: GeneratedMultipleChoiceQuestion,
+): GeneratedMultipleChoiceQuestion {
+  const indices = question.options.map((_, index) => index);
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+  return {
+    ...question,
+    options: indices.map((originalIndex) => question.options[originalIndex]),
+    correctOptionIndex: indices.indexOf(question.correctOptionIndex),
+  };
+}
+
 /** Generates a 4-option multiple-choice quiz grounded in the given flashcards, using the
  *  provider(s) configured in Settings, see `withProviderFallback` for the fallback semantics. */
 export async function generateMultipleChoiceQuiz(
@@ -96,7 +115,7 @@ export async function generateMultipleChoiceQuiz(
   questionCount: number,
 ): Promise<GeneratedMultipleChoiceQuestion[]> {
   const prompt = buildMultipleChoiceQuizPrompt(cards, questionCount, settings.proficiencyLevel);
-  return runQuizRequest(
+  const questions = await runQuizRequest(
     settings,
     prompt,
     MULTIPLE_CHOICE_QUIZ_RESPONSE_SCHEMA,
@@ -104,6 +123,7 @@ export async function generateMultipleChoiceQuiz(
     parseMultipleChoiceQuizResponseText,
     QUIZ_GENERATION_TEMPERATURE,
   );
+  return questions.map(shuffleQuestionOptions);
 }
 
 /** Generates an open-ended/descriptive quiz grounded in the given flashcards, answers are typed

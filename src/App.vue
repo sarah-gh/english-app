@@ -39,7 +39,7 @@ onMounted(() => syncStore.initOnStartup());
       </transition>
     </RouterView>
     <InstallPrompt />
-    <BottomNav v-if="showBottomNav" />
+    <BottomNav v-show="showBottomNav" />
   </div>
 </template>
 
