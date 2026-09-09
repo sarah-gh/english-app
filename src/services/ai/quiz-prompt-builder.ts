@@ -2,12 +2,25 @@ import type { Card } from '@/types/card';
 import type { ProficiencyLevel } from '@/types/settings';
 import { stripHtmlToText } from '@/utils/html';
 
-/** Appended to a quiz prompt so generated content matches the learner's self-assessed CEFR level
- *  instead of defaulting to whatever difficulty the model picks on its own. Omitted entirely (via
- *  an empty string) when the user hasn't set a level, preserving prior behavior. */
+/** Per-CEFR-band calibration rules, shared by every quiz prompt so difficulty is enforced
+ *  consistently across generation and grading rather than left to the model's own judgment. */
+function cefrBandGuidance(proficiencyLevel: ProficiencyLevel): string {
+  if (proficiencyLevel === 'A1' || proficiencyLevel === 'A2') {
+    return 'use simple sentence structures, high-frequency everyday vocabulary, and straightforward context sentences; wrong options should be clearly distinguishable rather than subtle near-misses';
+  }
+  if (proficiencyLevel === 'B1' || proficiencyLevel === 'B2') {
+    return 'use moderately complex sentences, contextual nuance, and common idioms/phrasal verbs where natural; wrong options should be plausible distractors that test accurate usage, not obviously wrong choices';
+  }
+  return 'use sophisticated, native-like language with complex syntax and subtle distinctions in register and collocation; wrong options should be advanced distractors that test precise semantic differences, not surface-level errors';
+}
+
+/** Appended to a quiz prompt so generated content strictly matches the learner's configured
+ *  target CEFR level instead of defaulting to whatever difficulty the model picks on its own.
+ *  Omitted entirely (via an empty string) when the user hasn't set a level, preserving prior
+ *  behavior. */
 function proficiencyInstruction(proficiencyLevel: ProficiencyLevel | null): string {
   if (!proficiencyLevel) return '';
-  return ` The learner's self-assessed CEFR English level is ${proficiencyLevel}, use vocabulary, sentence complexity, and question difficulty appropriate for that level.`;
+  return ` STRICT DIFFICULTY REQUIREMENT: the learner's target CEFR English level is ${proficiencyLevel}. Calibrate question complexity, distractors, and context sentences precisely to this level: ${cefrBandGuidance(proficiencyLevel)}. Do not generate content that is easier or harder than ${proficiencyLevel} warrants.`;
 }
 
 function summarizeCards(cards: Card[]): string {
@@ -48,9 +61,11 @@ export function buildMultipleChoiceQuizPrompt(
 
 Generate exactly ${questionCount} multiple-choice questions that test whether the learner can correctly APPLY each flashcard's term, not just recognize its definition. For every question, invent a brand-new sentence, scenario, or fill-in-the-blank context that does not appear on the card (do not reuse or lightly reword the card's own Explanation/Answer text or its Examples as the question stem). Distribute the questions across the flashcards provided, favoring cards not yet covered before repeating one. Set "sourceIndex" to the flashcard's number (1-based) shown below that a question was drawn from.
 
-Vary the question type across the batch instead of always asking "what does X mean?", mix in formats such as: a fill-in-the-blank sentence where the learner picks the word/form that correctly completes it, a question about which grammatical form is correct in context (using the Parts of speech info when available), and a short scenario where the learner picks which option best fits the situation. Each question must have exactly 4 options in "options", with "correctOptionIndex" as the 0-based index of the correct one. Make the 3 incorrect options plausible distractors, confusable or related terms, common learner mistakes, or near-miss grammatical forms, rather than obviously wrong choices. Ground every question only in the flashcard content provided (do not invent unrelated facts or meanings), but express that content through new wording of your own.
+Vary the question type across the batch instead of always asking "what does X mean?", mix in formats such as: a fill-in-the-blank sentence where the learner picks the word/form that correctly completes it, a question about which grammatical form is correct in context (using the Parts of speech info when available), and a short scenario where the learner picks which option best fits the situation. Each question must have EXACTLY 4 options in "options", with "correctOptionIndex" as the 0-based index of the correct one. Make the 3 incorrect options plausible distractors, confusable or related terms, common learner mistakes, or near-miss grammatical forms, rather than obviously wrong choices. Ground every question only in the flashcard content provided (do not invent unrelated facts or meanings), but express that content through new wording of your own.
 
-Randomize where the correct answer falls in "options" independently for each question, do not default to placing it first. Across the ${questionCount} questions, spread "correctOptionIndex" roughly evenly over 0, 1, 2, and 3 rather than clustering it on one value.${proficiencyInstruction(proficiencyLevel)}
+STRICT OPTIONS REQUIREMENT: every question's "options" array must contain exactly 4 entries, and all 4 must be completely distinct strings from one another, character-for-character. Never repeat an option, never output two options that are identical or near-identical restatements of the same word/phrase, and never return fewer than 4 options. Each of the 4 options must represent a genuinely different answer choice.
+
+The correct option MUST be randomly placed among the 4 choices (A, B, C, D / indices 0-3) for every question, independently each time, do not default to placing it first. Across the ${questionCount} questions, spread "correctOptionIndex" roughly evenly over 0, 1, 2, and 3 rather than clustering it on one value.${proficiencyInstruction(proficiencyLevel)}
 
 Flashcards:
 ${summarizeCards(cards)}`;

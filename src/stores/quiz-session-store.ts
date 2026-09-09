@@ -29,7 +29,11 @@ interface DescriptiveEvaluation {
 export const useQuizSessionStore = defineStore('quiz-session', () => {
   const mode = ref<QuizMode>('multiple-choice');
   const questions = ref<QuizSessionQuestion[]>([]);
+  /** Open-ended (descriptive) free-text answers, keyed by question id. */
   const answers = ref<Record<string, string>>({});
+  /** Multiple-choice selections, keyed by question id, storing the chosen option's index rather
+   *  than its text so two options with identical/duplicate text never select each other. */
+  const selectedOptionIndex = ref<Record<string, number>>({});
   const isSubmitted = ref(false);
   const isGrading = ref(false);
   const gradingError = ref('');
@@ -39,8 +43,7 @@ export const useQuizSessionStore = defineStore('quiz-session', () => {
 
   function isCorrect(question: QuizSessionQuestion): boolean {
     if (!question.options || question.correctOptionIndex === undefined) return false;
-    const given = answers.value[question.id];
-    return given !== undefined && given === question.options[question.correctOptionIndex];
+    return selectedOptionIndex.value[question.id] === question.correctOptionIndex;
   }
 
   /** For open-ended questions only, once graded. */
@@ -69,6 +72,7 @@ export const useQuizSessionStore = defineStore('quiz-session', () => {
     mode.value = newMode;
     questions.value = newQuestions;
     answers.value = {};
+    selectedOptionIndex.value = {};
     isSubmitted.value = false;
     isGrading.value = false;
     gradingError.value = '';
@@ -81,6 +85,10 @@ export const useQuizSessionStore = defineStore('quiz-session', () => {
     answers.value[questionId] = value;
   }
 
+  function setSelectedOption(questionId: string, optionIndex: number): void {
+    selectedOptionIndex.value[questionId] = optionIndex;
+  }
+
   /**
    * `question` and its `evaluationFor` result are reactive Proxies (read from this store's
    * `questions`/`evaluations` refs), their nested arrays (`options`) must be unwrapped with
@@ -89,8 +97,10 @@ export const useQuizSessionStore = defineStore('quiz-session', () => {
    */
   function buildQuestionDetail(question: QuizSessionQuestion): AiQuizResultQuestionDetail {
     const rawQuestion = toRaw(question);
-    const userAnswer = answers.value[question.id] ?? '';
     if (mode.value === 'multiple-choice') {
+      const chosenIndex = selectedOptionIndex.value[question.id];
+      const userAnswer =
+        chosenIndex !== undefined ? (rawQuestion.options?.[chosenIndex] ?? '') : '';
       return {
         question: rawQuestion.question,
         cardTitle: rawQuestion.cardTitle,
@@ -107,7 +117,7 @@ export const useQuizSessionStore = defineStore('quiz-session', () => {
     return {
       question: rawQuestion.question,
       cardTitle: rawQuestion.cardTitle,
-      userAnswer,
+      userAnswer: answers.value[question.id] ?? '',
       score: evaluation?.score,
       feedback: evaluation?.feedback,
       sampleAnswer: evaluation?.sampleAnswer,
@@ -220,6 +230,7 @@ export const useQuizSessionStore = defineStore('quiz-session', () => {
     mode,
     questions,
     answers,
+    selectedOptionIndex,
     isSubmitted,
     isGrading,
     gradingError,
@@ -230,6 +241,7 @@ export const useQuizSessionStore = defineStore('quiz-session', () => {
     evaluationFor,
     setQuestions,
     setAnswer,
+    setSelectedOption,
     submitMultipleChoice,
     submitDescriptive,
     saveQuestionToCard,

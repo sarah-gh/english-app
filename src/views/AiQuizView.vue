@@ -13,7 +13,11 @@ const quizSessionStore = useQuizSessionStore();
 const hasQuestions = computed(() => quizSessionStore.questions.length > 0);
 const isMultipleChoice = computed(() => quizSessionStore.mode === 'multiple-choice');
 const allAnswered = computed(() =>
-  quizSessionStore.questions.every((question) => (quizSessionStore.answers[question.id] ?? '').trim().length > 0),
+  quizSessionStore.questions.every((question) =>
+    isMultipleChoice.value
+      ? quizSessionStore.selectedOptionIndex[question.id] !== undefined
+      : (quizSessionStore.answers[question.id] ?? '').trim().length > 0,
+  ),
 );
 const averagePercent = computed(() =>
   quizSessionStore.total > 0 ? Math.round((quizSessionStore.score / quizSessionStore.total) * 100) : 0,
@@ -28,6 +32,10 @@ function gradeLabel(score: number): string {
 
 function setAnswer(questionId: string, value: string) {
   quizSessionStore.setAnswer(questionId, value);
+}
+
+function setSelectedOption(questionId: string, optionIndex: number) {
+  quizSessionStore.setSelectedOption(questionId, optionIndex);
 }
 
 function handleSubmit() {
@@ -109,9 +117,9 @@ v-else-if="quizSessionStore.isSubmitted && quizSessionStore.evaluationFor(questi
 
           <div v-if="isMultipleChoice && question.options" class="space-y-2">
             <label
-v-for="(option, optionIndex) in question.options" :key="option"
+v-for="(option, optionIndex) in question.options" :key="optionIndex"
               class="flex cursor-pointer items-center gap-2 rounded border px-3 py-2 text-sm" :class="[
-                quizSessionStore.answers[question.id] === option
+                quizSessionStore.selectedOptionIndex[question.id] === optionIndex
                   ? 'border-primary bg-primary/5'
                   : 'border-text/20',
                 quizSessionStore.isSubmitted && optionIndex === question.correctOptionIndex
@@ -119,9 +127,9 @@ v-for="(option, optionIndex) in question.options" :key="option"
                   : '',
               ]">
               <input
-type="radio" class="accent-primary" :name="question.id" :value="option"
-                :checked="quizSessionStore.answers[question.id] === option" :disabled="quizSessionStore.isSubmitted"
-                @change="setAnswer(question.id, option)" />
+type="radio" class="accent-primary" :name="question.id" :value="optionIndex"
+                :checked="quizSessionStore.selectedOptionIndex[question.id] === optionIndex" :disabled="quizSessionStore.isSubmitted"
+                @change="setSelectedOption(question.id, optionIndex)" />
               {{ option }}
             </label>
           </div>

@@ -1,7 +1,7 @@
 import type { Card } from '@/types/card';
 import type { AppSettings } from '@/types/settings';
 import { callAihubmixStructured } from './aihubmix-client';
-import { AiProviderError } from './errors';
+import { AiProviderError, AiServiceError } from './errors';
 import { callGoogleStructured } from './google-client';
 import { callOpenAiCompatibleStructured } from './openai-compatible-client';
 import {
@@ -88,6 +88,16 @@ async function runQuizRequest<T>(
  *  there than lexical variety. */
 const QUIZ_GENERATION_TEMPERATURE = 0.7;
 
+/** Guards against a provider occasionally returning a duplicated distractor despite the prompt's
+ *  instructions, e.g. two identical option strings. Options are compared trimmed/case-normalized,
+ *  a question that doesn't come out to 4 distinct options after that is discarded entirely rather
+ *  than shown, duplicate option text breaks radio-button selection in the UI (selecting one
+ *  duplicate would visually select both). */
+function hasFourUniqueOptions(question: GeneratedMultipleChoiceQuestion): boolean {
+  const normalized = new Set(question.options.map((option) => option.trim().toLowerCase()));
+  return normalized.size === 4;
+}
+
 /** Reshuffles one question's options so the correct answer's position is uniformly random,
  *  regardless of where the AI placed it. Models tend to default the correct option to the same
  *  slot (usually first) even when told to vary it, so the prompt instruction alone can't
@@ -123,7 +133,13 @@ export async function generateMultipleChoiceQuiz(
     parseMultipleChoiceQuizResponseText,
     QUIZ_GENERATION_TEMPERATURE,
   );
-  return questions.map(shuffleQuestionOptions);
+  const usableQuestions = questions.filter(hasFourUniqueOptions);
+  if (usableQuestions.length === 0) {
+    throw new AiServiceError(
+      'The AI provider returned quiz questions with duplicate answer options. Please try again.',
+    );
+  }
+  return usableQuestions.map(shuffleQuestionOptions);
 }
 
 /** Generates an open-ended/descriptive quiz grounded in the given flashcards, answers are typed

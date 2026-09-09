@@ -36,7 +36,7 @@ export const MULTIPLE_CHOICE_QUIZ_RESPONSE_SCHEMA = {
 export const MULTIPLE_CHOICE_QUIZ_JSON_SHAPE_HINT = `
 
 Respond with ONLY a JSON object of this exact shape, no other text:
-{"questions": [{"sourceIndex": number, "question": string, "options": string[] (exactly 4 entries), "correctOptionIndex": number (0-based index into "options")}]}`;
+{"questions": [{"sourceIndex": number, "question": string, "options": string[] (exactly 4 entries, all 4 mutually distinct, no duplicates), "correctOptionIndex": number (0-based index into "options")}]}`;
 
 function isGeneratedMultipleChoiceQuestion(
   value: unknown,

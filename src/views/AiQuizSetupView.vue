@@ -91,9 +91,25 @@ onMounted(async () => {
 
 const hasApiKey = computed(() => hasRequiredAiCredentials(settingsStore.settings));
 
+const MIN_QUESTIONS = 1;
+const MAX_QUESTIONS = 30;
+
+const canDecrementQuestions = computed(() => questionCount.value > MIN_QUESTIONS);
+const canIncrementQuestions = computed(() => questionCount.value < MAX_QUESTIONS);
+
+function decrementQuestionCount() {
+  if (canDecrementQuestions.value) questionCount.value -= 1;
+}
+
+function incrementQuestionCount() {
+  if (canIncrementQuestions.value) questionCount.value += 1;
+}
+
 function setQuestionCount(rawValue: string) {
   const parsed = Math.round(Number(rawValue));
-  questionCount.value = Number.isFinite(parsed) ? Math.min(30, Math.max(1, parsed)) : 1;
+  questionCount.value = Number.isFinite(parsed)
+    ? Math.min(MAX_QUESTIONS, Math.max(MIN_QUESTIONS, parsed))
+    : MIN_QUESTIONS;
 }
 
 const filteredCards = computed(() => {
@@ -348,22 +364,51 @@ async function handleGenerate() {
         </p>
       </div>
 
-      <div class="mb-4 max-w-40">
+      <div class="mb-4 w-full">
         <label
           for="question-count"
           class="text-card-gold mb-1.5 block font-serif text-sm font-bold"
         >
           Questions
         </label>
-        <input
-          id="question-count"
-          type="number"
-          min="1"
-          max="30"
-          :value="questionCount"
-          class="border-text/20 bg-background text-text focus:border-primary w-full rounded border px-3 py-2 text-sm focus:outline-none"
-          @input="setQuestionCount(($event.target as HTMLInputElement).value)"
-        />
+        <div
+          class="border-text/10 flex w-full items-center rounded-xl border bg-black/5 p-1 dark:bg-slate-950/40"
+        >
+          <button
+            type="button"
+            aria-label="Decrease question count"
+            class="text-text/60 hover:bg-text/10 hover:text-text flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
+            :disabled="!canDecrementQuestions"
+            @click="decrementQuestionCount"
+          >
+            <AppIcon
+              icon-name="Minus"
+              :size="16"
+            />
+          </button>
+          <input
+            id="question-count"
+            type="number"
+            inputmode="numeric"
+            min="1"
+            max="30"
+            :value="questionCount"
+            class="text-text w-full [appearance:textfield] bg-transparent text-center text-sm font-semibold focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            @input="setQuestionCount(($event.target as HTMLInputElement).value)"
+          />
+          <button
+            type="button"
+            aria-label="Increase question count"
+            class="text-text/60 hover:bg-text/10 hover:text-text flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
+            :disabled="!canIncrementQuestions"
+            @click="incrementQuestionCount"
+          >
+            <AppIcon
+              icon-name="Add"
+              :size="16"
+            />
+          </button>
+        </div>
       </div>
 
       <BaseInput
