@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, shallowRef } from 'vue';
+import { computed, ref, shallowRef } from 'vue';
 import ConfirmDialog from '@/components/app/ConfirmDialog.vue';
 import WarningIcon from '@/components/app/WarningIcon.vue';
 import BorderedCard from '@/components/common/BorderedCard.vue';
+import DuplicateCardBatchModal from '@/components/card/DuplicateCardBatchModal.vue';
 import JsonImportPreviewModal from '@/components/import/JsonImportPreviewModal.vue';
 import JsonTextImportModal from '@/components/import/JsonTextImportModal.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
@@ -17,7 +18,9 @@ import { useDeckStore } from '@/stores/deck-store';
 import { useSettingsStore } from '@/stores/settings-store';
 import { useTagStore } from '@/stores/tag-store';
 import { useTopicStore } from '@/stores/topic-store';
-import type { NewCard } from '@/types/card';
+import type { CardUpdate, NewCard } from '@/types/card';
+import type { DuplicateConflictItem, DuplicateResolutionAction } from '@/types/duplicate-card';
+import { resolveBatchDuplicates } from '@/utils/duplicate-cards';
 import {
   parseJsonCardImport,
   type JsonImportValidationResult,
@@ -104,6 +107,39 @@ const jsonImportError = ref('');
 // reactive Proxies, they get handed to IndexedDB as-is on import, and Dexie/structured-clone
 // can't clone a Proxy (the same DataCloneError pitfall documented in the quiz session store).
 const jsonImportResult = shallowRef<JsonImportValidationResult | null>(null);
+// Populated once the user resolves any duplicate conflicts (see `handleConflictsResolved`);
+// reset alongside `jsonImportResult` whenever a new file/paste is parsed or the import is cancelled.
+const duplicateResolutions = ref<Map<number, DuplicateResolutionAction>>(new Map());
+const duplicatesResolved = ref(false);
+/** Duplicate conflicts must be resolved before the preview modal (and import) can proceed. */
+const showConflictModal = computed(
+  () => !!jsonImportResult.value && jsonImportResult.value.duplicates.length > 0 && !duplicatesResolved.value,
+);
+
+/** Maps the parser's conflicts onto the display shape the shared duplicate modal renders. */
+const conflictItems = computed<DuplicateConflictItem[]>(() =>
+  (jsonImportResult.value?.duplicates ?? []).map((conflict) => ({
+    key: conflict.incoming.sourceIndex,
+    matchLabel:
+      conflict.match.source === 'database'
+        ? 'Already in your library'
+        : `Entry #${conflict.match.card.sourceIndex} earlier in this file`,
+    canOverwrite: true,
+    existing: {
+      frontTitle: conflict.match.card.frontTitle,
+      deckName: conflict.match.card.deckName,
+      topicName: conflict.match.card.topicName,
+      summary: conflict.match.card.backAnswer,
+      createdAt: conflict.match.source === 'database' ? conflict.match.card.createdAt : undefined,
+    },
+    incoming: {
+      frontTitle: conflict.incoming.frontTitle,
+      deckName: conflict.incoming.deckName,
+      topicName: conflict.incoming.topicName,
+      summary: conflict.incoming.backAnswer,
+    },
+  })),
+);
 const toastMessage = ref('');
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -134,11 +170,33 @@ async function parseJsonCardImportText(text: string): Promise<JsonImportValidati
     topicNamesByDeck[deck.name] = topicStore.byDeck(deck.id).map((topic) => topic.name);
   }
 
+  const deckNameById = new Map(deckStore.decks.map((deck) => [deck.id, deck.name]));
+  const existingCards = cardStore.cards
+    .filter((card) => !card.isDeleted)
+    .map((card) => ({
+      id: card.id,
+      frontTitle: card.frontTitle,
+      backAnswer: card.backAnswer,
+      extraInfo: card.extraInfo,
+      deckName: deckNameById.get(card.deckId) ?? 'Unknown deck',
+      topicName: card.topicId ? topicStore.getById(card.topicId)?.name : undefined,
+      createdAt: card.createdAt,
+    }));
+
   return parseJsonCardImport(text, {
     deckNames: deckStore.decks.map((deck) => deck.name),
     tagNames: tagStore.tags.map((tag) => tag.name),
     topicNamesByDeck,
+    existingCards,
   });
+}
+
+/** Shared by the file-upload flow and the paste/edit-JSON modal: stages a freshly parsed result
+ *  and resets any duplicate-conflict resolution left over from a previous import attempt. */
+function startJsonImport(result: JsonImportValidationResult) {
+  duplicateResolutions.value = new Map();
+  duplicatesResolved.value = false;
+  jsonImportResult.value = result;
 }
 
 async function handleJsonFileSelected(event: Event) {
@@ -155,7 +213,7 @@ async function handleJsonFileSelected(event: Event) {
     if (result.validCardsCount === 0) {
       jsonImportError.value = result.errors[0] ?? 'No valid cards were found in this file.';
     } else {
-      jsonImportResult.value = result;
+      startJsonImport(result);
     }
   } catch {
     jsonImportError.value = 'Could not read this file.';
@@ -188,7 +246,7 @@ async function handleJsonTextValidate(text: string) {
       jsonTextStructureError.value = result.errors[0] ?? 'No valid cards were found in this JSON.';
     } else {
       isTextImportModalOpen.value = false;
-      jsonImportResult.value = result;
+      startJsonImport(result);
     }
   } catch {
     jsonTextStructureError.value = 'Could not process this JSON.';
@@ -199,19 +257,35 @@ async function handleJsonTextValidate(text: string) {
 
 function cancelJsonImport() {
   jsonImportResult.value = null;
+  duplicateResolutions.value = new Map();
+  duplicatesResolved.value = false;
+}
+
+function handleConflictsResolved(resolutions: Map<number, DuplicateResolutionAction>) {
+  duplicateResolutions.value = resolutions;
+  duplicatesResolved.value = true;
 }
 
 async function confirmJsonImport() {
   const result = jsonImportResult.value;
   if (!result || result.parsedCards.length === 0) return;
 
+  const { toCreate, toOverwrite } = resolveBatchDuplicates(
+    result.parsedCards,
+    result.duplicates,
+    duplicateResolutions.value,
+    (card) => card.sourceIndex,
+  );
+  if (toCreate.length === 0 && toOverwrite.length === 0) return;
+
   isImportingJson.value = true;
   try {
     // One batch for the whole import run, the same cache lifetime the hand-rolled Maps had.
     const resolve = createBatch();
     const newCards: NewCard[] = [];
+    const overwrites: { id: string; changes: CardUpdate }[] = [];
 
-    for (const card of result.parsedCards) {
+    for (const card of toCreate) {
       const deckId = await resolve.deckId(card.deckName);
       const topicId = await resolve.topicId(deckId, card.topicName);
       const tagIds: string[] = [];
@@ -234,14 +308,50 @@ async function confirmJsonImport() {
         antonyms: card.antonyms,
         quizQuestions: [],
         partsOfSpeech: card.partsOfSpeech?.map((entry) => ({ ...entry, id: generateUUID() })),
-        wordFamily: card.wordFamily,
       });
     }
 
-    await cardStore.addMany(newCards);
+    for (const { incoming: card, existing } of toOverwrite) {
+      const deckId = await resolve.deckId(card.deckName);
+      const topicId = await resolve.topicId(deckId, card.topicName);
+      const tagIds: string[] = [];
+      for (const tagName of card.tagNames) {
+        tagIds.push(await resolve.tagId(tagName));
+      }
+
+      overwrites.push({
+        id: existing.id,
+        changes: {
+          frontTitle: card.frontTitle,
+          backAnswer: card.backAnswer,
+          extraInfo: card.extraInfo,
+          deckId,
+          topicId,
+          tagIds,
+          ipa: card.ipa,
+          hint: card.hint,
+          examples: card.examples,
+          synonyms: card.synonyms,
+          antonyms: card.antonyms,
+          partsOfSpeech: card.partsOfSpeech?.map((entry) => ({ ...entry, id: generateUUID() })),
+        },
+      });
+    }
+
+    if (newCards.length > 0) await cardStore.addMany(newCards);
+    for (const { id, changes } of overwrites) {
+      await cardStore.edit(id, changes);
+    }
     await refreshStores();
     jsonImportResult.value = null;
-    showToast(`Imported ${newCards.length} card${newCards.length === 1 ? '' : 's'} from JSON.`);
+    duplicateResolutions.value = new Map();
+    duplicatesResolved.value = false;
+
+    const parts: string[] = [];
+    if (newCards.length > 0) parts.push(`imported ${newCards.length} card${newCards.length === 1 ? '' : 's'}`);
+    if (overwrites.length > 0) parts.push(`overwrote ${overwrites.length} card${overwrites.length === 1 ? '' : 's'}`);
+    const message = parts.join(', ');
+    showToast(`${message.charAt(0).toUpperCase()}${message.slice(1)} from JSON.`);
   } finally {
     isImportingJson.value = false;
   }
@@ -437,9 +547,17 @@ async function handleClearAll() {
     @close="cancelJsonTextImport"
   />
 
+  <DuplicateCardBatchModal
+    v-if="showConflictModal"
+    :conflicts="conflictItems"
+    @resolve="handleConflictsResolved"
+    @cancel="cancelJsonImport"
+  />
+
   <JsonImportPreviewModal
-    v-if="jsonImportResult"
+    v-if="jsonImportResult && !showConflictModal"
     :result="jsonImportResult"
+    :resolutions="duplicateResolutions"
     :is-importing="isImportingJson"
     @confirm="confirmJsonImport"
     @cancel="cancelJsonImport"

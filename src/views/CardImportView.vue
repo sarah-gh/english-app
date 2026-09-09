@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
+import DuplicateCardBatchModal from '@/components/card/DuplicateCardBatchModal.vue';
 import ImportPreviewCard from '@/components/import/ImportPreviewCard.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
-import { useEntityResolver } from '@/composables/useEntityResolver';
+import { useDuplicateCardCheck } from '@/composables/useDuplicateCardCheck';
+import { useEntityResolver, type EntityResolverBatch } from '@/composables/useEntityResolver';
 import { useCardStore } from '@/stores/card-store';
 import { useDeckStore } from '@/stores/deck-store';
 import { useTagStore } from '@/stores/tag-store';
@@ -13,13 +15,20 @@ import {
   parseCardsWorkbook,
   type ParsedCardRow,
 } from '@/services/import/excel-card-import';
-import type { NewCard } from '@/types/card';
+import type { Card, CardUpdate, NewCard } from '@/types/card';
+import type { DuplicateConflictItem, DuplicateResolutionAction } from '@/types/duplicate-card';
+import {
+  detectBatchDuplicates,
+  resolveBatchDuplicates,
+  type BatchDuplicateConflict,
+} from '@/utils/duplicate-cards';
 
 const router = useRouter();
 const cardStore = useCardStore();
 const deckStore = useDeckStore();
 const tagStore = useTagStore();
 const { createBatch } = useEntityResolver();
+const { describeSavedCard } = useDuplicateCardCheck();
 
 const fileInput = ref<HTMLInputElement | null>(null);
 const fileName = ref('');
@@ -31,6 +40,9 @@ const importSummary = ref('');
 /** Row numbers currently checked for import, starts with every valid row selected, so opting
  *  out of specific cards is the exception, not the default action. */
 const selectedRowNumbers = ref<Set<number>>(new Set());
+
+/** Rows whose title collides with a saved card or an earlier row, awaiting the user's decision. */
+const pendingConflicts = ref<BatchDuplicateConflict<ParsedCardRow, Card>[]>([]);
 
 const validRows = computed(() => parsedRows.value.filter((row) => row.errors.length === 0));
 const invalidRows = computed(() => parsedRows.value.filter((row) => row.errors.length > 0));
@@ -113,43 +125,118 @@ function handleCancel() {
   if (fileInput.value) fileInput.value.value = '';
 }
 
+/** Maps the detected conflicts onto the display shape the shared duplicate modal renders. */
+const conflictItems = computed<DuplicateConflictItem[]>(() =>
+  pendingConflicts.value.map((conflict) => ({
+    key: conflict.incoming.rowNumber,
+    matchLabel:
+      conflict.match.source === 'database'
+        ? 'Already in your library'
+        : `Row ${conflict.match.card.rowNumber} earlier in this file`,
+    canOverwrite: true,
+    existing:
+      conflict.match.source === 'database'
+        ? describeSavedCard(conflict.match.card)
+        : {
+            frontTitle: conflict.match.card.frontTitle,
+            deckName: conflict.match.card.deckName,
+            summary: conflict.match.card.backAnswer,
+          },
+    incoming: {
+      frontTitle: conflict.incoming.frontTitle,
+      deckName: conflict.incoming.deckName,
+      summary: conflict.incoming.backAnswer,
+    },
+  })),
+);
+
+/** The card fields one spreadsheet row contributes, shared by the create and replace paths. */
+async function rowToCardFields(resolve: EntityResolverBatch, row: ParsedCardRow) {
+  const deckId = await resolve.deckId(row.deckName);
+  const tagIds: string[] = [];
+  for (const tagName of row.tagNames) {
+    tagIds.push(await resolve.tagId(tagName));
+  }
+
+  return {
+    frontTitle: row.frontTitle,
+    backAnswer: row.backAnswer,
+    deckId,
+    tagIds,
+    ipa: row.ipa,
+    hint: row.hint,
+    examples: [...row.examples],
+    synonyms: [],
+    antonyms: [],
+  };
+}
+
 async function handleImport() {
   if (selectedRows.value.length === 0) return;
+
+  // Every row goes through the app-wide exact-title check before anything is written, against
+  // both the saved cards and the other rows in this same spreadsheet.
+  await cardStore.ensureLoaded();
+  const conflicts = detectBatchDuplicates(selectedRows.value, cardStore.cards);
+  if (conflicts.length > 0) {
+    pendingConflicts.value = conflicts;
+    return;
+  }
+
+  await runImport(new Map());
+}
+
+async function handleConflictsResolved(resolutions: Map<number, DuplicateResolutionAction>) {
+  const conflicts = pendingConflicts.value;
+  pendingConflicts.value = [];
+  await runImport(resolutions, conflicts);
+}
+
+function cancelConflictResolution() {
+  pendingConflicts.value = [];
+}
+
+async function runImport(
+  resolutions: Map<number, DuplicateResolutionAction>,
+  conflicts: BatchDuplicateConflict<ParsedCardRow, Card>[] = [],
+) {
+  const rows = selectedRows.value;
+  const { toCreate, toOverwrite } = resolveBatchDuplicates(
+    rows,
+    conflicts,
+    resolutions,
+    (row) => row.rowNumber,
+  );
+
   isImporting.value = true;
   try {
     // One batch for the whole import run, the same cache lifetime the hand-rolled Maps had.
     const resolve = createBatch();
     const newCards: NewCard[] = [];
 
-    for (const row of selectedRows.value) {
-      const deckId = await resolve.deckId(row.deckName);
-      const tagIds: string[] = [];
-      for (const tagName of row.tagNames) {
-        tagIds.push(await resolve.tagId(tagName));
-      }
-
-      newCards.push({
-        frontTitle: row.frontTitle,
-        backAnswer: row.backAnswer,
-        deckId,
-        tagIds,
-        ipa: row.ipa,
-        ttsEnabled: true,
-        hint: row.hint,
-        examples: [...row.examples],
-        synonyms: [],
-        antonyms: [],
-        quizQuestions: [],
-      });
+    for (const row of toCreate) {
+      newCards.push({ ...(await rowToCardFields(resolve, row)), ttsEnabled: true, quizQuestions: [] });
     }
 
-    await cardStore.addMany(newCards);
-    importSummary.value = `Imported ${newCards.length} card${newCards.length === 1 ? '' : 's'} successfully.`;
+    if (newCards.length > 0) await cardStore.addMany(newCards);
+    for (const { incoming: row, existing } of toOverwrite) {
+      const changes: CardUpdate = await rowToCardFields(resolve, row);
+      await cardStore.edit(existing.id, changes);
+    }
 
-    // Only drop the rows that were actually imported, deselected rows and rows still needing
-    // fixes stay in the preview so a partial import doesn't throw away the rest of the batch.
-    const importedRowNumbers = new Set(selectedRows.value.map((row) => row.rowNumber));
-    parsedRows.value = parsedRows.value.filter((row) => !importedRowNumbers.has(row.rowNumber));
+    const parts: string[] = [];
+    if (newCards.length > 0) parts.push(`imported ${newCards.length} card${newCards.length === 1 ? '' : 's'}`);
+    if (toOverwrite.length > 0) parts.push(`replaced ${toOverwrite.length} existing card${toOverwrite.length === 1 ? '' : 's'}`);
+    const skipped = rows.length - newCards.length - toOverwrite.length;
+    if (skipped > 0) parts.push(`skipped ${skipped} duplicate${skipped === 1 ? '' : 's'}`);
+    const summary = parts.join(', ') || 'Nothing to import';
+    importSummary.value = `${summary.charAt(0).toUpperCase()}${summary.slice(1)}.`;
+
+    // Every selected row has now been acted on (created, used to replace a card, or skipped), so
+    // they all leave the preview. Deselected rows and rows still needing fixes stay, so a partial
+    // import doesn't throw away the rest of the batch.
+    const handledRowNumbers = new Set(rows.map((row) => row.rowNumber));
+    parsedRows.value = parsedRows.value.filter((row) => !handledRowNumbers.has(row.rowNumber));
     selectedRowNumbers.value = new Set();
 
     if (parsedRows.value.length === 0) {
@@ -298,5 +385,12 @@ function goToCards() {
         </BaseButton>
       </div>
     </template>
+
+    <DuplicateCardBatchModal
+      v-if="pendingConflicts.length > 0"
+      :conflicts="conflictItems"
+      @resolve="handleConflictsResolved"
+      @cancel="cancelConflictResolution"
+    />
   </div>
 </template>

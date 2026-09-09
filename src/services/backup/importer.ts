@@ -11,11 +11,9 @@ import {
   type Card,
   type CardReviewStats,
   type PartOfSpeechEntry,
-  type POSDetail,
   type PosType,
   type QuizQuestion,
   type ReviewStatus,
-  type WordFamilyData,
 } from '@/types/card';
 import type { DailyStat } from '@/types/daily-stat';
 import type { Deck } from '@/types/deck';
@@ -80,34 +78,6 @@ function parsePartsOfSpeech(raw: unknown): PartOfSpeechEntry[] | undefined {
     .filter((entry): entry is PartOfSpeechEntry => entry !== null);
 
   return entries.length > 0 ? entries : undefined;
-}
-
-function parsePosDetail(raw: unknown): POSDetail | undefined {
-  if (!raw || typeof raw !== 'object') return undefined;
-  const detail = raw as Record<string, unknown>;
-  if (!isNonEmptyString(detail.word)) return undefined;
-
-  return {
-    word: detail.word,
-    meaning: typeof detail.meaning === 'string' ? detail.meaning : undefined,
-    example: typeof detail.example === 'string' ? detail.example : undefined,
-  };
-}
-
-/** Parses a card's `wordFamily` from an archive that may predate this field entirely. */
-function parseWordFamily(raw: unknown): WordFamilyData | undefined {
-  if (!raw || typeof raw !== 'object') return undefined;
-  const data = raw as Record<string, unknown>;
-  if (!isNonEmptyString(data.rootWord)) return undefined;
-
-  return {
-    rootWord: data.rootWord,
-    noun: parsePosDetail(data.noun),
-    verb: parsePosDetail(data.verb),
-    adjective: parsePosDetail(data.adjective),
-    adverb: parsePosDetail(data.adverb),
-    usageNotes: typeof data.usageNotes === 'string' ? data.usageNotes : undefined,
-  };
 }
 
 /** Parses a card's `reviewStats` from an archive that may predate this field entirely (v1
@@ -229,7 +199,6 @@ export async function importBackup(file: File): Promise<ImportSummary> {
       antonyms: Array.isArray(raw.antonyms) ? (raw.antonyms as string[]) : [],
       quizQuestions: Array.isArray(raw.quizQuestions) ? (raw.quizQuestions as QuizQuestion[]) : [],
       partsOfSpeech: parsePartsOfSpeech(raw.partsOfSpeech),
-      wordFamily: parseWordFamily(raw.wordFamily),
       imageBlob,
       reviewStatus: VALID_STATUSES.includes(raw.reviewStatus as ReviewStatus)
         ? (raw.reviewStatus as ReviewStatus)

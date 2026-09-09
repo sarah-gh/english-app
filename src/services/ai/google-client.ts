@@ -5,11 +5,6 @@ import {
   type GeneratedCardDetails,
 } from './card-autofill-schema';
 import { AiProviderError } from './errors';
-import {
-  parseWordFamilyResponseText,
-  WORD_FAMILY_RESPONSE_SCHEMA,
-  type GeneratedWordFamily,
-} from './word-family-schema';
 
 const MODEL = 'gemini-flash-latest';
 const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
@@ -55,17 +50,6 @@ export async function autoFillCardViaGoogle(
 ): Promise<GeneratedCardDetails> {
   const text = await callGoogleStructured(apiKey, prompt, CARD_AUTOFILL_RESPONSE_SCHEMA);
   return parseCardAutofillResponseText(
-    text,
-    (message) => new AiProviderError('google', message, false),
-  );
-}
-
-export async function autoFillWordFamilyViaGoogle(
-  apiKey: string,
-  prompt: string,
-): Promise<GeneratedWordFamily> {
-  const text = await callGoogleStructured(apiKey, prompt, WORD_FAMILY_RESPONSE_SCHEMA);
-  return parseWordFamilyResponseText(
     text,
     (message) => new AiProviderError('google', message, false),
   );

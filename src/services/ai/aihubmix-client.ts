@@ -5,11 +5,6 @@ import {
   type GeneratedCardDetails,
 } from './card-autofill-schema';
 import { AiProviderError } from './errors';
-import {
-  parseWordFamilyResponseText,
-  WORD_FAMILY_RESPONSE_SCHEMA,
-  type GeneratedWordFamily,
-} from './word-family-schema';
 
 const MODEL = 'gemini-flash-latest';
 
@@ -107,18 +102,6 @@ export async function autoFillCardViaAihubmix(
 ): Promise<GeneratedCardDetails> {
   const text = await callAihubmixStructured(apiKey, baseUrl, prompt, CARD_AUTOFILL_RESPONSE_SCHEMA);
   return parseCardAutofillResponseText(
-    text,
-    (message) => new AiProviderError('aihubmix', message, false),
-  );
-}
-
-export async function autoFillWordFamilyViaAihubmix(
-  apiKey: string,
-  baseUrl: string,
-  prompt: string,
-): Promise<GeneratedWordFamily> {
-  const text = await callAihubmixStructured(apiKey, baseUrl, prompt, WORD_FAMILY_RESPONSE_SCHEMA);
-  return parseWordFamilyResponseText(
     text,
     (message) => new AiProviderError('aihubmix', message, false),
   );

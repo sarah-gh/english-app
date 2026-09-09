@@ -145,8 +145,3 @@ export async function generatePartsOfSpeech(
     parsePartsOfSpeechResponseText,
   );
 }
-
-/** Generates just the Word Family Forms section from the card's root word. This is the same
- *  request as the Word Family card's own full auto-fill, re-exported here so every per-field
- *  generator lives under one name in this module. */
-export { autoFillWordFamily as generateWordFamily } from './ai-card-autofill-service';

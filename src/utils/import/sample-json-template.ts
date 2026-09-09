@@ -20,7 +20,6 @@ const SAMPLE_JSON_IMPORT_DATA = {
             'Present, appearing, or found absolutely everywhere.\n\nفارسی: همه‌جا حاضر، فراگیر',
           extraInfo:
             '<h3>Usage Nuance &amp; Register</h3><p>Neutral-to-formal, common in writing and educated speech, rarely in casual small talk. Carries no emotional charge; it simply emphasizes how widespread something is.</p>' +
-            '<h3>Word Family</h3><ul><li><strong>Noun:</strong> ubiquity, the state of being everywhere.</li><li><strong>Adverb:</strong> ubiquitously.</li></ul>' +
             '<h3>Collocations</h3><ul><li><strong>ubiquitous</strong> presence</li><li><strong>ubiquitous</strong> in modern life</li><li>become <strong>ubiquitous</strong></li></ul>' +
             '<h3>Common Pitfalls</h3><p>Not the same as <strong>common</strong> (merely frequent), "ubiquitous" specifically means present <em>everywhere at once</em>, so it overstates things if the item only appears often rather than universally.</p>',
           ipa: '/juːˈbɪkwɪtəs/',
@@ -39,6 +38,18 @@ const SAMPLE_JSON_IMPORT_DATA = {
               definition: 'Present, appearing, or found everywhere.',
               ipa: '/juːˈbɪkwɪtəs/',
               examples: ['Ubiquitous computing is changing how we live.'],
+            },
+            {
+              pos: 'noun',
+              wordForm: 'Ubiquity',
+              definition: 'The state or fact of being everywhere at once.',
+              examples: ['The ubiquity of smartphones has changed how people communicate.'],
+            },
+            {
+              pos: 'adverb',
+              wordForm: 'Ubiquitously',
+              definition: 'In a way that is present or found everywhere.',
+              examples: ['Free wifi is now ubiquitously available in this city.'],
             },
           ],
         },

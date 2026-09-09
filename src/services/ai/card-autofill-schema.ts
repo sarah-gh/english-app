@@ -95,7 +95,11 @@ export function isGeneratedPosEntry(value: unknown): value is GeneratedPosEntry 
   const entry = value as Record<string, unknown>;
   return (
     typeof entry.pos === 'string' &&
-    POS_TYPES.includes(entry.pos as PosType) &&
+    // Case-insensitive: Gemini's schema `enum` guarantees the exact lowercase value, but
+    // Groq/OpenRouter only get a prompt hint, no real schema enforcement, and commonly capitalize
+    // it ("Noun" instead of "noun") despite the hint, which would otherwise silently drop every
+    // entry. `sanitizeGeneratedPosEntry` normalizes the casing on the way out.
+    POS_TYPES.includes(entry.pos.trim().toLowerCase() as PosType) &&
     typeof entry.definition === 'string' &&
     entry.definition.trim().length > 0 &&
     // Not all providers enforce the schema's `required: wordForm` (Groq/OpenRouter only get a
@@ -110,6 +114,19 @@ export function isGeneratedPosEntry(value: unknown): value is GeneratedPosEntry 
 function stringArray(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
+}
+
+/** Trims a structurally-valid `GeneratedPosEntry`'s string fields and drops any non-string or
+ *  blank items from `examples`, rather than rejecting the whole entry over one malformed item
+ *  (providers without real schema enforcement can mix stray non-string values into arrays). */
+export function sanitizeGeneratedPosEntry(entry: GeneratedPosEntry): GeneratedPosEntry {
+  return {
+    pos: entry.pos.trim().toLowerCase() as PosType,
+    wordForm: entry.wordForm?.trim() || undefined,
+    definition: entry.definition.trim(),
+    ipa: entry.ipa?.trim() || undefined,
+    examples: entry.examples ? stringArray(entry.examples) : undefined,
+  };
 }
 
 /** Parses and validates a card-autofill JSON response body. Throws `makeError(message)` (so
@@ -133,7 +150,7 @@ export function parseCardAutofillResponseText(
   }
 
   const partsOfSpeech = Array.isArray(obj.partsOfSpeech)
-    ? obj.partsOfSpeech.filter(isGeneratedPosEntry)
+    ? obj.partsOfSpeech.filter(isGeneratedPosEntry).map(sanitizeGeneratedPosEntry)
     : undefined;
 
   return {

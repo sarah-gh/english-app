@@ -2,17 +2,21 @@
 import { nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import ConfirmDialog from '@/components/app/ConfirmDialog.vue';
+import DuplicateCardWarningModal from '@/components/card/DuplicateCardWarningModal.vue';
 import CardEditorForm from '@/components/card-editor/CardEditorForm.vue';
 import {
   blankCardFormState,
   cardFormStateFromCard,
   cardFormStateToNewCard,
 } from '@/components/card-editor/card-form-state';
+import { useDuplicateCardCheck } from '@/composables/useDuplicateCardCheck';
 import { useCardStore } from '@/stores/card-store';
 import { useDeckStore } from '@/stores/deck-store';
 import { useSettingsStore } from '@/stores/settings-store';
 import { useTagStore } from '@/stores/tag-store';
 import { useTopicStore } from '@/stores/topic-store';
+import type { NewCard } from '@/types/card';
+import type { DuplicateConflictItem, DuplicateResolutionAction } from '@/types/duplicate-card';
 
 const route = useRoute();
 const router = useRouter();
@@ -21,6 +25,7 @@ const deckStore = useDeckStore();
 const tagStore = useTagStore();
 const topicStore = useTopicStore();
 const settingsStore = useSettingsStore();
+const { findDuplicate, describeSavedCard, describeNewCard } = useDuplicateCardCheck();
 
 const cardId = route.params.id as string | undefined;
 const isEditing = ref(false);
@@ -29,6 +34,7 @@ const isSaving = ref(false);
 const isDirty = ref(false);
 const toastMessage = ref('');
 const isConfirmingCancel = ref(false);
+const duplicateConflict = ref<DuplicateConflictItem | null>(null);
 let editingCardId: string | undefined;
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -80,17 +86,63 @@ function showToast(message: string) {
   }, 3000);
 }
 
+/** The save the user asked for, held back while the duplicate warning is on screen. */
+let pendingSave: { payload: NewCard; mode: 'add-another' | 'exit'; duplicateId: string } | null =
+  null;
+
 async function handleSubmit(mode: 'add-another' | 'exit') {
+  const payload = cardFormStateToNewCard(draft);
+
+  // Every save goes through the app-wide exact-title check first, whether the fields were typed
+  // by hand or filled in by AI Auto-Fill.
+  const duplicate = await findDuplicate(payload.frontTitle, editingCardId);
+  if (duplicate) {
+    pendingSave = { payload, mode, duplicateId: duplicate.id };
+    duplicateConflict.value = {
+      key: 0,
+      matchLabel: 'Already in your library',
+      // Replacing is only offered when adding a new card. Doing it while editing a *different*
+      // card would fold two saved cards into one, a deletion the user never asked for.
+      canOverwrite: !editingCardId,
+      existing: describeSavedCard(duplicate),
+      incoming: describeNewCard(payload),
+    };
+    return;
+  }
+
+  await savePayload(payload, mode);
+}
+
+async function handleDuplicateResolution(action: DuplicateResolutionAction) {
+  const pending = pendingSave;
+  duplicateConflict.value = null;
+  pendingSave = null;
+  if (!pending || action === 'skip') return;
+
+  await savePayload(pending.payload, pending.mode, action === 'overwrite' ? pending.duplicateId : undefined);
+}
+
+function cancelDuplicateResolution() {
+  duplicateConflict.value = null;
+  pendingSave = null;
+}
+
+async function savePayload(
+  payload: NewCard,
+  mode: 'add-another' | 'exit',
+  overwriteCardId?: string,
+) {
   isSaving.value = true;
   try {
-    const payload = cardFormStateToNewCard(draft);
     if (editingCardId) {
       await cardStore.edit(editingCardId, payload);
       router.push('/cards');
       return;
     }
 
-    await cardStore.add(payload);
+    if (overwriteCardId) await cardStore.edit(overwriteCardId, payload);
+    else await cardStore.add(payload);
+
     if (mode === 'add-another') {
       const keepDeckId = draft.deckId;
       const keepTopicId = draft.topicId;
@@ -99,7 +151,7 @@ async function handleSubmit(mode: 'add-another' | 'exit') {
       draft.topicId = keepTopicId;
       isDirty.value = false;
       formRef.value?.resetValidation();
-      showToast('Card saved successfully!');
+      showToast(overwriteCardId ? 'Existing card replaced!' : 'Card saved successfully!');
     } else {
       router.push('/cards');
     }
@@ -146,6 +198,14 @@ v-if="toastMessage"
 v-if="isConfirmingCancel" title="Discard unsaved changes?"
       message="You have unsaved changes that will be lost." confirm-label="Discard" @confirm="confirmDiscardChanges"
       @cancel="isConfirmingCancel = false" />
+
+    <DuplicateCardWarningModal
+      v-if="duplicateConflict"
+      :conflict="duplicateConflict"
+      :is-saving="isSaving"
+      @resolve="handleDuplicateResolution"
+      @cancel="cancelDuplicateResolution"
+    />
   </div>
 </template>
 

@@ -14,7 +14,7 @@ It combines a priority-driven study/practice flow with swipe gestures, an AI qui
 - **Chunked Flow:** cards are studied 5 at a time; every chunk ends with a 2-column matching quiz before the next chunk starts, and a missed match can be re-queued later in the same session.
 - **Two View Modes:** _Practice_ (swipe right = Known, swipe left = Not Known, with undo) and _Study_ (plain Next/Previous, no assessment).
 - **Session Summary:** tracks studied count, match accuracy, and elapsed time, with a "Study Another Batch" restart.
-- **Rich Card Fields:** IPA, hints, examples, synonyms/antonyms, multiple parts-of-speech entries (each with its own definition/IPA/examples), an alternative "Word Family" template (root word + noun/verb/adjective/adverb forms), images, and per-card audio.
+- **Rich Card Fields:** IPA, hints, examples, synonyms/antonyms, multiple parts-of-speech entries (each with its own definition/IPA/examples), images, and per-card audio.
 - **Pronunciation:** built-in browser Text-to-Speech (US/UK accent) plus one-click fetch of real human pronunciation audio from the [Free Dictionary API](https://dictionaryapi.dev).
 
 ### 🤖 AI Quiz Generator & Grading
@@ -22,7 +22,7 @@ It combines a priority-driven study/practice flow with swipe gestures, an AI qui
 - **Multiple Choice (4 options):** generated from your cards, scored instantly client-side.
 - **Open-Ended / Descriptive:** free-text answers graded by AI afterward, score (0–100), feedback, and a sample answer per question.
 - **Quiz History:** every AI quiz run is saved (mode, deck/topic, score, per-question detail) and shown on the Profile page.
-- **AI Card Auto-Fill:** generate a card's definition, IPA, hint, examples, and parts-of-speech from just its title, or auto-fill a Word Family's noun/verb/adjective/adverb forms from a root word, field-by-field or all at once.
+- **AI Card Auto-Fill:** generate a card's definition, IPA, hint, examples, and parts-of-speech from just its title, field-by-field or all at once.
 
 ### 🔌 Multi-Provider AI (bring your own key)
 
@@ -104,7 +104,7 @@ Configured entirely in Settings, keys stored only in local IndexedDB, never bund
 
 Tables: `cards`, `decks`, `topics`, `tags`, `aiQuizResults`, `dailyStats`, `settings` (a single-row settings table).
 
-- **Card:** front/back text, an optional `extraInfo` rich-text field for deeper linguistic context kept separate from the concise back answer, deck/topic/tag references, IPA, hint, examples, synonyms, antonyms, optional multi-entry parts-of-speech, optional Word Family data, optional image/audio blobs, review status (`new` / `easy` / `medium` / `hard`), per-card review stats (times reviewed, successful/failed matches), embedded quiz questions saved from AI quiz sessions.
+- **Card:** front/back text, an optional `extraInfo` rich-text field for deeper linguistic context kept separate from the concise back answer, deck/topic/tag references, IPA, hint, examples, synonyms, antonyms, optional multi-entry parts-of-speech, optional image/audio blobs, review status (`new` / `easy` / `medium` / `hard`), per-card review stats (times reviewed, successful/failed matches), embedded quiz questions saved from AI quiz sessions.
 - **Deck → Topic → Card** is a strict hierarchy (topics are scoped per deck).
 - Schema is versioned (currently v3) with in-place Dexie `.upgrade()` migrations, e.g. v2 introduced the Topic layer and backfilled a "General" topic per deck; v3 backfilled empty synonym/antonym arrays.
 - Pinia stores (`src/stores/`) are thin caches over Dexie repositories (`src/db/repositories/`), one store each for cards, decks, topics, tags, settings, theme, study session, quiz session, browse tree, and analytics.
@@ -125,7 +125,7 @@ Each card object supports:
 {
   "frontTitle": "Ephemeral",
   "backAnswer": "Lasting for a very short time",
-  "extraInfo": "<h3>Word Family</h3><ul><li><strong>Noun:</strong> ephemerality</li></ul>",
+  "extraInfo": "<h3>Related Forms</h3><ul><li><strong>Noun:</strong> ephemerality</li></ul>",
   "deckName": "Advanced Vocabulary",
   "topicName": "Adjectives",
   "ipa": "/ɪˈfem.ər.əl/",
@@ -142,19 +142,7 @@ Each card object supports:
       "ipa": "/ɪˈfem.ər.əl/",
       "examples": ["An ephemeral moment of joy."]
     }
-  ],
-  "wordFamily": {
-    "rootWord": "Decide",
-    "noun": {
-      "word": "Decision",
-      "meaning": "A conclusion reached",
-      "example": "She made a decision."
-    },
-    "verb": { "word": "Decide", "meaning": "To make a choice", "example": "I can't decide." },
-    "adjective": { "word": "Decisive", "meaning": "Settling an issue" },
-    "adverb": { "word": "Decisively", "meaning": "In a decisive manner" },
-    "usageNotes": "Decisive describes a person or action, not a decision itself."
-  }
+  ]
 }
 ```
 
@@ -163,7 +151,6 @@ Rules:
 - Only **`frontTitle`** and **`backAnswer`** are required; every other field is optional and independently defaulted.
 - `deckName` / `topicName` fall back to the group's values (for shape 2), then to `"Imported"` / `"General"`.
 - `pos` must be one of `noun` | `verb` | `adjective` | `adverb` | `other`; a `partsOfSpeech` entry without a valid `pos` and `definition` is dropped.
-- `wordFamily` is dropped entirely if it has no `rootWord`.
 - Deck/topic/tag names are matched case-insensitively against what already exists, new ones are listed in the preview modal as "to be created" before you confirm the import.
 - Malformed entries are skipped individually (with an error message) rather than rejecting the whole file, the preview always shows whatever _did_ parse.
 

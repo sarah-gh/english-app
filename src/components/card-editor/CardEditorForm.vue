@@ -8,22 +8,19 @@ import WarningIcon from '@/components/app/WarningIcon.vue';
 import BaseAutocomplete from '@/components/ui/BaseAutocomplete.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseRichTextEditor from '@/components/ui/BaseRichTextEditor.vue';
-import BaseSegmentedToggle from '@/components/ui/BaseSegmentedToggle.vue';
 import { useEntityResolver } from '@/composables/useEntityResolver';
 import { useWordAutocomplete, type WordSuggestion } from '@/composables/useWordAutocomplete';
 import { useAutofillCardDetails } from '@/queries/use-autofill-card-details';
-import { useAutofillWordFamily } from '@/queries/use-autofill-word-family';
 import { useGenerateDefinition } from '@/queries/use-generate-definition';
 import { useGenerateExtraInfo } from '@/queries/use-generate-extra-info';
 import { hasRequiredAiCredentials } from '@/services/ai/ai-card-autofill-service';
 import type { GeneratedCardDetails } from '@/services/ai/card-autofill-schema';
 import { AiServiceError } from '@/services/ai/errors';
-import type { GeneratedWordFamily } from '@/services/ai/word-family-schema';
 import { cardEditorSchema, type CardEditorValidationValues } from '@/schemas/cardSchema';
 import { useDeckStore } from '@/stores/deck-store';
 import { useSettingsStore } from '@/stores/settings-store';
 import AiFieldButton from './AiFieldButton.vue';
-import type { CardFormState, CardMode, PosEntryFormState } from './card-form-state';
+import type { CardFormState, PosEntryFormState } from './card-form-state';
 import DeckSelectField from './DeckSelectField.vue';
 import ExampleListField from './ExampleListField.vue';
 import ImageUploadField from './ImageUploadField.vue';
@@ -34,7 +31,6 @@ import QuizQuestionListField from './QuizQuestionListField.vue';
 import TagMultiSelectField from './TagMultiSelectField.vue';
 import TopicSelectField from './TopicSelectField.vue';
 import WordChipListField from './WordChipListField.vue';
-import WordFamilyField from './WordFamilyField.vue';
 
 const draft = defineModel<CardFormState>('draft', { required: true });
 
@@ -54,17 +50,9 @@ const { createBatch } = useEntityResolver();
 
 function validationSnapshot(): CardEditorValidationValues {
   return {
-    cardMode: draft.value.cardMode,
     frontTitle: draft.value.frontTitle,
     deckId: draft.value.deckId,
     backAnswer: draft.value.backAnswer,
-    wordFamily: {
-      noun: { ...draft.value.wordFamily.noun },
-      verb: { ...draft.value.wordFamily.verb },
-      adjective: { ...draft.value.wordFamily.adjective },
-      adverb: { ...draft.value.wordFamily.adverb },
-      usageNotes: draft.value.wordFamily.usageNotes,
-    },
   };
 }
 
@@ -73,7 +61,6 @@ const {
   setValues,
   resetForm,
   meta: formMeta,
-  errors: formErrors,
 } = useForm<CardEditorValidationValues>({
   validationSchema: toTypedSchema(cardEditorSchema),
   initialValues: validationSnapshot(),
@@ -94,10 +81,6 @@ const {
   meta: backAnswerMeta,
   handleBlur: touchBackAnswer,
 } = useField<string>('backAnswer');
-/** `useField('wordFamily')` doesn't surface schema errors attached to this object-typed (non-leaf)
- *  path, vee-validate's per-field validate only resolves leaf paths, so this reads the same
- *  error straight off the form's schema-validation result instead. */
-const wordFamilyError = computed(() => formErrors.value.wordFamily);
 
 /** Keeps the Zod-backed validation state in sync with `draft`, including AI Auto-Fill, which
  *  writes straight into `draft` rather than going through vee-validate's own setters. */
@@ -118,22 +101,6 @@ defineExpose({ resetValidation });
 const submitAddAnother = handleSubmit(() => emit('submit', 'add-another'));
 const submitExit = handleSubmit(() => emit('submit', 'exit'));
 
-function selectCardMode(mode: CardMode) {
-  draft.value.cardMode = mode;
-}
-
-/** Picking the "Word Families" deck switches the card into Word Family mode automatically, the
- *  user can still switch back manually afterward. */
-watch(
-  () => draft.value.deckId,
-  (deckId) => {
-    const deck = deckStore.getById(deckId);
-    if (deck && /word families/i.test(deck.name) && draft.value.cardMode !== 'word-family') {
-      draft.value.cardMode = 'word-family';
-    }
-  },
-);
-
 const frontTitleQuery = computed(() => draft.value.frontTitle);
 const { suggestions: frontTitleSuggestions, isLoading: isSuggestingFrontTitle } =
   useWordAutocomplete(frontTitleQuery);
@@ -145,16 +112,9 @@ const canAutofill = computed(
 
 const {
   mutateAsync: requestCardAutofill,
-  isPending: isCardAutofilling,
+  isPending: isAutofilling,
   error: cardAutofillApiError,
 } = useAutofillCardDetails();
-const {
-  mutateAsync: requestWordFamilyAutofill,
-  isPending: isWordFamilyAutofilling,
-  error: wordFamilyAutofillApiError,
-} = useAutofillWordFamily();
-
-const isAutofilling = computed(() => isCardAutofilling.value || isWordFamilyAutofilling.value);
 
 const {
   mutateAsync: requestDefinition,
@@ -213,10 +173,7 @@ const autofillLocalError = ref('');
 
 const autofillErrorMessage = computed(() => {
   if (autofillLocalError.value) return autofillLocalError.value;
-  const error =
-    draft.value.cardMode === 'word-family'
-      ? wordFamilyAutofillApiError.value
-      : cardAutofillApiError.value;
+  const error = cardAutofillApiError.value;
   if (!error) return '';
   return error instanceof AiServiceError ? error.message : 'Auto-fill failed. Please try again.';
 });
@@ -227,21 +184,13 @@ async function handleAutofill() {
 
   autofillLocalError.value = '';
   try {
-    if (draft.value.cardMode === 'word-family') {
-      const result = await requestWordFamilyAutofill({
-        settings: settingsStore.settings,
-        rootWord: title,
-      });
-      applyWordFamilyResult(result);
-    } else {
-      const deckName = deckStore.getById(draft.value.deckId)?.name;
-      const result = await requestCardAutofill({
-        settings: settingsStore.settings,
-        title,
-        deckName,
-      });
-      await applyAutofillResult(result);
-    }
+    const deckName = deckStore.getById(draft.value.deckId)?.name;
+    const result = await requestCardAutofill({
+      settings: settingsStore.settings,
+      title,
+      deckName,
+    });
+    await applyAutofillResult(result);
   } catch {
     // autofillErrorMessage (computed above) already reflects the mutation's error state.
   }
@@ -270,25 +219,6 @@ async function applyAutofillResult(result: GeneratedCardDetails): Promise<void> 
 
   await applySuggestedDeck(result.suggestedDeckCategory);
   await applySuggestedTags(result.suggestedTags);
-}
-
-function applyWordFamilyResult(result: GeneratedWordFamily): void {
-  const toFormState = (detail?: { word: string; meaning?: string; example?: string }) => ({
-    word: detail?.word ?? '',
-    meaning: detail?.meaning ?? '',
-    example: detail?.example ?? '',
-  });
-  draft.value.wordFamily.noun = toFormState(result.noun);
-  draft.value.wordFamily.verb = toFormState(result.verb);
-  draft.value.wordFamily.adjective = toFormState(result.adjective);
-  draft.value.wordFamily.adverb = toFormState(result.adverb);
-  if (result.usageNotes) draft.value.wordFamily.usageNotes = result.usageNotes;
-  if (result.ipa) draft.value.ipa = result.ipa;
-
-  // The card is already known to be a Word Family card, so the category is deterministic,
-  // no need to ask the AI to (re-)classify it the way `applySuggestedDeck` does for standard cards.
-  void applySuggestedDeck('Word Families');
-  void applySuggestedTags(result.suggestedTags);
 }
 
 /** Auto-selects a deck matching the AI-suggested category when the user hasn't already picked
@@ -321,25 +251,11 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
     @submit.prevent="isEditing ? submitExit() : submitAddAnother()"
   >
     <div>
-      <p class="text-text/60 mb-1 text-xs font-medium">Card Type</p>
-      <BaseSegmentedToggle
-        :model-value="draft.cardMode"
-        :options="[
-          { value: 'standard', label: 'Standard Card' },
-          { value: 'word-family', label: 'Word Family Card' },
-        ]"
-        @update:model-value="selectCardMode"
-      />
-    </div>
-
-    <div>
       <div class="mb-1 flex items-center justify-between gap-2">
         <label
           for="front-title"
           class="text-text/70 block text-sm font-medium"
-          >{{
-            draft.cardMode === 'word-family' ? 'Root / Base Word *' : 'Front Title / Question *'
-          }}</label
+          >Front Title / Question *</label
         >
         <BaseButton
           type="button"
@@ -359,7 +275,7 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
         :items="frontTitleSuggestions"
         :loading="isSuggestingFrontTitle"
         :invalid="frontTitleMeta.touched && Boolean(frontTitleError)"
-        :placeholder="draft.cardMode === 'word-family' ? 'e.g. Success' : 'e.g. Ubiquitous'"
+        placeholder="e.g. Ubiquitous"
         class="bg-card-surface"
         @blur="touchFrontTitle"
       >
@@ -402,91 +318,83 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
       </p>
     </div>
 
-    <WordFamilyField
-      v-if="draft.cardMode === 'word-family'"
-      v-model:data="draft.wordFamily"
-      :root-word="draft.frontTitle"
-      :error="formMeta.touched ? wordFamilyError : undefined"
-    />
-    <template v-else>
-      <div>
-        <div class="mb-1 flex items-center justify-between gap-2">
-          <label
-            for="back-answer"
-            class="text-text/70 block text-sm font-medium"
-            >Back Answer / Explanation *</label
-          >
-          <AiFieldButton
-            :loading="isGeneratingDefinition"
-            :disabled="!canAutofillField"
-            :title="
-              draft.frontTitle.trim()
-                ? 'Auto-fill this field with AI'
-                : 'Enter a word first to use AI Auto-Fill'
-            "
-            @click="handleGenerateDefinition"
-          />
-        </div>
-        <BaseRichTextEditor
-          id="back-answer"
-          v-model="draft.backAnswer"
-          placeholder="e.g. Present, appearing, or found everywhere."
-          :invalid="backAnswerMeta.touched && Boolean(backAnswerError)"
-          @blur="touchBackAnswer"
+    <div>
+      <div class="mb-1 flex items-center justify-between gap-2">
+        <label
+          for="back-answer"
+          class="text-text/70 block text-sm font-medium"
+          >Back Answer / Explanation *</label
+        >
+        <AiFieldButton
+          :loading="isGeneratingDefinition"
+          :disabled="!canAutofillField"
+          :title="
+            draft.frontTitle.trim()
+              ? 'Auto-fill this field with AI'
+              : 'Enter a word first to use AI Auto-Fill'
+          "
+          @click="handleGenerateDefinition"
         />
-        <p
-          v-if="backAnswerMeta.touched && backAnswerError"
-          class="text-danger mt-1 flex items-center gap-1.5 text-xs font-medium"
-        >
-          <WarningIcon />
-          {{ backAnswerError }}
-        </p>
-        <p
-          v-if="definitionErrorMessage"
-          class="text-danger mt-1 flex items-center gap-1.5 text-xs font-medium"
-        >
-          <WarningIcon />
-          {{ definitionErrorMessage }}
-        </p>
       </div>
-
-      <div>
-        <div class="mb-1 flex items-center justify-between gap-2">
-          <label
-            for="extra-info"
-            class="text-text/70 block text-sm font-medium"
-            >Extra Information (optional)</label
-          >
-          <AiFieldButton
-            :loading="isGeneratingExtraInfo"
-            :disabled="!canAutofillField"
-            :title="
-              draft.frontTitle.trim()
-                ? 'Auto-fill this field with AI'
-                : 'Enter a word first to use AI Auto-Fill'
-            "
-            @click="handleGenerateExtraInfo"
-          />
-        </div>
-        <BaseRichTextEditor
-          id="extra-info"
-          v-model="draft.extraInfo"
-          placeholder="Verb forms & tenses, phrasal verbs, collocations, or other supplementary notes."
-        />
-        <p
-          v-if="extraInfoErrorMessage"
-          class="text-danger mt-1 flex items-center gap-1.5 text-xs font-medium"
-        >
-          <WarningIcon />
-          {{ extraInfoErrorMessage }}
-        </p>
-      </div>
-
-      <PartsOfSpeechField
-        v-model:entries="draft.partsOfSpeech"
-        :root-word="draft.frontTitle"
+      <BaseRichTextEditor
+        id="back-answer"
+        v-model="draft.backAnswer"
+        placeholder="e.g. Present, appearing, or found everywhere."
+        :invalid="backAnswerMeta.touched && Boolean(backAnswerError)"
+        @blur="touchBackAnswer"
       />
-    </template>
+      <p
+        v-if="backAnswerMeta.touched && backAnswerError"
+        class="text-danger mt-1 flex items-center gap-1.5 text-xs font-medium"
+      >
+        <WarningIcon />
+        {{ backAnswerError }}
+      </p>
+      <p
+        v-if="definitionErrorMessage"
+        class="text-danger mt-1 flex items-center gap-1.5 text-xs font-medium"
+      >
+        <WarningIcon />
+        {{ definitionErrorMessage }}
+      </p>
+    </div>
+
+    <div>
+      <div class="mb-1 flex items-center justify-between gap-2">
+        <label
+          for="extra-info"
+          class="text-text/70 block text-sm font-medium"
+          >Extra Information (optional)</label
+        >
+        <AiFieldButton
+          :loading="isGeneratingExtraInfo"
+          :disabled="!canAutofillField"
+          :title="
+            draft.frontTitle.trim()
+              ? 'Auto-fill this field with AI'
+              : 'Enter a word first to use AI Auto-Fill'
+          "
+          @click="handleGenerateExtraInfo"
+        />
+      </div>
+      <BaseRichTextEditor
+        id="extra-info"
+        v-model="draft.extraInfo"
+        placeholder="Verb forms & tenses, phrasal verbs, collocations, or other supplementary notes."
+      />
+      <p
+        v-if="extraInfoErrorMessage"
+        class="text-danger mt-1 flex items-center gap-1.5 text-xs font-medium"
+      >
+        <WarningIcon />
+        {{ extraInfoErrorMessage }}
+      </p>
+    </div>
+
+    <PartsOfSpeechField
+      v-model:entries="draft.partsOfSpeech"
+      :root-word="draft.frontTitle"
+    />
 
     <DeckSelectField
       v-model:deck-id="draft.deckId"

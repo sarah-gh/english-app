@@ -2,7 +2,6 @@
 import { computed, ref } from 'vue';
 import ConfirmDialog from '@/components/app/ConfirmDialog.vue';
 import PartsOfSpeechDisplay from '@/components/card/PartsOfSpeechDisplay.vue';
-import WordFamilyDisplay from '@/components/card/WordFamilyDisplay.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseCard from '@/components/ui/BaseCard.vue';
 import BaseExpandableContent from '@/components/ui/BaseExpandableContent.vue';
@@ -137,67 +136,51 @@ async function handleDelete() {
         />
       </div>
 
-      <PartsOfSpeechDisplay
-        v-if="card.partsOfSpeech && card.partsOfSpeech.length > 0"
-        :entries="card.partsOfSpeech"
-        :view-mode="viewMode"
-        :front-title="card.frontTitle"
-        class="mt-3"
-      />
+      <template v-if="showAnswer">
+        <p class="mt-3 text-sm text-text">{{ stripHtmlToText(card.backAnswer) }}</p>
 
-      <template v-if="card.wordFamily">
-        <WordFamilyDisplay
-          v-if="showAnswer"
-          :data="card.wordFamily"
+        <PartsOfSpeechDisplay
+          v-if="card.partsOfSpeech && card.partsOfSpeech.length > 0"
+          :entries="card.partsOfSpeech"
+          :view-mode="viewMode"
+          :front-title="card.frontTitle"
           class="mt-3"
         />
-        <button
-          v-else
-          type="button"
-          class="mt-3 w-full rounded border border-dashed border-text/20 py-2 text-xs font-medium text-text/50 hover:border-primary hover:text-primary"
-          @click="isRevealed = true"
-        >
-          Show Word Family
-        </button>
-      </template>
-      <template v-else>
-        <template v-if="showAnswer">
-          <p class="mt-3 text-sm text-text">{{ stripHtmlToText(card.backAnswer) }}</p>
-          <ul
-            v-if="card.examples.length > 0"
-            class="mt-2 space-y-0.5"
-          >
-            <li
-              v-for="(example, index) in card.examples"
-              :key="index"
-              class="text-xs text-text/50"
-            >
-              “{{ example }}”
-            </li>
-          </ul>
 
-          <p
-            v-if="card.synonyms.length > 0"
-            class="mt-2 text-xs text-text/50"
-          >
-            <span class="font-medium text-text/70">Synonyms:</span> {{ card.synonyms.join(', ') }}
-          </p>
-          <p
-            v-if="card.antonyms.length > 0"
-            class="mt-0.5 text-xs text-text/50"
-          >
-            <span class="font-medium text-text/70">Antonyms:</span> {{ card.antonyms.join(', ') }}
-          </p>
-        </template>
-        <button
-          v-else
-          type="button"
-          class="mt-3 w-full rounded border border-dashed border-text/20 px-3 py-2 text-xs font-medium text-text/50 hover:border-primary hover:text-primary"
-          @click="isRevealed = true"
+        <ul
+          v-if="card.examples.length > 0"
+          class="mt-2 space-y-0.5"
         >
-          Show Answer
-        </button>
+          <li
+            v-for="(example, index) in card.examples"
+            :key="index"
+            class="text-xs text-text/50"
+          >
+            “{{ example }}”
+          </li>
+        </ul>
+
+        <p
+          v-if="card.synonyms.length > 0"
+          class="mt-2 text-xs text-text/50"
+        >
+          <span class="font-medium text-text/70">Synonyms:</span> {{ card.synonyms.join(', ') }}
+        </p>
+        <p
+          v-if="card.antonyms.length > 0"
+          class="mt-0.5 text-xs text-text/50"
+        >
+          <span class="font-medium text-text/70">Antonyms:</span> {{ card.antonyms.join(', ') }}
+        </p>
       </template>
+      <button
+        v-else
+        type="button"
+        class="mt-3 w-full rounded border border-dashed border-text/20 px-3 py-2 text-xs font-medium text-text/50 hover:border-primary hover:text-primary"
+        @click="isRevealed = true"
+      >
+        Show Answer
+      </button>
     </BaseExpandableContent>
 
     <ConfirmDialog

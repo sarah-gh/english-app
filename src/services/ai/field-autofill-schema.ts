@@ -2,6 +2,7 @@ import { sanitizeRichText, stripHtmlToText } from '@/utils/html';
 import {
   isGeneratedPosEntry,
   POS_ENTRY_SCHEMA,
+  sanitizeGeneratedPosEntry,
   type GeneratedPosEntry,
 } from './card-autofill-schema';
 
@@ -180,7 +181,7 @@ export function parsePartsOfSpeechResponseText(
     throw makeError("The AI provider's response did not include a parts-of-speech list.");
   }
 
-  const validEntries = partsOfSpeech.filter(isGeneratedPosEntry);
+  const validEntries = partsOfSpeech.filter(isGeneratedPosEntry).map(sanitizeGeneratedPosEntry);
   if (validEntries.length === 0) {
     throw makeError('The AI provider did not find any distinct parts of speech for this word.');
   }

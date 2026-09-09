@@ -1,5 +1,6 @@
-import type { PartOfSpeechEntry, POSDetail, PosType, WordFamilyData } from '@/types/card';
+import type { PartOfSpeechEntry, PosType } from '@/types/card';
 import { GENERAL_TOPIC_NAME } from '@/types/topic';
+import { detectBatchDuplicates, type BatchDuplicateConflict } from '@/utils/duplicate-cards';
 
 const DEFAULT_DECK_NAME = 'Imported';
 const DEFAULT_TOPIC_NAME = GENERAL_TOPIC_NAME;
@@ -27,19 +28,39 @@ export interface ParsedImportCard {
   tagNames: string[];
   /** Ids are assigned at creation time (`generateUUID()`), same as `seedInitialDataIfNeeded()`. */
   partsOfSpeech?: Omit<PartOfSpeechEntry, 'id'>[];
-  wordFamily?: WordFamilyData;
+}
+
+/** A card already saved in the database, reduced to the fields needed to detect and preview a
+ *  duplicate against an incoming JSON card. */
+export interface JsonImportExistingCardSummary {
+  id: string;
+  frontTitle: string;
+  backAnswer: string;
+  extraInfo?: string;
+  deckName: string;
+  topicName?: string;
+  createdAt: number;
 }
 
 /** What already exists in the app, so the parser can tell which deck/topic/tag names in the file
  *  are new versus reused by a case-insensitive name match, the same resolve-or-create rule the
- *  Excel importer and card editor use. */
+ *  Excel importer and card editor use, and which incoming cards collide with a card that's
+ *  already saved. */
 export interface JsonImportExistingData {
   deckNames: string[];
   tagNames: string[];
   /** Existing topic names for each deck, keyed by deck name (topics are deck-scoped, so the same
    *  topic name can be "new" under one deck and "existing" under another). */
   topicNamesByDeck: Record<string, string[]>;
+  existingCards: JsonImportExistingCardSummary[];
 }
+
+/** A JSON card that collided with a saved card or with an earlier card in the same file, by the
+ *  app-wide exact-title rule (see `exactFrontTitleKey`). */
+export type CardDuplicateConflict = BatchDuplicateConflict<
+  ParsedImportCard,
+  JsonImportExistingCardSummary
+>;
 
 export interface JsonImportValidationResult {
   isValid: boolean;
@@ -49,6 +70,9 @@ export interface JsonImportValidationResult {
   topicsToCreate: string[];
   tagsToCreate: string[];
   parsedCards: ParsedImportCard[];
+  /** Incoming cards whose title exactly matches an existing card, or another card earlier in the
+   *  same file, and so need a user decision before import. */
+  duplicates: CardDuplicateConflict[];
   errors: string[];
 }
 
@@ -95,32 +119,6 @@ function parsePartsOfSpeech(raw: unknown): Omit<PartOfSpeechEntry, 'id'>[] | und
   return entries.length > 0 ? entries : undefined;
 }
 
-function parsePosDetail(raw: unknown): POSDetail | undefined {
-  if (!raw || typeof raw !== 'object') return undefined;
-  const detail = raw as Record<string, unknown>;
-  const word = asString(detail.word);
-  if (!word) return undefined;
-  return { word, meaning: asString(detail.meaning), example: asString(detail.example) };
-}
-
-/** Requires a `rootWord`, a Word Family entry without one has nothing to anchor it, so it's
- *  dropped entirely rather than importing a blank shell. */
-function parseWordFamily(raw: unknown): WordFamilyData | undefined {
-  if (!raw || typeof raw !== 'object') return undefined;
-  const data = raw as Record<string, unknown>;
-  const rootWord = asString(data.rootWord);
-  if (!rootWord) return undefined;
-
-  return {
-    rootWord,
-    noun: parsePosDetail(data.noun),
-    verb: parsePosDetail(data.verb),
-    adjective: parsePosDetail(data.adjective),
-    adverb: parsePosDetail(data.adverb),
-    usageNotes: asString(data.usageNotes),
-  };
-}
-
 function parseCard(
   raw: unknown,
   sourceIndex: number,
@@ -160,7 +158,6 @@ function parseCard(
     antonyms: asStringArray(card.antonyms),
     tagNames: asStringArray(card.tagNames),
     partsOfSpeech: parsePartsOfSpeech(card.partsOfSpeech),
-    wordFamily: parseWordFamily(card.wordFamily),
   };
 }
 
@@ -235,6 +232,7 @@ export function parseJsonCardImport(
       topicsToCreate: [],
       tagsToCreate: [],
       parsedCards: [],
+      duplicates: [],
       errors: ['This file is not valid JSON.'],
     };
   }
@@ -248,6 +246,7 @@ export function parseJsonCardImport(
       topicsToCreate: [],
       tagsToCreate: [],
       parsedCards: [],
+      duplicates: [],
       errors: [
         'Unrecognized JSON structure. Expected an array of cards, an array of decks (each with a ' +
           '"cards" list), or an object with a "decks" or "cards" key.',
@@ -295,6 +294,8 @@ export function parseJsonCardImport(
     }
   }
 
+  const duplicates = detectBatchDuplicates(parsedCards, existing.existingCards);
+
   return {
     isValid: parsedCards.length > 0,
     validCardsCount: parsedCards.length,
@@ -302,6 +303,7 @@ export function parseJsonCardImport(
     topicsToCreate: [...topicsToCreate].sort((a, b) => a.localeCompare(b)),
     tagsToCreate: [...tagsToCreate].sort((a, b) => a.localeCompare(b)),
     parsedCards,
+    duplicates,
     errors,
   };
 }

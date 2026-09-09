@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import PartsOfSpeechDisplay from '@/components/card/PartsOfSpeechDisplay.vue';
-import WordFamilyDisplay from '@/components/card/WordFamilyDisplay.vue';
 import BaseExpandableContent from '@/components/ui/BaseExpandableContent.vue';
 import BaseFlipCard from '@/components/ui/BaseFlipCard.vue';
 import BaseTag from '@/components/ui/BaseTag.vue';
@@ -59,29 +58,6 @@ const flyTiming = ref(DRAG_FLY_TIMING);
 const isHintRevealed = ref(false);
 const isImageExpanded = ref(false);
 const isAnswerManuallyRevealed = ref(false);
-
-type WordFamilyPos = 'noun' | 'verb' | 'adjective' | 'adverb';
-const WORD_FAMILY_POS_LABELS: Record<WordFamilyPos, string> = {
-  noun: 'Noun',
-  verb: 'Verb',
-  adjective: 'Adjective',
-  adverb: 'Adverb',
-};
-
-function pickWordFamilyChallengeForm(card: Card): WordFamilyPos | null {
-  const wordFamily = card.wordFamily;
-  if (!wordFamily) return null;
-  const available = (['noun', 'verb', 'adjective', 'adverb'] as WordFamilyPos[]).filter(
-    (pos) => wordFamily[pos]?.word,
-  );
-  if (available.length === 0) return null;
-  return available[Math.floor(Math.random() * available.length)];
-}
-
-/** Picked once when this card instance is created (the wrapping `ReviewCard` remounts fresh per
- *  card via `:key`, so this stays stable across reveals but varies from card to card), the
- *  Practice-mode "Form Challenge" asks about this one form before revealing the rest. */
-const wordFamilyChallengeForm = pickWordFamilyChallengeForm(props.card);
 
 /** Study mode always shows the answer; Practice mode conceals it until the Show Answer button
  *  is tapped explicitly, tapping elsewhere on the card, or starting a swipe drag, must not
@@ -372,138 +348,102 @@ onBeforeUnmount(() => {
         :max-height="280"
         fade-class="from-card-surface via-card-surface/80"
       >
-        <template v-if="card.wordFamily">
-          <BaseFlipCard
-            class="mt-4 w-full"
-            :flipped="showAnswer"
-            :interactive="interactive"
-            @update:flipped="setAnswerRevealed"
-          >
-            <template #front>
-              <button
-                type="button"
-                class="border-card-gold/30 text-card-muted hover:border-primary hover:text-primary flex h-full w-full items-center justify-center rounded-xl border-2 border-dashed p-4 text-center text-sm font-medium"
-                @pointerdown.stop
-                @click.stop="setAnswerRevealed(true)"
-              >
-                <template v-if="wordFamilyChallengeForm">
-                  What is the {{ WORD_FAMILY_POS_LABELS[wordFamilyChallengeForm] }} form of “{{
-                    card.wordFamily.rootWord
-                  }}”?
-                </template>
-                <template v-else>Show Word Family</template>
-              </button>
-            </template>
-            <template #back>
-              <div
-                class="border-card-gold/20 bg-card-definition h-full w-full rounded-xl border p-4"
-              >
-                <WordFamilyDisplay
-                  :data="card.wordFamily"
-                  :highlight="wordFamilyChallengeForm ?? undefined"
-                />
-              </div>
-            </template>
-          </BaseFlipCard>
-        </template>
-        <template v-else>
-          <BaseFlipCard
-            class="mt-4 w-full"
-            :flipped="showAnswer"
-            :interactive="interactive"
-            @update:flipped="setAnswerRevealed"
-          >
-            <template #front>
-              <button
-                type="button"
-                class="border-card-gold/30 text-card-muted hover:border-primary hover:text-primary flex h-full w-full items-center justify-center gap-1.5 rounded-xl border-2 border-dashed p-4 text-sm font-medium"
-                @pointerdown.stop
-                @click.stop="setAnswerRevealed(true)"
-              >
-                <AppIcon
-                  icon-name="Eye"
-                  :size="16"
-                />
-                Show Answer
-              </button>
-            </template>
-            <template #back>
-              <div
-                class="border-card-gold/20 bg-card-definition h-full w-full rounded-xl border p-4"
-              >
-                <!-- backAnswerHtml is sanitized via sanitizeRichText above -->
-                <div
-                  class="rich-text-content text-text text-base leading-relaxed"
-                  v-html="backAnswerHtml"
-                />
-              </div>
-            </template>
-          </BaseFlipCard>
-
-          <div
-            v-if="showAnswer && card.examples.length > 0"
-            class="border-card-gold/20 bg-card-definition mt-4 rounded-xl border p-4"
-          >
-            <h2 class="text-card-gold mb-1 text-base">Examples:</h2>
-            <ul class="space-y-2">
-              <li
-                v-for="(example, index) in card.examples"
-                :key="index"
-                class="text-text/90 text-base"
-              >
-                {{ example }}
-              </li>
-            </ul>
-          </div>
-
-          <p
-            v-if="showAnswer && card.synonyms.length > 0"
-            class="text-text/80 mt-4 text-sm"
-          >
-            <span class="text-primary font-semibold">Synonyms:</span> {{ card.synonyms.join(', ') }}
-          </p>
-          <p
-            v-if="showAnswer && card.antonyms.length > 0"
-            class="text-text/80 mt-1 text-sm"
-          >
-            <span class="text-primary font-semibold">Antonyms:</span> {{ card.antonyms.join(', ') }}
-          </p>
-
-          <PartsOfSpeechDisplay
-            v-if="card.partsOfSpeech && card.partsOfSpeech.length > 0"
-            :entries="card.partsOfSpeech"
-            :view-mode="viewMode"
-            :front-title="card.frontTitle"
-            :interactive="interactive"
-            class="mt-4"
-          />
-
-          <div
-            v-if="showAnswer && extraInfoHtml"
-            class="border-card-gold/20 bg-card-definition mt-2 mb-2 rounded-xl border"
-          >
+        <BaseFlipCard
+          class="mt-4 w-full"
+          :flipped="showAnswer"
+          :interactive="interactive"
+          @update:flipped="setAnswerRevealed"
+        >
+          <template #front>
             <button
               type="button"
-              class="text-primary flex w-full items-center justify-between gap-2 p-4 text-left text-sm font-semibold"
+              class="border-card-gold/30 text-card-muted hover:border-primary hover:text-primary flex h-full w-full items-center justify-center gap-1.5 rounded-xl border-2 border-dashed p-4 text-sm font-medium"
               @pointerdown.stop
-              @click.stop="toggleExtraInfo"
+              @click.stop="setAnswerRevealed(true)"
             >
-              Extra Information
               <AppIcon
-                icon-name="ArrowDown2"
+                icon-name="Eye"
                 :size="16"
-                class="transition-transform duration-200"
-                :class="{ 'rotate-180': isExtraInfoExpanded }"
               />
+              Show Answer
             </button>
-            <!-- extraInfoHtml is sanitized via sanitizeRichText above -->
+          </template>
+          <template #back>
             <div
-              v-if="isExtraInfoExpanded"
-              class="rich-text-content text-text px-4 pb-4 text-base leading-relaxed"
-              v-html="extraInfoHtml"
+              class="border-card-gold/20 bg-card-definition h-full w-full rounded-xl border p-4"
+            >
+              <!-- backAnswerHtml is sanitized via sanitizeRichText above -->
+              <div
+                class="rich-text-content text-text text-base leading-relaxed"
+                v-html="backAnswerHtml"
+              />
+            </div>
+          </template>
+        </BaseFlipCard>
+
+        <PartsOfSpeechDisplay
+          v-if="showAnswer && card.partsOfSpeech && card.partsOfSpeech.length > 0"
+          :entries="card.partsOfSpeech"
+          :view-mode="viewMode"
+          :front-title="card.frontTitle"
+          :interactive="interactive"
+          class="mt-4"
+        />
+
+        <div
+          v-if="showAnswer && card.examples.length > 0"
+          class="border-card-gold/20 bg-card-definition mt-4 rounded-xl border p-4"
+        >
+          <h2 class="text-card-gold mb-1 text-base">Examples:</h2>
+          <ul class="space-y-2">
+            <li
+              v-for="(example, index) in card.examples"
+              :key="index"
+              class="text-text/90 text-base"
+            >
+              {{ example }}
+            </li>
+          </ul>
+        </div>
+
+        <p
+          v-if="showAnswer && card.synonyms.length > 0"
+          class="text-text/80 mt-4 text-sm"
+        >
+          <span class="text-primary font-semibold">Synonyms:</span> {{ card.synonyms.join(', ') }}
+        </p>
+        <p
+          v-if="showAnswer && card.antonyms.length > 0"
+          class="text-text/80 mt-1 text-sm"
+        >
+          <span class="text-primary font-semibold">Antonyms:</span> {{ card.antonyms.join(', ') }}
+        </p>
+
+        <div
+          v-if="showAnswer && extraInfoHtml"
+          class="border-card-gold/20 bg-card-definition mt-2 mb-2 rounded-xl border"
+        >
+          <button
+            type="button"
+            class="text-primary flex w-full items-center justify-between gap-2 p-4 text-left text-sm font-semibold"
+            @pointerdown.stop
+            @click.stop="toggleExtraInfo"
+          >
+            Extra Information
+            <AppIcon
+              icon-name="ArrowDown2"
+              :size="16"
+              class="transition-transform duration-200"
+              :class="{ 'rotate-180': isExtraInfoExpanded }"
             />
-          </div>
-        </template>
+          </button>
+          <!-- extraInfoHtml is sanitized via sanitizeRichText above -->
+          <div
+            v-if="isExtraInfoExpanded"
+            class="rich-text-content text-text px-4 pb-4 text-base leading-relaxed"
+            v-html="extraInfoHtml"
+          />
+        </div>
       </BaseExpandableContent>
 
       <button
