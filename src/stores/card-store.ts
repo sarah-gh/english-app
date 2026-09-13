@@ -1,11 +1,17 @@
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { ref, shallowRef } from 'vue';
 import { cardRepository } from '@/db/repositories';
 import { useTopicStore } from '@/stores/topic-store';
 import type { Card, CardUpdate, NewCard, ReviewStatus } from '@/types/card';
 
 export const useCardStore = defineStore('cards', () => {
-  const cards = ref<Card[]>([]);
+  // `shallowRef` instead of a deep `ref`: with 1,000+ cards, deep reactivity means every field of
+  // every card gets proxy-wrapped as soon as something reads it (e.g. filtering the All Cards
+  // list), which is the main cost behind that page's jank. A shallow ref only reacts to `cards`
+  // being reassigned wholesale, so in-place mutators below (`edit`, `setReviewStatus`, etc.) mutate
+  // the found card object directly, exactly as before, then reassign `cards.value` to a new array
+  // (same element references) purely to fire that top-level notification.
+  const cards = shallowRef<Card[]>([]);
   const isLoaded = ref(false);
 
   async function fetchAll(): Promise<void> {
@@ -67,26 +73,38 @@ export const useCardStore = defineStore('cards', () => {
   async function edit(id: string, changes: CardUpdate): Promise<void> {
     await cardRepository.update(id, changes);
     const card = getById(id);
-    if (card) Object.assign(card, changes, { updatedAt: Date.now() });
+    if (card) {
+      Object.assign(card, changes, { updatedAt: Date.now() });
+      cards.value = [...cards.value];
+    }
   }
 
   async function setReviewStatus(id: string, status: ReviewStatus): Promise<void> {
     await cardRepository.setReviewStatus(id, status);
     const card = getById(id);
-    if (card) card.reviewStatus = status;
+    if (card) {
+      card.reviewStatus = status;
+      cards.value = [...cards.value];
+    }
   }
 
   async function incrementStudyCount(id: string): Promise<void> {
     await cardRepository.incrementStudyCount(id);
     const card = getById(id);
-    if (card) card.studyCount += 1;
+    if (card) {
+      card.studyCount += 1;
+      cards.value = [...cards.value];
+    }
   }
 
   /** Rolls back one `incrementStudyCount`, see the repository method's doc comment. */
   async function decrementStudyCount(id: string): Promise<void> {
     await cardRepository.decrementStudyCount(id);
     const card = getById(id);
-    if (card) card.studyCount = Math.max(0, card.studyCount - 1);
+    if (card) {
+      card.studyCount = Math.max(0, card.studyCount - 1);
+      cards.value = [...cards.value];
+    }
   }
 
   async function remove(id: string): Promise<void> {
@@ -106,6 +124,7 @@ export const useCardStore = defineStore('cards', () => {
       successfulMatches: card.reviewStats.successfulMatches + (success ? 1 : 0),
       failedMatches: card.reviewStats.failedMatches + (success ? 0 : 1),
     };
+    cards.value = [...cards.value];
   }
 
   return {

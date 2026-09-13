@@ -17,8 +17,9 @@ export interface GeneratedPosEntry {
 
 export interface GeneratedCardDetails {
   /** Concise HTML (<p>, <strong>, <em> only), sanitized down to that tag set by
-   *  `parseCardAutofillResponseText` before it ever reaches the caller. Just a brief definition,
-   *  primary translation, and one core example, extended context belongs in `extraInfo` instead. */
+   *  `parseCardAutofillResponseText` before it ever reaches the caller. Just a brief English
+   *  definition or functional explanation, no translation and no examples, extended context
+   *  belongs in `extraInfo` instead. */
   backAnswer: string;
   /** Extended context kept separate from the concise `backAnswer`: verb forms/tenses, phrasal
    *  verbs, collocations, idiom notes, etc. Structured HTML (<h3>, <p>, <strong>, <em>,

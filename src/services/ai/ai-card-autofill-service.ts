@@ -17,7 +17,7 @@ export async function autoFillCardDetails(
   title: string,
   deckName?: string,
 ): Promise<GeneratedCardDetails> {
-  const prompt = buildCardAutofillPrompt(title, deckName);
+  const prompt = buildCardAutofillPrompt(settings, title, deckName);
   return withProviderFallback(settings, {
     google: (apiKey) => autoFillCardViaGoogle(apiKey, prompt),
     groq: (apiKey, baseUrl, model) => autoFillCardViaGroq(apiKey, baseUrl, model, prompt),

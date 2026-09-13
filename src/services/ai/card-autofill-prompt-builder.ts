@@ -1,39 +1,31 @@
+import { interpolatePrompt, resolveActivePromptTemplate } from './prompt-registry';
+import type { AppSettings } from '@/types/settings';
+
 /**
  * Builds a prompt asking the AI to fill in every remaining field of a flashcard from just its
- * front title (and, if picked, the deck it's going into as a topic hint).
+ * front title (and, if picked, the deck it's going into as a topic hint). Uses the user's custom
+ * "CARD_AUTOFILL" prompt template from Settings when they've saved one, otherwise the built-in
+ * default (see `prompt-registry.ts`).
  */
-export function buildCardAutofillPrompt(title: string, deckName?: string): string {
-  const topicHint = deckName
+export function buildCardAutofillPrompt(
+  settings: AppSettings,
+  title: string,
+  deckName?: string,
+): string {
+  const deckNameHint = deckName
     ? ` The card is going into the "${deckName}" deck, use that as a hint for the topic.`
     : '';
+  const userLevel = settings.proficiencyLevel ?? '';
+  const userLevelHint = userLevel
+    ? ` The learner's self-assessed English level is ${userLevel} (CEFR); keep vocabulary and explanations calibrated to that level.`
+    : '';
 
-  return `You are helping an English-language learner build a flashcard. The flashcard's front title/topic is: "${title}".${topicHint}
-
-First, silently classify the topic into exactly one category: "Vocabulary" (a single word or short phrase), "Idioms & Expressions" (an idiom, phrasal verb, or fixed expression), or "Grammar" (a grammar point, tense, or structure). Use this classification to guide the fields below.
-
-Every piece of content belongs in exactly ONE field. Example sentences, synonyms, and antonyms each have their own dedicated field below and must NEVER also appear inside the "backAnswer" or "extraInfo" HTML, the app renders those fields separately, so repeating them there duplicates content on the card.
-
-Generate the back-side content for this flashcard:
-- backAnswer: ONLY the core meaning, a brief, clear English definition plus the primary Persian (Farsi) translation. Before writing it, silently identify the exact Part of Speech (Noun, Verb, Adjective, Adverb, etc.) of "${title}" as it is spelled, not the part of speech of a related root word. The English definition and the Persian translation MUST both match that exact part of speech, never substitute the meaning of a different word form (e.g. for the adjective "Ambitious", define it as an adjective — "having or showing a strong desire and determination to succeed" — and translate it with an adjective like "جاه‌طلب" or "جاه‌طلبانه", never with the noun "ambition"/"جاه‌طلبی" or "تمایل به موفقیت"). Two short sentences at most. No example sentences, no synonym or antonym lists, no extended notes. Never open by restating the term itself, no "${title} means …", no "${title}: …" prefix, start directly with the meaning or grammatical function (e.g. for "Intimidating", begin "Causing fear or nervousness in someone …"). The card's front already shows the term, so repeating it wastes the reader's first glance. This is the first thing shown on the back of the card during review, so it must be readable at a glance. Format this as clean HTML using only <p>, <strong>, <em> (never <script>, <style>, headings, lists, or any attributes), short prose, not a structured document.
-- extraInfo: the deeper linguistic context that doesn't fit in the concise "backAnswer". Format this as clean, structured HTML using only these tags: <h3>, <p>, <strong>, <em>, <ul>, <ol>, <li> (never <script>, <style>, or any attributes), one <h3> heading per section, <p> for prose, <ul>/<li> for lists. Cover whichever of these sections are genuinely useful for this term/topic:
-  - "Usage Nuance & Register": formal vs. casual vs. neutral contexts, emotional tone and connotation, whether it's more common in speech or writing, and how strong/intense it sounds.
-  - "Collocations & Preposition Patterns": the words and prepositions this term habitually combines with, shown as short patterns (e.g. "intimidated by someone").
-  - "Verb Forms & Tenses" (verbs only): base, past simple, past participle, and -ing forms, explicitly flagging irregular forms.
-  - "Phrasal Verbs & Preposition Patterns" (verbs only, when applicable): e.g. "take off", "look after", each with a brief meaning and how it's used.
-  - "Common Pitfalls & Easily Confused Words": near-neighbour words learners mix this up with and precisely how they differ (e.g. how "intimidating" differs from "frightening" or "scary"), plus mistakes learners typically make with it.
-  - "Cultural & Practical Context": when and where native speakers actually reach for this term in real life.
-  - For Idioms & Expressions, also cover origin/etymology notes and how fixed or flexible the wording is. For Grammar topics, also cover the structures it contrasts with and the rules governing its use.
-  Rules for extraInfo: never include a bare list of synonyms or antonyms, and never include standalone example sentences, those belong in the dedicated fields below. DO NOT include Word Family, Parts of Speech, or related word forms (noun/verb/adjective/adverb variants) here in any form, not as a heading, list, or passing mention, that information belongs exclusively in the dedicated "partsOfSpeech" field below, repeating it here duplicates the card. Contrasting a confusable word with an explanation of the difference is fine; short illustrative fragments inside a nuance explanation are fine; a list of similar words or a block of practice sentences is not. Omit any section with nothing meaningful to add, and omit "extraInfo" entirely only if there is genuinely nothing beyond the definition worth knowing.
-- ipa: the IPA phonetic transcription, only if the title is a single word or short phrase with a standard pronunciation, omit it otherwise (e.g. for grammar topics like "Present Perfect Tense").
-- hint: a short, helpful memory cue, this is hidden until tapped during review, so it should nudge recall without giving the answer away outright.
-- personalExamples: relatable, real-life example sentences that use the term/topic the way an actual person would say it in conversation, texting, or everyday situations, never dry textbook sentences. Plain sentence strings, with no HTML and no surrounding quotes.
-  - For Vocabulary or Idioms & Expressions: at least 2 example sentences.
-  - For Grammar: at least 3 example sentences that each demonstrate a different usage structure of the topic (e.g. affirmative, negative, and question forms, or other distinct patterns the topic supports).
-- synonyms: 3-5 words or short phrases meaning roughly the same thing, as plain strings (e.g. ["frightening", "daunting"]), no HTML, no bullets, no explanations. Return an empty list when the term genuinely has no useful synonyms (most grammar topics).
-- antonyms: 2-5 opposites in the same plain-string form (e.g. ["reassuring", "comforting", "encouraging"]). Return an empty list when nothing meaningfully opposes the term.
-- partsOfSpeech: for a single vocabulary word, list every part of speech worth knowing about it, this is the ONLY place related noun/verb/adjective/adverb forms belong now (do not describe them in "extraInfo" instead). Cover both: (a) other grammatical uses of the title's own spelling (e.g. "book" as both noun and verb), and (b) closely related noun/verb/adjective/adverb forms with a different spelling (e.g. for "Intimidating": verb "intimidate", noun "intimidation", adverb "intimidatingly", alongside the adjective entry for "intimidating" itself). Always include an entry for the title's own exact part of speech. One entry per part of speech/form, each with its own definition, IPA, and 1-2 examples. Always include wordForm: the exact spelling of that part of speech, use the title itself when the spelling doesn't change (e.g. wordForm "book" for both the noun and verb entries of "book"), or the distinct spelling when it does (e.g. wordForm "decision" for the noun form of "decide"). Never leave wordForm blank. Each entry's "pos" and "definition" must describe that entry's own "wordForm" exactly as that specific part of speech, never the meaning of a different entry's word form (e.g. the "adjective" entry for "decisive" must be defined and translated as an adjective, not as the "noun" entry's "decision" meaning reused with a different label). Omit partsOfSpeech entirely (or leave empty) only for grammar topics, idioms, or fixed phrases with no meaningful parts of speech to distinguish.
-- suggestedTags: 2-3 short, relevant tag names (e.g. "B2", "Verbs", "Business", "Idioms"), plain words, no leading "#".
-- suggestedDeckCategory: the category name you classified above ("Vocabulary", "Idioms & Expressions", or "Grammar"), always include this even if a deck was already hinted above.
-
-Respond only with the structured fields requested.`;
+  const template = resolveActivePromptTemplate(settings.customPrompts, 'CARD_AUTOFILL');
+  return interpolatePrompt(template, {
+    frontTitle: title,
+    deckName: deckName ?? '',
+    deckNameHint,
+    userLevel,
+    userLevelHint,
+  });
 }

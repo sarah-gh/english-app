@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue';
 import { RouterLink } from 'vue-router';
 import AiProviderSettings from '@/components/settings/AiProviderSettings.vue';
 import AppearanceSettings from '@/components/settings/AppearanceSettings.vue';
+import CustomPromptManagerSettings from '@/components/settings/CustomPromptManagerSettings.vue';
 import DailyGoalSettings from '@/components/settings/DailyGoalSettings.vue';
 import InstallAppSettings from '@/components/settings/InstallAppSettings.vue';
 import ProficiencyLevelSettings from '@/components/settings/ProficiencyLevelSettings.vue';
@@ -19,20 +20,30 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-background px-4 py-6 pb-18.75">
-    <RouterLink to="/" class="mb-4 inline-flex items-center gap-1 text-sm text-text/50 hover:text-primary">
-      <AppIcon icon-name="ArrowLeft" :size="14" />
+  <div class="bg-background min-h-screen px-4 py-6 pb-18.75">
+    <RouterLink
+      to="/"
+      class="text-text/50 hover:text-primary mb-4 inline-flex items-center gap-1 text-sm"
+    >
+      <AppIcon
+        icon-name="ArrowLeft"
+        :size="14"
+      />
       Dashboard
     </RouterLink>
-    <h1 class="mb-6 text-xl font-semibold text-text">Settings</h1>
+    <h1 class="text-text mb-6 text-xl font-semibold">Settings</h1>
 
-    <p v-if="!isReady" class="text-sm text-text/50">
+    <p
+      v-if="!isReady"
+      class="text-text/50 text-sm"
+    >
       Loading…
     </p>
 
     <template v-else>
       <ProficiencyLevelSettings />
       <AiProviderSettings />
+      <CustomPromptManagerSettings />
       <AppearanceSettings />
       <PronunciationSettings />
       <DailyGoalSettings />
@@ -40,7 +51,7 @@ onMounted(async () => {
 
       <RouterLink
         to="/privacy"
-        class="mt-2 block text-center text-xs text-text/35 hover:text-text/60"
+        class="text-text/35 hover:text-text/60 mt-2 block text-center text-xs"
       >
         Privacy Policy
       </RouterLink>

@@ -5,6 +5,7 @@ import {
   type AiConfigFields,
   type AppSettings,
   type ConcreteAiProvider,
+  type PromptKey,
 } from '@/types/settings';
 
 const VALID_CONCRETE_PROVIDERS: ConcreteAiProvider[] = ['google', 'groq', 'openrouter', 'aihubmix'];
@@ -71,6 +72,14 @@ export const settingsRepository = {
 
   async setProficiencyLevel(level: AppSettings['proficiencyLevel']): Promise<AppSettings> {
     return settingsRepository.update({ proficiencyLevel: level });
+  },
+
+  /** Saves (or, passing `null`, clears) the user's custom override for one prompt template. */
+  async setCustomPrompt(key: PromptKey, template: string | null): Promise<AppSettings> {
+    const current = await settingsRepository.get();
+    return settingsRepository.update({
+      customPrompts: { ...current.customPrompts, [key]: template },
+    });
   },
 
   /** Used by Cloud Sync only: writes the record as-is, preserving the incoming `updatedAt` instead

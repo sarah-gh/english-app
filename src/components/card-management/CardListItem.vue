@@ -59,7 +59,7 @@ async function handleDelete() {
   <BaseCard>
     <div class="flex items-start justify-between gap-3">
       <div class="min-w-0">
-        <p class="truncate font-medium font-serif text-lg text-text">{{ card.frontTitle }}</p>
+        <p class="truncate font-medium text-wrap font-serif text-lg text-text">{{ card.frontTitle }}</p>
         <p class="mt-3.5 flex items-center gap-1.5 text-xs text-text/50">
           {{ deckName }}
           <span
@@ -85,7 +85,7 @@ async function handleDelete() {
           </span>
         </p>
       </div>
-      <div class="flex shrink-0 items-center gap-1">
+      <div class="flex shrink-0 flex-wrap items-center gap-1">
         <button
           type="button"
           aria-label="Play audio"
@@ -100,17 +100,18 @@ async function handleDelete() {
         <BaseButton
           variant="ghost"
           size="sm"
+          class="aspect-square rounded-full"
           :to="`/cards/${card.id}/edit`"
         >
           <AppIcon
             icon-name="Edit2"
             :size="14"
           />
-          Edit
         </BaseButton>
         <BaseButton
           variant="ghost"
           size="sm"
+          class="aspect-square rounded-full"
           danger
           @click="isConfirmingDelete = true"
         >
@@ -118,7 +119,6 @@ async function handleDelete() {
             icon-name="Trash"
             :size="14"
           />
-          Delete
         </BaseButton>
       </div>
     </div>

@@ -99,7 +99,7 @@ export async function generateExtraInfo(
 ): Promise<string> {
   return generateField(
     settings,
-    buildExtraInfoPrompt(front, back),
+    buildExtraInfoPrompt(settings, front, back),
     EXTRA_INFO_RESPONSE_SCHEMA,
     EXTRA_INFO_JSON_SHAPE_HINT,
     parseExtraInfoResponseText,
@@ -139,7 +139,7 @@ export async function generatePartsOfSpeech(
 ): Promise<GeneratedPosEntry[]> {
   return generateField(
     settings,
-    buildPartsOfSpeechPrompt(title),
+    buildPartsOfSpeechPrompt(settings, title),
     PARTS_OF_SPEECH_RESPONSE_SCHEMA,
     PARTS_OF_SPEECH_JSON_SHAPE_HINT,
     parsePartsOfSpeechResponseText,

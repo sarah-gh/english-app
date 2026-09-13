@@ -124,7 +124,7 @@ export async function generateMultipleChoiceQuiz(
   cards: Card[],
   questionCount: number,
 ): Promise<GeneratedMultipleChoiceQuestion[]> {
-  const prompt = buildMultipleChoiceQuizPrompt(cards, questionCount, settings.proficiencyLevel);
+  const prompt = buildMultipleChoiceQuizPrompt(settings, cards, questionCount);
   const questions = await runQuizRequest(
     settings,
     prompt,

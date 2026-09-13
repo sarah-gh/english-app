@@ -16,8 +16,7 @@ const SAMPLE_JSON_IMPORT_DATA = {
       cards: [
         {
           frontTitle: 'Ubiquitous',
-          backAnswer:
-            'Present, appearing, or found absolutely everywhere.\n\nفارسی: همه‌جا حاضر، فراگیر',
+          backAnswer: 'Present, appearing, or found absolutely everywhere.',
           extraInfo:
             '<h3>Usage Nuance &amp; Register</h3><p>Neutral-to-formal, common in writing and educated speech, rarely in casual small talk. Carries no emotional charge; it simply emphasizes how widespread something is.</p>' +
             '<h3>Collocations</h3><ul><li><strong>ubiquitous</strong> presence</li><li><strong>ubiquitous</strong> in modern life</li><li>become <strong>ubiquitous</strong></li></ul>' +

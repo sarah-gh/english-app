@@ -6,6 +6,7 @@ import {
   type AiConfigFields,
   type AppSettings,
   type ProficiencyLevel,
+  type PromptKey,
   type SpeechAccent,
 } from '@/types/settings';
 
@@ -34,6 +35,11 @@ export const useSettingsStore = defineStore('settings', () => {
     settings.value = await settingsRepository.setProficiencyLevel(level);
   }
 
+  /** Saves (or, passing `null`, clears) the user's custom override for one AI prompt template. */
+  async function setCustomPrompt(key: PromptKey, template: string | null): Promise<void> {
+    settings.value = await settingsRepository.setCustomPrompt(key, template);
+  }
+
   return {
     settings,
     isLoaded,
@@ -42,5 +48,6 @@ export const useSettingsStore = defineStore('settings', () => {
     setAiConfig,
     setSpeechAccent,
     setProficiencyLevel,
+    setCustomPrompt,
   };
 });

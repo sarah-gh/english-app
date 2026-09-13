@@ -6,6 +6,14 @@ export type ProficiencyLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
 /** AI backends the Quiz Generator and Card Auto-Fill can call directly. */
 export type ConcreteAiProvider = 'google' | 'groq' | 'openrouter' | 'aihubmix';
 
+/** Identifies one customizable AI prompt template, see `src/services/ai/prompt-registry.ts` for
+ *  each key's title, description, supported placeholders, and built-in default template. */
+export type PromptKey = 'CARD_AUTOFILL' | 'EXTRA_INFO' | 'PARTS_OF_SPEECH' | 'QUIZ_GENERATOR';
+
+/** A user's saved override for one prompt key's template, keyed by `PromptKey`. A missing entry,
+ *  or a `null`/blank value, means "use the built-in default" for that prompt. */
+export type CustomPrompts = Partial<Record<PromptKey, string | null>>;
+
 /** Which AI backend is active. `'fallback'` tries `fallbackPrimaryProvider` first and
  *  automatically retries `fallbackBackupProvider` if the primary fails (network error, rate
  *  limit, server error, missing credentials, etc). */
@@ -49,6 +57,10 @@ export interface AppSettings {
   /** Self-assessed CEFR level, `null` if the user hasn't set one yet. Passed to the AI Quiz
    *  generator so questions/explanations match the learner's level. */
   proficiencyLevel: ProficiencyLevel | null;
+
+  /** User-customized AI prompt templates, keyed by `PromptKey`. Entries missing here fall back to
+   *  the built-in default template for that key. */
+  customPrompts: CustomPrompts;
 
   updatedAt: number;
 }
@@ -96,5 +108,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
   hasSeededInitialData: false,
   dailyGoalCards: 15,
   proficiencyLevel: null,
+  customPrompts: {},
   updatedAt: 0,
 };

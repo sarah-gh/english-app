@@ -89,8 +89,8 @@ function truncate(text: string, max: number): string {
         :key="card.sourceIndex"
         class="rounded-lg border border-text/10 p-2.5"
       >
-        <div class="mb-1 flex items-center justify-between gap-2">
-          <p class="min-w-0 truncate text-sm font-medium text-text">{{ card.frontTitle }}</p>
+        <div class="mb-1 flex w-full flex-wrap items-center justify-between gap-1">
+          <p class="min-w-fit max-w-full text-wrap truncate text-sm font-medium text-text">{{ card.frontTitle }}</p>
           <span class="shrink-0 text-xs text-text/50">{{ card.deckName }} › {{ card.topicName }}</span>
         </div>
         <p class="text-xs text-text/60">{{ truncate(card.backAnswer, 120) }}</p>

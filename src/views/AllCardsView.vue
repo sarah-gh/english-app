@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { watchDebounced } from '@vueuse/core';
+import { computed, onMounted, ref, shallowRef } from 'vue';
 import { RouterLink } from 'vue-router';
 import ActiveFiltersBar from '@/components/browse/ActiveFiltersBar.vue';
 import AllCardsFilterBar from '@/components/browse/AllCardsFilterBar.vue';
-import CardListItem from '@/components/card-management/CardListItem.vue';
+import CardListSkeleton from '@/components/browse/CardListSkeleton.vue';
+import CardVirtualList from '@/components/browse/CardVirtualList.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseInput from '@/components/ui/BaseInput.vue';
 import BaseSegmentedToggle from '@/components/ui/BaseSegmentedToggle.vue';
@@ -11,7 +13,13 @@ import { useCardStore } from '@/stores/card-store';
 import { useDeckStore } from '@/stores/deck-store';
 import { useTagStore } from '@/stores/tag-store';
 import { useTopicStore } from '@/stores/topic-store';
-import type { DifficultyFilter, PosFilter, SortOption, StudyStatusFilter } from '@/types/card-filters';
+import type { Card } from '@/types/card';
+import type {
+  DifficultyFilter,
+  PosFilter,
+  SortOption,
+  StudyStatusFilter,
+} from '@/types/card-filters';
 import type { CardViewMode } from '@/types/view-mode';
 import { stripHtmlToText } from '@/utils/html';
 
@@ -21,16 +29,6 @@ const topicStore = useTopicStore();
 const tagStore = useTagStore();
 
 const isReady = ref(false);
-
-onMounted(async () => {
-  await Promise.all([
-    cardStore.ensureLoaded(),
-    deckStore.ensureLoaded(),
-    topicStore.ensureLoaded(),
-    tagStore.ensureLoaded(),
-  ]);
-  isReady.value = true;
-});
 
 const searchQuery = ref('');
 const deckId = ref('');
@@ -42,38 +40,79 @@ const pos = ref<PosFilter>('all');
 const sort = ref<SortOption>('created-desc');
 const viewMode = ref<CardViewMode>('study');
 
-const filteredCards = computed(() => {
+/** Filtering/sorting 1,000+ cards synchronously inside a `computed` is heavy enough to jank a
+ *  keystroke or a filter toggle, so it instead runs here, off the reactive graph: `scheduleRecompute`
+ *  flips `isFiltering` on straight away (so the loading state can paint), then defers the actual
+ *  work a frame so the browser isn't asked to filter, sort, and re-render in the same tick. */
+const displayedCards = shallowRef<Card[]>([]);
+const isFiltering = ref(false);
+let recomputeToken = 0;
+
+function filterAndSortCards(): Card[] {
   const query = searchQuery.value.trim().toLowerCase();
-  return cardStore.cards.filter((card) => {
+  const filtered = cardStore.cards.filter((card) => {
     if (deckId.value && card.deckId !== deckId.value) return false;
     if (topicId.value && card.topicId !== topicId.value) return false;
-    if (tagIds.value.length > 0 && !tagIds.value.some((id) => card.tagIds.includes(id))) return false;
+    if (tagIds.value.length > 0 && !tagIds.value.some((id) => card.tagIds.includes(id)))
+      return false;
     if (studyStatus.value === 'studied' && card.studyCount === 0) return false;
     if (studyStatus.value === 'unstudied' && card.studyCount > 0) return false;
     if (difficulty.value !== 'all' && card.reviewStatus !== difficulty.value) return false;
-    if (pos.value !== 'all' && !card.partsOfSpeech?.some((entry) => entry.pos === pos.value)) return false;
+    if (pos.value !== 'all' && !card.partsOfSpeech?.some((entry) => entry.pos === pos.value))
+      return false;
     if (query) {
-      const haystack = `${card.frontTitle} ${stripHtmlToText(card.backAnswer)} ${card.hint ?? ''}`.toLowerCase();
+      const haystack =
+        `${card.frontTitle} ${stripHtmlToText(card.backAnswer)} ${card.hint ?? ''}`.toLowerCase();
       if (!haystack.includes(query)) return false;
     }
     return true;
   });
-});
 
-const sortedCards = computed(() => {
-  const list = [...filteredCards.value];
   switch (sort.value) {
     case 'alphabetical':
-      return list.sort((a, b) => a.frontTitle.localeCompare(b.frontTitle));
+      return filtered.sort((a, b) => a.frontTitle.localeCompare(b.frontTitle));
     case 'study-count':
-      return list.sort((a, b) => b.studyCount - a.studyCount);
+      return filtered.sort((a, b) => b.studyCount - a.studyCount);
     case 'last-reviewed':
-      return list.sort((a, b) => (b.reviewStats.lastReviewedAt ?? 0) - (a.reviewStats.lastReviewedAt ?? 0));
+      return filtered.sort(
+        (a, b) => (b.reviewStats.lastReviewedAt ?? 0) - (a.reviewStats.lastReviewedAt ?? 0),
+      );
     case 'created-desc':
     default:
-      return list.sort((a, b) => b.createdAt - a.createdAt);
+      return filtered.sort((a, b) => b.createdAt - a.createdAt);
   }
+}
+
+function scheduleRecompute() {
+  isFiltering.value = true;
+  const token = ++recomputeToken;
+  // One frame to let `isFiltering`'s loading state paint, then a macrotask so the actual filter
+  // work runs in its own tick instead of blocking the frame that shows the loading state.
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      if (token !== recomputeToken) return; // a newer input/filter change superseded this run
+      displayedCards.value = filterAndSortCards();
+      isFiltering.value = false;
+    }, 0);
+  });
+}
+
+onMounted(async () => {
+  await Promise.all([
+    cardStore.ensureLoaded(),
+    deckStore.ensureLoaded(),
+    topicStore.ensureLoaded(),
+    tagStore.ensureLoaded(),
+  ]);
+  isReady.value = true;
+  scheduleRecompute();
 });
+
+watchDebounced(
+  [searchQuery, deckId, topicId, tagIds, studyStatus, difficulty, pos, sort, () => cardStore.cards],
+  scheduleRecompute,
+  { debounce: 200 },
+);
 
 const STUDY_STATUS_LABELS: Record<Exclude<StudyStatusFilter, 'all'>, string> = {
   studied: 'Studied',
@@ -95,15 +134,20 @@ const POS_LABELS: Record<Exclude<PosFilter, 'all'>, string> = {
 
 const activeChips = computed(() => {
   const chips: { key: string; label: string }[] = [];
-  if (searchQuery.value.trim()) chips.push({ key: 'search', label: `Search: "${searchQuery.value.trim()}"` });
-  if (deckId.value) chips.push({ key: 'deck', label: deckStore.getById(deckId.value)?.name ?? 'Deck' });
-  if (topicId.value) chips.push({ key: 'topic', label: topicStore.getById(topicId.value)?.name ?? 'Topic' });
+  if (searchQuery.value.trim())
+    chips.push({ key: 'search', label: `Search: "${searchQuery.value.trim()}"` });
+  if (deckId.value)
+    chips.push({ key: 'deck', label: deckStore.getById(deckId.value)?.name ?? 'Deck' });
+  if (topicId.value)
+    chips.push({ key: 'topic', label: topicStore.getById(topicId.value)?.name ?? 'Topic' });
   for (const id of tagIds.value) {
     const tag = tagStore.getById(id);
     if (tag) chips.push({ key: `tag:${id}`, label: tag.name });
   }
-  if (studyStatus.value !== 'all') chips.push({ key: 'studyStatus', label: STUDY_STATUS_LABELS[studyStatus.value] });
-  if (difficulty.value !== 'all') chips.push({ key: 'difficulty', label: DIFFICULTY_LABELS[difficulty.value] });
+  if (studyStatus.value !== 'all')
+    chips.push({ key: 'studyStatus', label: STUDY_STATUS_LABELS[studyStatus.value] });
+  if (difficulty.value !== 'all')
+    chips.push({ key: 'difficulty', label: DIFFICULTY_LABELS[difficulty.value] });
   if (pos.value !== 'all') chips.push({ key: 'pos', label: POS_LABELS[pos.value] });
   return chips;
 });
@@ -132,10 +176,10 @@ function clearAllFilters() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-background px-4 pt-6 pb-18.75">
+  <div class="bg-background min-h-screen px-4 pt-6 pb-18.75">
     <RouterLink
       to="/cards"
-      class="mb-4 inline-flex items-center gap-1 text-sm text-text/50 hover:text-primary"
+      class="text-text/50 hover:text-primary mb-4 inline-flex items-center gap-1 text-sm"
     >
       <AppIcon
         icon-name="ArrowLeft"
@@ -145,7 +189,7 @@ function clearAllFilters() {
     </RouterLink>
 
     <div class="mb-4 flex items-center justify-between">
-      <h1 class="font-serif text-2xl font-bold text-card-primary">All Cards</h1>
+      <h1 class="text-card-primary font-serif text-2xl font-bold">All Cards</h1>
       <BaseButton
         variant="primary"
         size="sm"
@@ -161,7 +205,7 @@ function clearAllFilters() {
 
     <p
       v-if="!isReady"
-      class="text-sm text-text/50"
+      class="text-text/50 text-sm"
     >
       Loading…
     </p>
@@ -204,52 +248,32 @@ function clearAllFilters() {
         @clear-all="clearAllFilters"
       />
 
-      <p class="mb-3 text-xs text-text/50">
-        Showing {{ sortedCards.length }} of {{ cardStore.cards.length }} card{{
+      <p class="text-text/50 mb-3 flex items-center gap-2 text-xs">
+        Showing {{ displayedCards.length }} of {{ cardStore.cards.length }} card{{
           cardStore.cards.length === 1 ? '' : 's'
         }}
+        <span
+          v-if="isFiltering"
+          class="text-primary"
+        >
+          · Filtering…
+        </span>
       </p>
 
-      <TransitionGroup
-        tag="div"
-        name="card-list"
-        class="relative space-y-3 max-h-130 overflow-y-auto px-1"
-      >
-        <CardListItem
-          v-for="card in sortedCards"
-          :key="card.id"
-          :card="card"
-          :view-mode="viewMode"
-        />
-      </TransitionGroup>
+      <CardListSkeleton v-if="isFiltering && displayedCards.length === 0" />
+      <CardVirtualList
+        v-else-if="displayedCards.length > 0"
+        :cards="displayedCards"
+        :view-mode="viewMode"
+        class="transition-opacity duration-150"
+        :class="{ 'pointer-events-none opacity-50': isFiltering }"
+      />
       <p
-        v-if="sortedCards.length === 0"
-        class="rounded-lg border border-text/20 py-8 text-center text-sm text-text/35"
+        v-if="!isFiltering && displayedCards.length === 0"
+        class="border-text/20 text-text/35 rounded-lg border py-8 text-center text-sm"
       >
         No cards match the active filters.
       </p>
     </template>
   </div>
 </template>
-
-<style scoped>
-.card-list-move,
-.card-list-enter-active,
-.card-list-leave-active {
-  transition:
-    opacity 0.22s ease,
-    transform 0.22s ease;
-}
-.card-list-enter-from {
-  opacity: 0;
-  transform: translateY(-8px);
-}
-.card-list-leave-to {
-  opacity: 0;
-  transform: scale(0.96);
-}
-.card-list-leave-active {
-  position: absolute;
-  width: 100%;
-}
-</style>

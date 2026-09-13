@@ -282,9 +282,9 @@ onBeforeUnmount(() => {
       >
         {{ rootDeckName }}
       </p>
-      <div class="flex flex-wrap items-start justify-between gap-3">
-        <h2 class="text-card-gold font-serif text-3xl font-semibold">{{ card.frontTitle }}</h2>
-        <div class="flex flex-1 items-center justify-end gap-2">
+      <div class="flex items-start justify-between gap-3">
+        <h2 class="text-card-gold text-wrap font-serif text-3xl font-semibold">{{ card.frontTitle }}</h2>
+        <div class="flex flex-1 flex-wrap items-center justify-end gap-2">
           <span
             v-if="card.studyCount > 0"
             class="bg-primary/10 text-primary inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-xs font-medium"
@@ -395,11 +395,11 @@ onBeforeUnmount(() => {
           class="border-card-gold/20 bg-card-definition mt-4 rounded-xl border p-4"
         >
           <h2 class="text-card-gold mb-1 text-base">Examples:</h2>
-          <ul class="space-y-2">
+          <ul class="space-y-3 list-disc">
             <li
               v-for="(example, index) in card.examples"
               :key="index"
-              class="text-text/90 text-base"
+              class="text-text/90 ml-4 leading-4.5 text-base"
             >
               {{ example }}
             </li>
