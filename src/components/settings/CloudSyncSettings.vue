@@ -66,8 +66,9 @@ async function handleConnect() {
       </span>
     </div>
     <p class="text-card-muted mb-4 text-xs">
-      Back up and sync your decks, cards, and tags to your personal Google Drive, no account with us
-      required. Storage lives in your Drive's private app data, invisible to other apps.
+      Back up and sync your decks, cards, tags, and AI quiz history to your personal Google Drive, no
+      account with us required. Storage lives in your Drive's private app data, invisible to other
+      apps.
     </p>
 
     <template v-if="!syncStore.isConfigured">

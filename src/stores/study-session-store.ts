@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { dailyStatRepository } from '@/db/repositories';
 import { buildMatchingQuizChunk, type MatchingQuizChunk } from '@/services/review/matching-quiz';
 import { buildPriorityQueue, type ReviewPriorityFilter } from '@/services/review/priority-queue';
@@ -77,6 +77,32 @@ export const useStudySessionStore = defineStore('study-session', () => {
     totalMatched.value > 0 ? totalCorrectMatches.value / totalMatched.value : 0,
   );
   const elapsedMs = computed(() => (finishedAt.value ?? Date.now()) - startedAt.value);
+
+  /**
+   * Keeps `queue`/`currentChunk` in sync with `cardStore.cards`, so a mid-session edit (the
+   * quick-edit modal opened from the active card) shows up immediately on the card still on
+   * screen. `cardStore.cards` is a `shallowRef` (see its own doc comment): `cardStore.edit`
+   * updates a card's fields by mutating the shared object directly rather than through a Vue
+   * reactive proxy, so nothing downstream is notified on its own, even though `queue` and
+   * `currentChunk` hold that exact same object. Re-assigning a fresh shallow copy into the
+   * matching slot is what actually gives Vue a changed value to react to, so `currentCard`
+   * recomputes and the visible `ReviewCard` re-renders with the new content — `chunkCardIndex`,
+   * `phase`, and every timer/progress field here are untouched.
+   */
+  watch(
+    () => useCardStore().cards,
+    () => {
+      const cardsById = new Map(useCardStore().cards.map((card) => [card.id, card]));
+      const refresh = (list: Card[]) => {
+        for (let i = 0; i < list.length; i++) {
+          const fresh = cardsById.get(list[i]!.id);
+          if (fresh) list[i] = { ...fresh };
+        }
+      };
+      refresh(queue.value);
+      refresh(currentChunk.value);
+    },
+  );
 
   function start(config: StudySessionConfig, initialViewMode: CardViewMode = 'practice'): void {
     const cardStore = useCardStore();

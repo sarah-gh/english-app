@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { RouterLink, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import DuplicateCardBatchModal from '@/components/card/DuplicateCardBatchModal.vue';
+import PageHeaderBack from '@/components/common/PageHeaderBack.vue';
 import ImportPreviewCard from '@/components/import/ImportPreviewCard.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import { useDuplicateCardCheck } from '@/composables/useDuplicateCardCheck';
@@ -255,16 +256,10 @@ function goToCards() {
 
 <template>
   <div class="bg-background min-h-screen px-4 py-6 pb-18.75">
-    <RouterLink
+    <PageHeaderBack
       to="/cards"
-      class="text-text/50 hover:text-primary mb-4 inline-flex items-center gap-1 text-sm"
-    >
-      <AppIcon
-        icon-name="ArrowLeft"
-        :size="14"
-      />
-      Cards
-    </RouterLink>
+      label="Cards"
+    />
 
     <h1 class="text-text mb-1 text-xl font-semibold">Import from Excel</h1>
     <p class="text-text/50 mb-6 text-sm">

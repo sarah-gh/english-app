@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router';
 import ConfirmDialog from '@/components/app/ConfirmDialog.vue';
 import DuplicateCardWarningModal from '@/components/card/DuplicateCardWarningModal.vue';
 import CardEditorForm from '@/components/card-editor/CardEditorForm.vue';
+import PageHeaderBack from '@/components/common/PageHeaderBack.vue';
 import {
   blankCardFormState,
   cardFormStateFromCard,
@@ -176,6 +177,10 @@ function confirmDiscardChanges() {
 
 <template>
   <div class="min-h-screen bg-background px-4 py-6">
+    <PageHeaderBack
+      label="Back"
+      @click="handleCancel"
+    />
     <h1 class="mb-2 text-lg font-semibold text-text">
       {{ isEditing ? 'Edit Card' : 'New Card' }}
     </h1>

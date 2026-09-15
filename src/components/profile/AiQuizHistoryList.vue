@@ -25,6 +25,18 @@ function formatDate(timestamp: number): string {
 function modeLabel(mode?: 'multiple-choice' | 'open-ended'): string {
   return mode === 'open-ended' ? 'Open-Ended' : 'Multiple Choice';
 }
+
+/** Open-ended results are shown as a single normalized percentage rather than `score/total`, this
+ *  computes the ratio rather than assuming `total` is already 100, so it renders correctly for
+ *  older records saved before the score/total pair was normalized (e.g. `273/300`) as well as
+ *  current ones (e.g. `91/100`), both reduce to the same 91%. */
+function scoreLabel(result: { mode?: 'multiple-choice' | 'open-ended'; score: number; total: number }): string {
+  if (result.mode === 'open-ended') {
+    const percent = result.total > 0 ? Math.round((result.score / result.total) * 100) : 0;
+    return `${percent}%`;
+  }
+  return `${result.score}/${result.total}`;
+}
 </script>
 
 <template>
@@ -63,7 +75,7 @@ function modeLabel(mode?: 'multiple-choice' | 'open-ended'): string {
               </p>
             </div>
             <span class="flex shrink-0 items-center gap-1.5">
-              <span class="text-sm font-semibold text-primary">{{ result.score }}/{{ result.total }}</span>
+              <span class="text-sm font-semibold text-primary">{{ scoreLabel(result) }}</span>
               <AppIcon
                 v-if="result.questions && result.questions.length > 0"
                 icon-name="ArrowDown2"
@@ -85,7 +97,7 @@ function modeLabel(mode?: 'multiple-choice' | 'open-ended'): string {
 
               <template v-if="result.mode === 'open-ended'">
                 <p v-if="detail.score !== undefined" class="mb-1 text-xs font-semibold text-primary">{{ detail.score }}/100</p>
-                <p v-if="detail.feedback" class="mb-1 text-xs text-card-muted">{{ detail.feedback }}</p>
+                <p v-if="detail.feedback" class="mb-1 whitespace-pre-line text-xs text-card-muted">{{ detail.feedback }}</p>
                 <p v-if="detail.sampleAnswer" class="text-xs text-card-muted">Sample: {{ detail.sampleAnswer }}</p>
               </template>
               <template v-else>

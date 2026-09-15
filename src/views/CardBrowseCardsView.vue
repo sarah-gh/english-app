@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { RouterLink, useRoute, useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import CardListItem from '@/components/card-management/CardListItem.vue';
+import PageHeaderBack from '@/components/common/PageHeaderBack.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseInput from '@/components/ui/BaseInput.vue';
 import BaseSegmentedToggle from '@/components/ui/BaseSegmentedToggle.vue';
@@ -73,16 +74,10 @@ const addCardLink = computed(() => {
 
 <template>
   <div class="min-h-screen bg-background px-4 pt-6 pb-3">
-    <RouterLink
+    <PageHeaderBack
       :to="`/cards/${deckId}`"
-      class="mb-4 inline-flex items-center gap-1 text-sm text-text/50 hover:text-primary"
-    >
-      <AppIcon
-        icon-name="ArrowLeft"
-        :size="14"
-      />
-      {{ deck?.name ?? 'Topics' }}
-    </RouterLink>
+      :label="deck?.name ?? 'Topics'"
+    />
 
     <div class="mb-3 flex items-center justify-between">
       <h1 class="text-xl font-semibold text-text">{{ pageTitle }}</h1>

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { RouterLink } from 'vue-router';
 import ConfirmDialog from '@/components/app/ConfirmDialog.vue';
 import DeckFormModal from '@/components/browse/DeckFormModal.vue';
 import TopicFormModal from '@/components/browse/TopicFormModal.vue';
+import PageHeaderBack from '@/components/common/PageHeaderBack.vue';
 import { useCardStore } from '@/stores/card-store';
 import { useDeckStore } from '@/stores/deck-store';
 import { useTagStore } from '@/stores/tag-store';
@@ -150,16 +150,10 @@ async function confirmDeleteTag() {
 
 <template>
   <div class="bg-background min-h-screen px-4 py-6 pb-18.75">
-    <RouterLink
+    <PageHeaderBack
       to="/"
-      class="text-text/50 hover:text-primary mb-4 inline-flex items-center gap-1 text-sm"
-    >
-      <AppIcon
-        icon-name="ArrowLeft"
-        :size="14"
-      />
-      Dashboard
-    </RouterLink>
+      label="Dashboard"
+    />
     <h1 class="text-text mb-6 text-xl font-semibold">Decks &amp; Tags</h1>
 
     <p

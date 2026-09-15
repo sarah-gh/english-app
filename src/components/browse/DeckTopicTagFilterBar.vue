@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import TagFilterDropdown from '@/components/browse/TagFilterDropdown.vue';
+import TagFilterDropdown from '@/components/common/TagFilterDropdown.vue';
 import BaseSelect from '@/components/ui/BaseSelect.vue';
 import { useTopicStore } from '@/stores/topic-store';
 import type { Deck } from '@/types/deck';

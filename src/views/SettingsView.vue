@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { RouterLink } from 'vue-router';
+import PageHeaderBack from '@/components/common/PageHeaderBack.vue';
 import AiProviderSettings from '@/components/settings/AiProviderSettings.vue';
 import AppearanceSettings from '@/components/settings/AppearanceSettings.vue';
 import CustomPromptManagerSettings from '@/components/settings/CustomPromptManagerSettings.vue';
@@ -21,16 +22,10 @@ onMounted(async () => {
 
 <template>
   <div class="bg-background min-h-screen px-4 py-6 pb-18.75">
-    <RouterLink
+    <PageHeaderBack
       to="/"
-      class="text-text/50 hover:text-primary mb-4 inline-flex items-center gap-1 text-sm"
-    >
-      <AppIcon
-        icon-name="ArrowLeft"
-        :size="14"
-      />
-      Dashboard
-    </RouterLink>
+      label="Dashboard"
+    />
     <h1 class="text-text mb-6 text-xl font-semibold">Settings</h1>
 
     <p

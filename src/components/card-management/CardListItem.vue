@@ -123,7 +123,7 @@ async function handleDelete() {
       </div>
     </div>
 
-    <BaseExpandableContent fade-class="from-white via-white/80 dark:from-slate-900 dark:via-slate-900/80">
+    <BaseExpandableContent fade-class="from-card-surface via-card-surface/80">
       <div
         v-if="cardTags.length > 0"
         class="mt-2 flex flex-wrap gap-1.5"

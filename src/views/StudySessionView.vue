@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import CardEditorModal from '@/components/card-editor/CardEditorModal.vue';
+import PageHeaderBack from '@/components/common/PageHeaderBack.vue';
 import ReviewCard from '@/components/review/ReviewCard.vue';
 import MatchingQuiz from '@/components/study/MatchingQuiz.vue';
 import SessionSummaryReport from '@/components/study/SessionSummaryReport.vue';
@@ -19,8 +20,9 @@ const activeCardRef = ref<InstanceType<typeof ReviewCard>>();
 
 /** Editing happens in-place, as an overlay above the current session, the route and the
  *  session store never change, so the same card index/queue state is exactly where the user
- *  left it once the overlay closes. `cardStore.edit` mutates the card object in place, and this
- *  session's queue holds that same object reference, so the card underneath updates for free. */
+ *  left it once the overlay closes. The edited content itself reaching the visible card is
+ *  handled by a `cardStore.cards` watcher in `study-session-store` (see its own doc comment) —
+ *  not something that happens "for free" from object identity alone. */
 const editingCard = ref<Card | null>(null);
 
 function openCardEditor(card: Card) {
@@ -107,17 +109,10 @@ function studyAnotherBatch() {
     :style="backgroundImageStyle"
   >
     <div class="mb-4 flex items-center justify-between">
-      <button
-        type="button"
-        class="text-text/50 hover:text-primary inline-flex items-center gap-1 text-sm"
-        @click="backToSetup"
-      >
-        <AppIcon
-          icon-name="ArrowLeft"
-          :size="14"
-        />
-        Exit
-      </button>
+      <PageHeaderBack
+        to="/study"
+        label="Exit"
+      />
       <button
         v-if="studySessionStore.phase === 'studying' && studySessionStore.viewMode === 'practice'"
         type="button"

@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { RouterLink, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import WarningIcon from '@/components/app/WarningIcon.vue';
 import ActiveFiltersBar from '@/components/browse/ActiveFiltersBar.vue';
 import AllCardsFilterBar from '@/components/browse/AllCardsFilterBar.vue';
+import PageHeaderBack from '@/components/common/PageHeaderBack.vue';
 import QuizCardSelectionList from '@/components/quiz-setup/QuizCardSelectionList.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseInput from '@/components/ui/BaseInput.vue';
@@ -105,11 +106,36 @@ function incrementQuestionCount() {
   if (canIncrementQuestions.value) questionCount.value += 1;
 }
 
-function setQuestionCount(rawValue: string) {
-  const parsed = Math.round(Number(rawValue));
-  questionCount.value = Number.isFinite(parsed)
+/** Ceiling-only, applied as the user types: strips anything non-digit and caps at
+ *  `MAX_QUESTIONS` immediately, but tolerates a momentarily blank or below-`MIN_QUESTIONS` field
+ *  (e.g. mid-backspace while replacing the number) rather than fighting the user for every
+ *  keystroke — `handleQuestionCountBlur` below is what finalizes the floor once they're done. */
+function handleQuestionCountInput(event: Event) {
+  const target = event.target as HTMLInputElement;
+  const digitsOnly = target.value.replace(/\D/g, '');
+  if (digitsOnly !== target.value) target.value = digitsOnly;
+
+  if (digitsOnly === '') return;
+
+  const clamped = Math.min(MAX_QUESTIONS, Number.parseInt(digitsOnly, 10));
+  questionCount.value = clamped;
+  // `questionCount.value` only re-renders `:value` when it actually changes, so once it's already
+  // pinned at MAX_QUESTIONS, further digits (e.g. typing "30" then "22" more, making "3022") would
+  // otherwise keep drifting the native input's own displayed text away from the clamped model
+  // value instead of snapping back — this forces the DOM back in sync every time regardless.
+  target.value = String(clamped);
+}
+
+/** Finalizes the field on blur: a blank or below-`MIN_QUESTIONS` value (left alone by `@input`
+ *  above) is clamped up to `MIN_QUESTIONS` here instead. */
+function handleQuestionCountBlur(event: Event) {
+  const target = event.target as HTMLInputElement;
+  const parsed = Number.parseInt(target.value, 10);
+  const clamped = Number.isFinite(parsed)
     ? Math.min(MAX_QUESTIONS, Math.max(MIN_QUESTIONS, parsed))
     : MIN_QUESTIONS;
+  questionCount.value = clamped;
+  target.value = String(clamped);
 }
 
 const filteredCards = computed(() => {
@@ -292,16 +318,10 @@ async function handleGenerate() {
 
 <template>
   <div class="bg-background min-h-screen px-4 py-6">
-    <RouterLink
+    <PageHeaderBack
       to="/"
-      class="text-text/50 hover:text-primary mb-4 inline-flex items-center gap-1 text-sm"
-    >
-      <AppIcon
-        icon-name="ArrowLeft"
-        :size="14"
-      />
-      Dashboard
-    </RouterLink>
+      label="Dashboard"
+    />
     <h1 class="text-card-gold mb-6 font-serif text-3xl font-bold">AI Quiz Generator</h1>
 
     <p
@@ -394,7 +414,8 @@ async function handleGenerate() {
             max="30"
             :value="questionCount"
             class="text-text w-full [appearance:textfield] bg-transparent text-center text-sm font-semibold focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-            @input="setQuestionCount(($event.target as HTMLInputElement).value)"
+            @input="handleQuestionCountInput"
+            @blur="handleQuestionCountBlur"
           />
           <button
             type="button"

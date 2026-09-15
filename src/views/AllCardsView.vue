@@ -1,26 +1,21 @@
 <script setup lang="ts">
 import { watchDebounced } from '@vueuse/core';
 import { computed, onMounted, ref, shallowRef } from 'vue';
-import { RouterLink } from 'vue-router';
 import ActiveFiltersBar from '@/components/browse/ActiveFiltersBar.vue';
 import AllCardsFilterBar from '@/components/browse/AllCardsFilterBar.vue';
 import CardListSkeleton from '@/components/browse/CardListSkeleton.vue';
 import CardVirtualList from '@/components/browse/CardVirtualList.vue';
+import PageHeaderBack from '@/components/common/PageHeaderBack.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseInput from '@/components/ui/BaseInput.vue';
 import BaseSegmentedToggle from '@/components/ui/BaseSegmentedToggle.vue';
+import { useCardFilterQuerySync } from '@/composables/useCardFilterQuerySync';
 import { useCardStore } from '@/stores/card-store';
 import { useDeckStore } from '@/stores/deck-store';
 import { useTagStore } from '@/stores/tag-store';
 import { useTopicStore } from '@/stores/topic-store';
 import type { Card } from '@/types/card';
-import type {
-  DifficultyFilter,
-  PosFilter,
-  SortOption,
-  StudyStatusFilter,
-} from '@/types/card-filters';
-import type { CardViewMode } from '@/types/view-mode';
+import type { DifficultyFilter, PosFilter, StudyStatusFilter } from '@/types/card-filters';
 import { stripHtmlToText } from '@/utils/html';
 
 const cardStore = useCardStore();
@@ -30,15 +25,20 @@ const tagStore = useTagStore();
 
 const isReady = ref(false);
 
-const searchQuery = ref('');
-const deckId = ref('');
-const topicId = ref('');
-const tagIds = ref<string[]>([]);
-const studyStatus = ref<StudyStatusFilter>('all');
-const difficulty = ref<DifficultyFilter>('all');
-const pos = ref<PosFilter>('all');
-const sort = ref<SortOption>('created-desc');
-const viewMode = ref<CardViewMode>('study');
+// Seeded from `route.query` on setup and mirrored back to it on change, so filters survive a
+// trip to the card editor and back (see the composable's doc comment for why).
+const {
+  searchQuery,
+  deckId,
+  topicId,
+  tagIds,
+  studyStatus,
+  difficulty,
+  pos,
+  sort,
+  viewMode,
+  syncQueryParams,
+} = useCardFilterQuerySync();
 
 /** Filtering/sorting 1,000+ cards synchronously inside a `computed` is heavy enough to jank a
  *  keystroke or a filter toggle, so it instead runs here, off the reactive graph: `scheduleRecompute`
@@ -114,6 +114,12 @@ watchDebounced(
   { debounce: 200 },
 );
 
+watchDebounced(
+  [searchQuery, deckId, topicId, tagIds, studyStatus, difficulty, pos, sort, viewMode],
+  syncQueryParams,
+  { debounce: 200 },
+);
+
 const STUDY_STATUS_LABELS: Record<Exclude<StudyStatusFilter, 'all'>, string> = {
   studied: 'Studied',
   unstudied: 'Unstudied',
@@ -177,16 +183,10 @@ function clearAllFilters() {
 
 <template>
   <div class="bg-background min-h-screen px-4 pt-6 pb-18.75">
-    <RouterLink
+    <PageHeaderBack
       to="/cards"
-      class="text-text/50 hover:text-primary mb-4 inline-flex items-center gap-1 text-sm"
-    >
-      <AppIcon
-        icon-name="ArrowLeft"
-        :size="14"
-      />
-      Browse Cards
-    </RouterLink>
+      label="Browse Cards"
+    />
 
     <div class="mb-4 flex items-center justify-between">
       <h1 class="text-card-primary font-serif text-2xl font-bold">All Cards</h1>

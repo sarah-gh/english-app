@@ -33,7 +33,12 @@ function isActive(routeName: string): boolean {
 
 <template>
   <nav class="fixed inset-x-4 bottom-2 z-40 mx-auto max-w-sm">
-    <div class="relative flex items-stretch justify-around rounded-full bg-neutral-900 shadow-lg shadow-black/30">
+    <div
+      class="relative flex items-stretch justify-around rounded-full border border-white/20 bg-slate-100/75
+      shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1),0_4px_6px_-4px_rgba(0,0,0,0.1),inset_0_1px_1px_rgba(255,255,255,0.4)]
+      backdrop-blur-sm backdrop-saturate-150 dark:border-none dark:bg-neutral-900/75
+      dark:shadow-[0_10px_15px_-3px_rgba(245,158,11,0.1),0_4px_6px_-4px_rgba(245,158,11,0.1),inset_0_1px_1px_rgba(255,255,255,0.1)]"
+    >
       <!-- Sliding active-tab spotlight: top light bar + downward glow -->
       <!-- <div
         class="pointer-events-none absolute top-1 h-full w-16 -translate-x-1/2 transition-[left] duration-300 ease-out"
@@ -50,7 +55,11 @@ function isActive(routeName: string): boolean {
         :key="tab.to"
         :to="tab.to"
         class="relative z-10 flex flex-1 flex-col items-center justify-center gap-0.5 py-3.5 transition-colors duration-200"
-        :class="isActive(tab.routeName) ? 'text-primary text-shadow-md text-shadow-primary' : 'text-white/40 hover:text-white/70'"
+        :class="
+          isActive(tab.routeName)
+            ? 'text-primary text-shadow-md text-shadow-primary'
+            : 'text-slate-700 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100'
+        "
       >
         <AppIcon
           :icon-name="tab.icon"

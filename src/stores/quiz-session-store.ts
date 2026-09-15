@@ -51,22 +51,24 @@ export const useQuizSessionStore = defineStore('quiz-session', () => {
     return evaluations.value[question.id];
   }
 
-  /** Multiple-choice: count of correct answers. Open-ended: sum of 0-100 AI scores, paired with
-   *  `total` below, which scales to match (question count vs. question count * 100). */
+  /** Multiple-choice: count of correct answers, paired with `total` below as a question count.
+   *  Open-ended: the average of the per-question 0-100 AI scores, rounded, paired with a fixed
+   *  `total` of 100, so the overall result is always on a normalized 100-point scale regardless of
+   *  how many questions were graded. */
   const score = computed(() => {
     if (!isSubmitted.value) return 0;
     if (mode.value === 'multiple-choice') {
       return questions.value.filter((question) => isCorrect(question)).length;
     }
-    return questions.value.reduce(
+    if (questions.value.length === 0) return 0;
+    const totalPoints = questions.value.reduce(
       (sum, question) => sum + (evaluationFor(question)?.score ?? 0),
       0,
     );
+    return Math.round(totalPoints / questions.value.length);
   });
 
-  const total = computed(() =>
-    mode.value === 'multiple-choice' ? questions.value.length : questions.value.length * 100,
-  );
+  const total = computed(() => (mode.value === 'multiple-choice' ? questions.value.length : 100));
 
   function setQuestions(newMode: QuizMode, newQuestions: QuizSessionQuestion[]): void {
     mode.value = newMode;

@@ -1,19 +1,13 @@
 <script setup lang="ts">
-import { RouterLink } from 'vue-router';
+import PageHeaderBack from '@/components/common/PageHeaderBack.vue';
 </script>
 
 <template>
   <div class="bg-background min-h-screen px-4 py-6 pb-18.75">
-    <RouterLink
+    <PageHeaderBack
       to="/"
-      class="text-text/50 hover:text-primary mb-4 inline-flex items-center gap-1 text-sm"
-    >
-      <AppIcon
-        icon-name="ArrowLeft"
-        :size="14"
-      />
-      Dashboard
-    </RouterLink>
+      label="Dashboard"
+    />
     <h1 class="text-text mb-1 text-xl font-semibold">Privacy Policy</h1>
     <p class="text-text/50 mb-6 text-sm">Last updated: September 2026</p>
 

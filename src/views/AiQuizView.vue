@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { RouterLink, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import WarningIcon from '@/components/app/WarningIcon.vue';
+import PageHeaderBack from '@/components/common/PageHeaderBack.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseCard from '@/components/ui/BaseCard.vue';
 import BaseInput from '@/components/ui/BaseInput.vue';
@@ -55,10 +56,7 @@ function startNewQuiz() {
 
 <template>
   <div class="min-h-screen bg-background px-4 py-6">
-    <RouterLink to="/ai-quiz" class="mb-4 inline-flex items-center gap-1 text-sm text-text/50 hover:text-primary">
-      <AppIcon icon-name="ArrowLeft" :size="14" />
-      Card Selection
-    </RouterLink>
+    <PageHeaderBack to="/ai-quiz" label="Card Selection" />
     <h1 class="mb-6 text-xl font-semibold text-text">AI Quiz</h1>
 
     <div v-if="!hasQuestions" class="flex flex-col items-center gap-4 py-16 text-center">
@@ -151,7 +149,7 @@ v-if="quizSessionStore.isSubmitted && isMultipleChoice && !quizSessionStore.isCo
           </p>
 
           <div v-if="quizSessionStore.isSubmitted && !isMultipleChoice && quizSessionStore.evaluationFor(question)" class="mt-3 space-y-2 border-t border-text/10 pt-3">
-            <p class="text-xs text-text/70">
+            <p class="whitespace-pre-line text-xs text-text/70">
               <span class="font-semibold text-text">Feedback:</span> {{ quizSessionStore.evaluationFor(question)!.feedback }}
             </p>
             <p class="text-xs text-text/70">

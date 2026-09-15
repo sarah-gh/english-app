@@ -4,6 +4,7 @@ import { RouterLink, useRoute } from 'vue-router';
 import ConfirmDialog from '@/components/app/ConfirmDialog.vue';
 import DeckTree from '@/components/browse/DeckTree.vue';
 import TopicFormModal from '@/components/browse/TopicFormModal.vue';
+import PageHeaderBack from '@/components/common/PageHeaderBack.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import { useBrowseTreeStore } from '@/stores/browse-tree-store';
 import { useCardStore } from '@/stores/card-store';
@@ -78,16 +79,10 @@ async function confirmDeleteTopic() {
 
 <template>
   <div class="bg-background min-h-screen px-4 pt-6 pb-18.75">
-    <RouterLink
+    <PageHeaderBack
       to="/"
-      class="text-text/50 hover:text-primary mb-4 inline-flex items-center gap-1 text-sm"
-    >
-      <AppIcon
-        icon-name="ArrowLeft"
-        :size="14"
-      />
-      Dashboard
-    </RouterLink>
+      label="Dashboard"
+    />
 
     <div class="mb-4 flex items-center justify-between">
       <h1 class="text-card-primary font-serif text-2xl font-bold">Browse Cards</h1>

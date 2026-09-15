@@ -1,8 +1,10 @@
 export interface GeneratedQuizEvaluation {
   /** 1-based index into the list of question/answer pairs the evaluation prompt was built from. */
   sourceIndex: number;
-  /** 0-100. */
+  /** 0-100. Below 100 only when a requirement was missed or an inaccuracy was present. */
   score: number;
+  /** Below a score of 100, must include a "Why points were deducted:" section, see
+   *  `buildDescriptiveEvaluationPrompt`. */
   feedback: string;
   sampleAnswer: string;
 }

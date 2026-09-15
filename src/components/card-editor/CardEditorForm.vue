@@ -451,7 +451,7 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
     <div class="border-text/10 bg-background fixed inset-x-0 bottom-0 flex gap-3 border-t p-4">
       <button
         type="button"
-        class="border-text/20 text-text/70 hover:border-primary hover:text-primary flex-1 rounded border py-2.5 text-sm font-medium"
+        class="border-text/20 text-text/70 hover:border-primary hover:text-primary flex-1 rounded border py-2 text-sm font-medium"
         @click="emit('cancel')"
       >
         Cancel
@@ -460,17 +460,29 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
         v-if="!isEditing"
         type="button"
         :disabled="isSaving || (formMeta.touched && !formMeta.valid)"
-        class="border-primary text-primary hover:bg-primary hover:text-background disabled:border-text/20 disabled:text-text/30 flex-1 rounded border py-2.5 text-sm font-medium disabled:cursor-not-allowed disabled:hover:bg-transparent"
+        class="border-primary text-primary hover:bg-primary hover:text-background disabled:border-text/20 disabled:text-text/30 flex-1 rounded border py-2 text-sm font-medium disabled:cursor-not-allowed disabled:hover:bg-transparent"
         @click="submitExit"
       >
-        {{ isSaving ? 'Saving…' : 'Save & Exit' }}
+        {{ isSaving ? 'Saving…' : '' }}
+        <span v-if="!isSaving">
+          Save
+          <span class="text-[10px]">
+            & Exit
+          </span>
+        </span>
       </button>
       <button
         type="submit"
         :disabled="isSaving || (formMeta.touched && !formMeta.valid)"
-        class="bg-secondary text-text hover:bg-secondary/90 disabled:bg-secondary/30 disabled:text-text/30 flex-1 rounded py-2.5 text-sm font-medium"
+        class="bg-secondary text-text hover:bg-secondary/90 disabled:bg-secondary/30 disabled:text-text/30 flex-1 rounded py-2 text-sm font-medium"
       >
-        {{ isSaving ? 'Saving…' : isEditing ? 'Save Changes' : 'Save & Add Another' }}
+        {{ isSaving ? 'Saving…' : isEditing ? 'Save Changes' : '' }}
+        <span v-if="!isSaving && !isEditing">
+          Save
+          <span class="text-[10px]">
+            & Add Another
+          </span>
+        </span>
       </button>
     </div>
   </form>

@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue';
+import { autoUpdate, flip, offset, shift, size, useFloating } from '@floating-ui/vue';
+import { computed, ref, useTemplateRef } from 'vue';
 import BaseTag from '@/components/ui/BaseTag.vue';
 import { useTagStore } from '@/stores/tag-store';
 
@@ -7,16 +9,50 @@ const tagIds = defineModel<string[]>('tagIds', { required: true });
 
 const tagStore = useTagStore();
 
-/** Starts open whenever the card already has tags (editing an existing card), collapsed for a
- *  brand-new card with none yet. */
-const isExpanded = ref(tagIds.value.length > 0);
-const isCreating = ref(false);
-const newTagName = ref('');
-const newTagColor = ref('#6b7280');
+const triggerRef = useTemplateRef<InstanceType<typeof PopoverButton>>('trigger');
+const panelRef = useTemplateRef<InstanceType<typeof PopoverPanel>>('panel');
+
+// Same bounded-popover setup as the browse-page TagFilterDropdown (offset/flip/shift/size), so
+// this list is never clipped by the viewport or the form's own edges either, regardless of where
+// in the (long, scrollable) card editor form it happens to be opened from.
+const { floatingStyles } = useFloating(triggerRef, panelRef, {
+  placement: 'bottom-start',
+  strategy: 'fixed',
+  whileElementsMounted: autoUpdate,
+  middleware: [
+    offset(4),
+    flip({ padding: 8 }),
+    shift({ padding: 8 }),
+    size({
+      padding: 8,
+      apply({ elements, availableWidth, availableHeight }) {
+        elements.floating.style.minWidth = '14rem';
+        elements.floating.style.maxWidth = `${Math.min(350, availableWidth)}px`;
+        elements.floating.style.maxHeight = `${Math.min(320, availableHeight)}px`;
+      },
+    }),
+  ],
+});
 
 const summaryLabel = computed(() =>
   tagIds.value.length === 0 ? 'Tags' : `Tags (${tagIds.value.length} selected)`,
 );
+
+const searchQuery = ref('');
+const newTagColor = ref('#6b7280');
+
+const trimmedQuery = computed(() => searchQuery.value.trim());
+const filteredTags = computed(() => {
+  const query = trimmedQuery.value.toLowerCase();
+  if (!query) return tagStore.tags;
+  return tagStore.tags.filter((tag) => tag.name.toLowerCase().includes(query));
+});
+/** Hides the "Create" suggestion once the typed name already belongs to a real tag, so the same
+ *  name can't be created twice just because of a difference in case. */
+const hasExactMatch = computed(() =>
+  tagStore.tags.some((tag) => tag.name.toLowerCase() === trimmedQuery.value.toLowerCase()),
+);
+const showCreateOption = computed(() => trimmedQuery.value.length > 0 && !hasExactMatch.value);
 
 function toggleTag(id: string) {
   tagIds.value = tagIds.value.includes(id)
@@ -24,94 +60,95 @@ function toggleTag(id: string) {
     : [...tagIds.value, id];
 }
 
-async function createTag() {
-  const name = newTagName.value.trim();
+async function createTagFromSearch() {
+  const name = trimmedQuery.value;
   if (!name) return;
-
   const tag = await tagStore.add({ name, color: newTagColor.value });
   tagIds.value = [...tagIds.value, tag.id];
-  newTagName.value = '';
-  isCreating.value = false;
+  searchQuery.value = '';
 }
 </script>
 
 <template>
-  <div>
-    <button
-      type="button"
-      class="flex w-full items-center justify-between rounded border border-card-gold/20 bg-card-surface px-3 py-2 text-left text-sm font-medium text-text hover:border-card-gold/40"
-      :aria-expanded="isExpanded"
-      @click="isExpanded = !isExpanded"
+  <Popover>
+    <PopoverButton
+      ref="trigger"
+      v-slot="{ open }"
+      class="border-card-gold/20 bg-card-surface hover:border-card-gold/40 text-text flex w-full items-center justify-between rounded border px-3 py-2 text-left text-sm font-medium"
     >
       <span>{{ summaryLabel }}</span>
       <AppIcon
         icon-name="ArrowDown2"
         :size="16"
-        class="shrink-0 text-card-gold transition-transform duration-150"
-        :class="isExpanded ? 'rotate-180' : ''"
+        class="text-card-gold shrink-0 transition-transform duration-150"
+        :class="open ? 'rotate-180' : ''"
       />
-    </button>
+    </PopoverButton>
 
-    <div
-      v-if="isExpanded"
-      class="mt-2 rounded-lg border border-card-gold/10 bg-card-definition p-3"
+    <transition
+      leave-active-class="transition duration-100 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
     >
-      <div class="flex flex-wrap gap-2">
-        <BaseTag
-          v-for="tag in tagStore.tags"
-          :key="tag.id"
-          :label="tag.name"
-          :color="tag.color"
-          selectable
-          :selected="tagIds.includes(tag.id)"
-          @click="toggleTag(tag.id)"
-        />
-        <p
-          v-if="tagStore.tags.length === 0"
-          class="text-xs text-text/35"
-        >
-          No tags yet.
-        </p>
-      </div>
-
-      <div class="mt-3 border-t border-card-gold/10 pt-3">
-        <button
-          v-if="!isCreating"
-          type="button"
-          class="inline-flex items-center gap-1 text-xs font-medium text-primary underline underline-offset-2 hover:no-underline"
-          @click="isCreating = true"
-        >
-          <AppIcon
-            icon-name="Add"
-            :size="12"
+      <PopoverPanel
+        ref="panel"
+        :style="floatingStyles"
+        class="border-card-gold/20 bg-card-surface z-50 flex w-88 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-lg border shadow-lg"
+      >
+        <div class="border-card-gold/10 shrink-0 border-b p-2">
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Search or add tags…"
+            class="border-card-gold/20 bg-card-definition text-text placeholder:text-text/40 focus:border-primary w-full rounded border px-2 py-1.5 text-sm focus:outline-none"
+            @keyup.enter="showCreateOption && createTagFromSearch()"
           />
-          New tag
-        </button>
+        </div>
+
         <div
-          v-else
-          class="flex items-center gap-2"
+          v-if="showCreateOption"
+          class="border-card-gold/10 flex shrink-0 items-center gap-2 border-b px-2 py-2"
         >
           <input
             v-model="newTagColor"
             type="color"
-            class="h-8 w-8 shrink-0 cursor-pointer rounded border border-text/20"
-          />
-          <input
-            v-model="newTagName"
-            type="text"
-            placeholder="Tag name"
-            class="w-full rounded border border-text/20 px-3 py-2 text-sm focus:border-primary focus:outline-none"
-            @keyup.enter="createTag"
+            aria-label="New tag color"
+            class="border-text/20 h-7 w-7 shrink-0 cursor-pointer rounded border"
           />
           <button
             type="button"
-            class="shrink-0 rounded bg-primary px-3 py-2 text-xs font-medium text-background hover:bg-primary/90"
-            @click="createTag"
+            class="text-primary flex flex-1 items-center gap-1 truncate text-left text-xs font-medium hover:underline"
+            @click="createTagFromSearch"
           >
-            Add
+            <AppIcon
+              icon-name="Add"
+              :size="12"
+              class="shrink-0"
+            />
+            <span class="truncate">Create "{{ trimmedQuery }}"</span>
           </button>
         </div>
-      </div>
-    </div>
-  </div>
+
+        <div class="max-h-60 overflow-y-auto p-2.5 sm:max-h-80">
+          <div class="flex flex-wrap gap-1.5">
+            <BaseTag
+              v-for="tag in filteredTags"
+              :key="tag.id"
+              :label="tag.name"
+              :color="tag.color"
+              selectable
+              :selected="tagIds.includes(tag.id)"
+              @click="toggleTag(tag.id)"
+            />
+            <p
+              v-if="filteredTags.length === 0 && !showCreateOption"
+              class="text-text/35 text-xs"
+            >
+              {{ tagStore.tags.length === 0 ? 'No tags yet.' : 'No tags match your search.' }}
+            </p>
+          </div>
+        </div>
+      </PopoverPanel>
+    </transition>
+  </Popover>
 </template>

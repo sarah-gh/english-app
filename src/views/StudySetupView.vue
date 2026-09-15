@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
-import { RouterLink, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import BorderedCard from '@/components/common/BorderedCard.vue';
+import PageHeaderBack from '@/components/common/PageHeaderBack.vue';
 import SessionSizeSelector from '@/components/study/SessionSizeSelector.vue';
 import BaseSegmentedToggle from '@/components/ui/BaseSegmentedToggle.vue';
 import BaseSelect from '@/components/ui/BaseSelect.vue';
@@ -88,10 +89,7 @@ function startSession() {
 
 <template>
   <div class="min-h-screen bg-background px-4 py-6">
-    <RouterLink to="/" class="mb-4 inline-flex items-center gap-1 text-sm text-text/50 hover:text-primary">
-      <AppIcon icon-name="ArrowLeft" :size="14" />
-      Dashboard
-    </RouterLink>
+    <PageHeaderBack to="/" label="Dashboard" />
     <h1 class="mb-6 text-2xl font-bold font-serif text-text">Study Session</h1>
 
     <p v-if="!isReady" class="text-sm text-text/50">
