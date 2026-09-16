@@ -13,6 +13,7 @@ import { useTagStore } from '@/stores/tag-store';
 import type { Card, ReviewStatus } from '@/types/card';
 import type { CardViewMode } from '@/types/view-mode';
 import { stripHtmlToText } from '@/utils/html';
+import { capitalizeFirstLetter } from '@/utils/text';
 
 const props = defineProps<{
   card: Card;
@@ -59,7 +60,7 @@ async function handleDelete() {
   <BaseCard>
     <div class="flex items-start justify-between gap-3">
       <div class="min-w-0">
-        <p class="truncate font-medium text-wrap font-serif text-lg text-text">{{ card.frontTitle }}</p>
+        <p class="truncate font-medium text-wrap font-serif text-lg text-text">{{ capitalizeFirstLetter(card.frontTitle) }}</p>
         <p class="mt-3.5 flex items-center gap-1.5 text-xs text-text/50">
           {{ deckName }}
           <span

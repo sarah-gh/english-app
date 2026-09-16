@@ -144,7 +144,7 @@ function setParagraph() {
     </div>
     <EditorContent
       :editor="editor"
-      class="min-h-20 px-3 py-2"
+      class="min-h-20 max-h-85 overflow-y-auto px-3 py-2"
     />
   </div>
 </template>

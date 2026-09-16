@@ -12,6 +12,7 @@ import type { Card } from '@/types/card';
 import type { Tag } from '@/types/tag';
 import type { CardViewMode } from '@/types/view-mode';
 import { sanitizeRichText } from '@/utils/html';
+import { capitalizeFirstLetter } from '@/utils/text';
 
 const props = withDefaults(
   defineProps<{
@@ -283,7 +284,7 @@ onBeforeUnmount(() => {
         {{ rootDeckName }}
       </p>
       <div class="flex items-start justify-between gap-3">
-        <h2 class="text-card-gold text-wrap font-serif text-3xl font-semibold">{{ card.frontTitle }}</h2>
+        <h2 class="text-card-gold text-wrap font-serif text-3xl font-semibold">{{ capitalizeFirstLetter(card.frontTitle) }}</h2>
         <div class="flex flex-1 flex-wrap items-center justify-end gap-2">
           <span
             v-if="card.studyCount > 0"

@@ -49,7 +49,7 @@ async function createTopic() {
         label="Topic (optional)"
         placeholder="General (default)"
         :disabled="!deckId"
-        class="w-full"
+        class="min-w-0 w-full"
         :options="topicOptions"
       />
       <button

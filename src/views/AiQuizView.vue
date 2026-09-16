@@ -7,6 +7,7 @@ import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseCard from '@/components/ui/BaseCard.vue';
 import BaseInput from '@/components/ui/BaseInput.vue';
 import { useQuizSessionStore } from '@/stores/quiz-session-store';
+import { capitalizeFirstLetter } from '@/utils/text';
 
 const router = useRouter();
 const quizSessionStore = useQuizSessionStore();
@@ -96,7 +97,7 @@ function startNewQuiz() {
         <BaseCard v-for="(question, index) in quizSessionStore.questions" :key="question.id">
           <div class="mb-2 flex items-center justify-between">
             <p class="text-xs font-medium text-text/50">
-              Question {{ index + 1 }} · from “{{ question.cardTitle }}”
+              Question {{ index + 1 }} · from “{{ capitalizeFirstLetter(question.cardTitle) }}”
             </p>
             <span
 v-if="quizSessionStore.isSubmitted && isMultipleChoice" class="inline-flex items-center gap-1 text-xs font-semibold"

@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import MatchColumnItem from '@/components/study/MatchColumnItem.vue';
 import type { MatchingQuizChunk } from '@/services/review/matching-quiz';
 import type { MatchResult } from '@/stores/study-session-store';
+import { capitalizeFirstLetter } from '@/utils/text';
 
 const props = defineProps<{
   chunk: MatchingQuizChunk;
@@ -141,7 +142,7 @@ function requestHint() {
           <MatchColumnItem
             v-for="item in chunk.words"
             :key="item.cardId"
-            :text="item.word"
+            :text="capitalizeFirstLetter(item.word)"
             :status="wordStatusFor(item.cardId)"
             @click="selectWord(item.cardId)"
           />

@@ -3,6 +3,7 @@ import BaseButton from '@/components/ui/BaseButton.vue';
 import { useDeckStore } from '@/stores/deck-store';
 import { useTopicStore } from '@/stores/topic-store';
 import type { Card } from '@/types/card';
+import { capitalizeFirstLetter } from '@/utils/text';
 
 const props = defineProps<{
   cards: Card[];
@@ -78,7 +79,9 @@ function deselectAll() {
             />
             <span class="text-text min-w-fit flex-1 truncate text-sm">
               {{
-                card.frontTitle.length > 20 ? card.frontTitle.slice(0, 20) + '...' : card.frontTitle
+                card.frontTitle.length > 20
+                  ? capitalizeFirstLetter(card.frontTitle.slice(0, 20)) + '...'
+                  : capitalizeFirstLetter(card.frontTitle)
               }}
             </span>
             <span class="text-card-muted shrink-0 text-xs">

@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import BaseFlipCard from '@/components/ui/BaseFlipCard.vue';
 import type { PartOfSpeechEntry } from '@/types/card';
 import type { CardViewMode } from '@/types/view-mode';
+import { capitalizeFirstLetter } from '@/utils/text';
 
 const props = withDefaults(
   defineProps<{
@@ -55,7 +56,7 @@ function posLabel(pos: string): string {
           @pointerdown.stop
           @click.stop="setRevealed(entry.id, true)"
         >
-          {{ frontTitle }} (as {{ posLabel(entry.pos) }})
+          {{ capitalizeFirstLetter(frontTitle) }} (as {{ posLabel(entry.pos) }})
         </button>
       </template>
       <template #back>

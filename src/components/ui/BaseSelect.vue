@@ -57,7 +57,7 @@ const { floatingStyles } = useFloating(triggerRef, panelRef, {
 </script>
 
 <template>
-  <div>
+  <div class="min-w-0">
     <label
       v-if="label"
       :for="selectId"
@@ -75,16 +75,17 @@ const { floatingStyles } = useFloating(triggerRef, panelRef, {
       :disabled="disabled"
       @update:model-value="(value) => emit('update:modelValue', value as T)"
     >
-      <div>
+      <div class="min-w-0">
         <ListboxButton
           :id="selectId"
           ref="trigger"
-          class="flex w-full bg-card-surface items-center justify-between gap-2 rounded border px-3 py-2 text-left text-sm text-text focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-text/5 disabled:text-text/40"
+          :title="selectedLabel ?? placeholder ?? undefined"
+          class="flex w-full min-w-0 bg-card-surface items-center justify-between gap-2 rounded border px-3 py-2 text-left text-sm text-text focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-text/5 disabled:text-text/40"
           :class="error ? 'border-danger/80 bg-background' : (triggerClass ?? 'border-text/20 bg-background')"
           @blur="emit('blur')"
         >
           <span
-            class="truncate"
+            class="min-w-0 truncate"
             :class="selectedLabel ? '' : 'text-text/40'"
           >
             {{ selectedLabel ?? placeholder ?? ' ' }}

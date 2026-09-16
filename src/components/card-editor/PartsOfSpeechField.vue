@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import WarningIcon from '@/components/app/WarningIcon.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseInput from '@/components/ui/BaseInput.vue';
@@ -62,15 +62,27 @@ const POS_OPTIONS: { value: PosType; label: string }[] = [
   { value: 'other', label: 'Other' },
 ];
 
-function addEntry() {
+/** Keyed by entry id so the newly added entry's element can be found and scrolled into view
+ *  without relying on array-index refs shifting around as entries are added/removed. */
+const entryEls = ref<Record<string, HTMLElement | undefined>>({});
+
+function setEntryRef(id: string, el: Element | null) {
+  entryEls.value[id] = (el as HTMLElement) ?? undefined;
+}
+
+async function addEntry() {
+  const id = generateUUID();
   entries.value = [
     ...entries.value,
-    { id: generateUUID(), pos: 'noun', wordForm: '', definition: '', ipa: '', examples: [] },
+    { id, pos: 'noun', wordForm: '', definition: '', ipa: '', examples: [] },
   ];
+  await nextTick();
+  entryEls.value[id]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 function removeEntry(id: string) {
   entries.value = entries.value.filter((entry) => entry.id !== id);
+  delete entryEls.value[id];
 }
 </script>
 
@@ -86,17 +98,6 @@ function removeEntry(id: string) {
           @click="handleGenerate"
         />
       </span>
-      <BaseButton
-        variant="link"
-        size="sm"
-        @click="addEntry"
-      >
-        <AppIcon
-          icon-name="Add"
-          :size="12"
-        />
-        Add Part of Speech
-      </BaseButton>
     </div>
     <p
       v-if="generateErrorMessage"
@@ -110,8 +111,21 @@ function removeEntry(id: string) {
       <div
         v-for="entry in entries"
         :key="entry.id"
-        class="space-y-2 rounded border bg-card-surface border-text/10 p-3"
+        :ref="(el) => setEntryRef(entry.id, el as Element | null)"
+        class="relative space-y-2 rounded border bg-card-surface border-text/10 p-3 pt-4"
       >
+        <button
+          type="button"
+          aria-label="Remove this part of speech"
+          class="absolute right-1 top-1 rounded-lg p-2 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300"
+          @click="removeEntry(entry.id)"
+        >
+          <AppIcon
+            icon-name="Trash"
+            :size="16"
+          />
+        </button>
+
         <div class="flex items-end gap-2">
           <BaseSelect
             :model-value="entry.pos"
@@ -128,27 +142,11 @@ function removeEntry(id: string) {
           />
         </div>
 
-        <div class="flex items-end gap-2">
-          <BaseInput
-            v-model="entry.ipa"
-            label="IPA (optional)"
-            placeholder="/wɜːrd/"
-            class="w-full"
-          />
-          <BaseButton
-            variant="ghost"
-            size="sm"
-            muted
-            class="shrink-0"
-            @click="removeEntry(entry.id)"
-          >
-            <AppIcon
-              icon-name="Trash"
-              :size="12"
-            />
-            Remove
-          </BaseButton>
-        </div>
+        <BaseInput
+          v-model="entry.ipa"
+          label="IPA (optional)"
+          placeholder="/wɜːrd/"
+        />
 
         <BaseInput
           v-model="entry.definition"
@@ -168,6 +166,19 @@ function removeEntry(id: string) {
       >
         No parts of speech added.
       </p>
+
+      <BaseButton
+        variant="ghost"
+        size="sm"
+        block
+        @click="addEntry"
+      >
+        <AppIcon
+          icon-name="Add"
+          :size="14"
+        />
+        Add Another Part of Speech
+      </BaseButton>
     </div>
   </div>
 </template>

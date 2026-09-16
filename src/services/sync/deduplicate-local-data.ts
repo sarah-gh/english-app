@@ -1,5 +1,12 @@
-import { cardRepository, deckRepository, tagRepository, topicRepository } from '@/db/repositories';
+import {
+  aiQuizResultRepository,
+  cardRepository,
+  deckRepository,
+  tagRepository,
+  topicRepository,
+} from '@/db/repositories';
 import { deduplicateByName, deduplicateCards, healReference } from '@/services/sync/merge';
+import type { AiQuizResult } from '@/types/ai-quiz-result';
 import type { Card } from '@/types/card';
 
 /**
@@ -22,11 +29,12 @@ import type { Card } from '@/types/card';
  * Cloud Sync entirely, e.g. from a bug or a messy import, on a device that never syncs at all.
  */
 export async function deduplicateLocalData(): Promise<void> {
-  const [decks, topics, tags, cards] = await Promise.all([
+  const [decks, topics, tags, cards, quizHistory] = await Promise.all([
     deckRepository.getAllIncludingDeleted(),
     topicRepository.getAllIncludingDeleted(),
     tagRepository.getAllIncludingDeleted(),
     cardRepository.getAllIncludingDeleted(),
+    aiQuizResultRepository.getAll(),
   ]);
 
   const dedupedDecks = deduplicateByName(decks);
@@ -69,6 +77,26 @@ export async function deduplicateLocalData(): Promise<void> {
   });
   const dedupedCards = deduplicateCards(healedCards);
 
+  // Quiz results aren't deduplicated themselves (two devices' quiz attempts are never "the same
+  // record" just because they cover the same cards), but each one's `deckIds`/`topicIds` still need
+  // the same healing cards get above, otherwise a quiz taken before a same-named duplicate deck/
+  // topic got collapsed keeps pointing at the now-tombstoned id and silently drops that deck's name
+  // from the history list (see `AiQuizHistoryList.vue`'s `deckNames`).
+  const healedQuizHistory = quizHistory.map((result): AiQuizResult => {
+    const healedDeckIds = result.deckIds.map((deckId) => healReference(decksById, deckId) ?? deckId);
+    const healedTopicIds = result.topicIds.map(
+      (topicId) =>
+        healReference(topicsById, topicId, { scopeKey: (topic) => topic.deckId }) ?? topicId,
+    );
+
+    const unchanged =
+      healedDeckIds.every((id, index) => id === result.deckIds[index]) &&
+      healedTopicIds.every((id, index) => id === result.topicIds[index]);
+    if (unchanged) return result;
+
+    return { ...result, deckIds: healedDeckIds, topicIds: healedTopicIds, updatedAt: now };
+  });
+
   // Index-aligned with the original reads throughout (every transform above preserves order and
   // length), and every unchanged entity kept its original object reference, so a plain `!==`
   // finds exactly what changed, without writing back rows that didn't need it.
@@ -76,11 +104,13 @@ export async function deduplicateLocalData(): Promise<void> {
   const changedTopics = dedupedTopics.filter((topic, index) => topic !== topics[index]);
   const changedTags = dedupedTags.filter((tag, index) => tag !== tags[index]);
   const changedCards = dedupedCards.filter((card, index) => card !== cards[index]);
+  const changedQuizHistory = healedQuizHistory.filter((result, index) => result !== quizHistory[index]);
 
   await Promise.all([
     changedDecks.length > 0 ? deckRepository.bulkPut(changedDecks) : undefined,
     changedTopics.length > 0 ? topicRepository.bulkPut(changedTopics) : undefined,
     changedTags.length > 0 ? tagRepository.bulkPut(changedTags) : undefined,
     changedCards.length > 0 ? cardRepository.bulkPut(changedCards) : undefined,
+    changedQuizHistory.length > 0 ? aiQuizResultRepository.bulkPut(changedQuizHistory) : undefined,
   ]);
 }

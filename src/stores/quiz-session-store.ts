@@ -5,6 +5,7 @@ import { evaluateDescriptiveQuiz } from '@/services/ai/ai-quiz-service';
 import { AiServiceError } from '@/services/ai/errors';
 import { useCardStore } from '@/stores/card-store';
 import { useSettingsStore } from '@/stores/settings-store';
+import { useSyncStore } from '@/stores/sync-store';
 import type { AiQuizResultQuestionDetail, QuizMode } from '@/types/ai-quiz-result';
 import type { QuizQuestion } from '@/types/card';
 import { generateUUID } from '@/utils/uuid';
@@ -152,6 +153,15 @@ export const useQuizSessionStore = defineStore('quiz-session', () => {
       questions: questions.value.map((question) => buildQuestionDetail(question)),
     });
     isResultSaved.value = true;
+
+    // Uploads this result immediately rather than leaving it to the next app launch or a manual
+    // "Sync Now", so it reaches other devices as soon as possible. Fire-and-forget and
+    // non-interactive, the same way `initOnStartup`'s launch sync is: a no-op if Cloud Sync isn't
+    // connected, and it never opens a sign-in window on its own since this isn't a user gesture
+    // (see `getAccessToken`'s doc comment on why background callers can't do that) — a session that
+    // needs the user present again just waits for their next "Sync Now" click, same as any other
+    // background sync.
+    void useSyncStore().syncNow();
   }
 
   /** Multiple-choice quizzes score instantly, client-side. */
