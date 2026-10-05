@@ -132,7 +132,7 @@ export async function generateExamples(
   );
 }
 
-/** Generates just the Parts of Speech block from the card's front title. */
+/** Generates just the Word Forms & Derivatives block from the card's front title. */
 export async function generatePartsOfSpeech(
   settings: AppSettings,
   title: string,

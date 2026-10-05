@@ -9,7 +9,7 @@ import { withProviderFallback } from './with-provider-fallback';
 
 export { hasRequiredAiCredentials } from './with-provider-fallback';
 
-/** Auto-fills a card's back-side fields (definition, IPA, hint, examples, parts of speech,
+/** Auto-fills a card's back-side fields (definition, IPA, hint, examples, word forms & derivatives,
  *  suggested tags) from just its front title, using the provider(s) configured in Settings,
  *  see `withProviderFallback` for the fallback semantics. */
 export async function autoFillCardDetails(

@@ -1,4 +1,5 @@
 import type { PosType } from '@/types/card';
+import type { ProficiencyLevel } from '@/types/settings';
 import { sanitizeRichText, stripHtmlToText } from '@/utils/html';
 
 export interface GeneratedPosEntry {
@@ -43,7 +44,8 @@ export interface GeneratedCardDetails {
   /** Present only when the title has more than one common part of speech worth distinguishing. */
   partsOfSpeech?: GeneratedPosEntry[];
   /** Plain tag names (no leading "#"), the caller resolves these to existing tags or creates
-   *  new ones. */
+   *  new ones. Holds at most one CEFR level tag, always first: the dedicated `cefrLevel` field
+   *  when the AI supplied one, see `normalizeSuggestedTags`. */
   suggestedTags: string[];
   /** Best-fit deck/category name (e.g. "Vocabulary", "Idioms & Expressions", "Grammar"), only
    *  applied by the caller when the user hasn't already picked a deck. */
@@ -51,6 +53,26 @@ export interface GeneratedCardDetails {
 }
 
 const POS_TYPES: PosType[] = ['noun', 'verb', 'adjective', 'adverb', 'other'];
+
+const CEFR_LEVELS: ProficiencyLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+
+function asCefrLevel(value: unknown): ProficiencyLevel | undefined {
+  if (typeof value !== 'string') return undefined;
+  const normalized = value.replace(/^#/, '').trim().toUpperCase();
+  return CEFR_LEVELS.find((level) => level === normalized);
+}
+
+/** Builds the final tag list so a card gets exactly one, correctly-cased CEFR tag. The CEFR
+ *  level comes from the dedicated, schema-enforced `cefrLevel` field (which the prompt asks the
+ *  AI to judge from the term itself, not the learner's level); any CEFR-looking entries the AI
+ *  also slipped into `suggestedTags` are dropped. Only when `cefrLevel` is missing (a custom
+ *  prompt that doesn't ask for it, or a provider ignoring the JSON hint) does the first CEFR tag
+ *  from `suggestedTags` survive. No level is ever invented here. */
+function normalizeSuggestedTags(rawTags: string[], rawCefrLevel: unknown): string[] {
+  const topicTags = rawTags.filter((tag) => !asCefrLevel(tag));
+  const cefrLevel = asCefrLevel(rawCefrLevel) ?? rawTags.map(asCefrLevel).find(Boolean);
+  return cefrLevel ? [cefrLevel, ...topicTags] : topicTags;
+}
 
 /** Gemini Structured Output schema for a single parts-of-speech entry, shared between the
  *  full-card autofill schema below and the standalone per-field parts-of-speech endpoint. */
@@ -61,9 +83,13 @@ export const POS_ENTRY_SCHEMA = {
     wordForm: { type: 'STRING' },
     definition: { type: 'STRING' },
     ipa: { type: 'STRING' },
-    examples: { type: 'ARRAY', items: { type: 'STRING' } },
+    examples: { type: 'ARRAY', items: { type: 'STRING' }, minItems: 1 },
   },
-  required: ['pos', 'wordForm', 'definition'],
+  // `ipa` and `examples` are required here (providers with real schema enforcement, i.e. Gemini)
+  // to push toward a complete, comprehensive word-family entry rather than a bare definition;
+  // `isGeneratedPosEntry` below still accepts entries missing them since Groq/OpenRouter don't
+  // actually enforce this schema, only get a prompt hint describing it.
+  required: ['pos', 'wordForm', 'definition', 'ipa', 'examples'],
 };
 
 export const CARD_AUTOFILL_RESPONSE_SCHEMA = {
@@ -77,6 +103,7 @@ export const CARD_AUTOFILL_RESPONSE_SCHEMA = {
     synonyms: { type: 'ARRAY', items: { type: 'STRING' } },
     antonyms: { type: 'ARRAY', items: { type: 'STRING' } },
     partsOfSpeech: { type: 'ARRAY', items: POS_ENTRY_SCHEMA },
+    cefrLevel: { type: 'STRING', enum: CEFR_LEVELS },
     suggestedTags: { type: 'ARRAY', items: { type: 'STRING' } },
     suggestedDeckCategory: { type: 'STRING' },
   },
@@ -89,7 +116,7 @@ export const CARD_AUTOFILL_RESPONSE_SCHEMA = {
 export const CARD_AUTOFILL_JSON_SHAPE_HINT = `
 
 Respond with ONLY a JSON object of this exact shape, no other text:
-{"backAnswer": string (concise HTML, <p>, <strong>, <em> only), "extraInfo": string (optional, structured HTML with <h3>, <p>, <strong>, <em>, <ul>/<ol>/<li> section headings; no other tags or attributes), "ipa": string (optional), "hint": string (optional), "personalExamples": string[], "synonyms": string[], "antonyms": string[], "partsOfSpeech": [{"pos": "noun" | "verb" | "adjective" | "adverb" | "other", "wordForm": string, "definition": string, "ipa": string (optional), "examples": string[] (optional)}] (optional), "suggestedTags": string[], "suggestedDeckCategory": string (optional)}`;
+{"backAnswer": string (concise HTML, <p>, <strong>, <em> only), "extraInfo": string (optional, structured HTML with <h3>, <p>, <strong>, <em>, <ul>/<ol>/<li> section headings; no other tags or attributes), "ipa": string (optional), "hint": string (optional), "personalExamples": string[], "synonyms": string[], "antonyms": string[], "partsOfSpeech": [{"pos": "noun" | "verb" | "adjective" | "adverb" | "other", "wordForm": string, "definition": string, "ipa": string, "examples": string[] (1-2 items)}] (must cover the word's full family of forms, not just one entry), "cefrLevel": "A1" | "A2" | "B1" | "B2" | "C1" | "C2" (the term's own level, not the learner's), "suggestedTags": string[] (topic tags only, no CEFR level), "suggestedDeckCategory": string (optional)}`;
 
 export function isGeneratedPosEntry(value: unknown): value is GeneratedPosEntry {
   if (!value || typeof value !== 'object') return false;
@@ -166,7 +193,7 @@ export function parseCardAutofillResponseText(
     synonyms: stringArray(obj.synonyms),
     antonyms: stringArray(obj.antonyms),
     partsOfSpeech: partsOfSpeech && partsOfSpeech.length > 0 ? partsOfSpeech : undefined,
-    suggestedTags: stringArray(obj.suggestedTags),
+    suggestedTags: normalizeSuggestedTags(stringArray(obj.suggestedTags), obj.cefrLevel),
     suggestedDeckCategory:
       typeof obj.suggestedDeckCategory === 'string' && obj.suggestedDeckCategory.trim()
         ? obj.suggestedDeckCategory.trim()

@@ -161,7 +161,7 @@ export const PARTS_OF_SPEECH_RESPONSE_SCHEMA = {
 export const PARTS_OF_SPEECH_JSON_SHAPE_HINT = `
 
 Respond with ONLY a JSON object of this exact shape, no other text:
-{"partsOfSpeech": [{"pos": "noun" | "verb" | "adjective" | "adverb" | "other", "wordForm": string, "definition": string, "ipa": string (optional), "examples": string[] (optional)}]}`;
+{"partsOfSpeech": [{"pos": "noun" | "verb" | "adjective" | "adverb" | "other", "wordForm": string, "definition": string, "ipa": string, "examples": string[] (1-2 items)}]} (must cover the word's full family of forms, not just one entry)`;
 
 export function parsePartsOfSpeechResponseText(
   text: string | undefined,
@@ -183,7 +183,7 @@ export function parsePartsOfSpeechResponseText(
 
   const validEntries = partsOfSpeech.filter(isGeneratedPosEntry).map(sanitizeGeneratedPosEntry);
   if (validEntries.length === 0) {
-    throw makeError('The AI provider did not find any distinct parts of speech for this word.');
+    throw makeError('The AI provider did not find any word forms or derivatives for this word.');
   }
   return validEntries;
 }

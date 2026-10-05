@@ -137,7 +137,7 @@ async function savePayload(
   try {
     if (editingCardId) {
       await cardStore.edit(editingCardId, payload);
-      router.push('/cards');
+      exitEditor();
       return;
     }
 
@@ -145,20 +145,32 @@ async function savePayload(
     else await cardStore.add(payload);
 
     if (mode === 'add-another') {
-      const keepDeckId = draft.deckId;
-      const keepTopicId = draft.topicId;
-      Object.assign(draft, blankCardFormState());
-      draft.deckId = keepDeckId;
-      draft.topicId = keepTopicId;
-      isDirty.value = false;
-      formRef.value?.resetValidation();
+      await resetForNextCard();
       showToast(overwriteCardId ? 'Existing card replaced!' : 'Card saved successfully!');
     } else {
-      router.push('/cards');
+      exitEditor();
     }
   } finally {
     isSaving.value = false;
   }
+}
+
+/** Clears every field, deck/topic/tag selections included, so the next card starts from scratch. */
+async function resetForNextCard() {
+  Object.assign(draft, blankCardFormState());
+  // The dirty-tracking watcher fires on the next flush; let it run before marking the form clean,
+  // otherwise the reset itself would count as an unsaved edit.
+  await nextTick();
+  isDirty.value = false;
+  formRef.value?.resetValidation();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/** Returns to whichever page opened the editor, or the Dashboard when there's no in-app history
+ *  to go back to (e.g. the editor URL was opened directly or reloaded in a fresh tab). */
+function exitEditor() {
+  if (window.history.state?.back) router.back();
+  else router.replace('/');
 }
 
 function handleCancel() {
@@ -166,12 +178,12 @@ function handleCancel() {
     isConfirmingCancel.value = true;
     return;
   }
-  router.back();
+  exitEditor();
 }
 
 function confirmDiscardChanges() {
   isConfirmingCancel.value = false;
-  router.back();
+  exitEditor();
 }
 </script>
 

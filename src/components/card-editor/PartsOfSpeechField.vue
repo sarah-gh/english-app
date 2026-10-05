@@ -4,6 +4,7 @@ import WarningIcon from '@/components/app/WarningIcon.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseInput from '@/components/ui/BaseInput.vue';
 import BaseSelect from '@/components/ui/BaseSelect.vue';
+import { useSpeech } from '@/composables/useSpeech';
 import { useGeneratePartsOfSpeech } from '@/queries/use-generate-parts-of-speech';
 import { hasRequiredAiCredentials } from '@/services/ai/ai-card-autofill-service';
 import { AiServiceError } from '@/services/ai/errors';
@@ -22,6 +23,7 @@ const props = defineProps<{
 const entries = defineModel<PosEntryFormState[]>('entries', { required: true });
 
 const settingsStore = useSettingsStore();
+const { speak, isSupported: isTtsSupported } = useSpeech();
 const { mutateAsync: requestPartsOfSpeech, isPending: isGenerating, error: generateApiError } =
   useGeneratePartsOfSpeech();
 
@@ -90,7 +92,7 @@ function removeEntry(id: string) {
   <div>
     <div class="mb-1 flex items-center justify-between gap-2">
       <span class="flex items-center gap-1 text-xs font-medium text-text/60">
-        Parts of Speech (Optional)
+        Word Forms &amp; Derivatives (optional)
         <AiFieldButton
           :loading="isGenerating"
           :disabled="!canGenerate"
@@ -116,7 +118,7 @@ function removeEntry(id: string) {
       >
         <button
           type="button"
-          aria-label="Remove this part of speech"
+          aria-label="Remove this word form"
           class="absolute right-1 top-1 rounded-lg p-2 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300"
           @click="removeEntry(entry.id)"
         >
@@ -140,6 +142,19 @@ function removeEntry(id: string) {
             :placeholder="rootWord ? `e.g. ${rootWord}...` : 'e.g. Decision'"
             class="w-full"
           />
+          <button
+            type="button"
+            :disabled="!isTtsSupported || !entry.wordForm.trim()"
+            :aria-label="entry.wordForm.trim() ? `Pronounce ${entry.wordForm.trim()}` : 'Enter a word form to hear it'"
+            :title="entry.wordForm.trim() ? 'Speak (TTS)' : 'Enter a word form to hear it'"
+            class="inline-flex shrink-0 items-center justify-center rounded border border-primary bg-background p-2.5 text-primary transition-colors hover:bg-primary hover:text-background disabled:cursor-not-allowed disabled:border-text/20 disabled:text-text/30 disabled:hover:bg-transparent"
+            @click="speak(entry.wordForm.trim())"
+          >
+            <AppIcon
+              icon-name="VolumeHigh"
+              :size="16"
+            />
+          </button>
         </div>
 
         <BaseInput
@@ -164,7 +179,7 @@ function removeEntry(id: string) {
         v-if="entries.length === 0"
         class="text-xs text-text/35"
       >
-        No parts of speech added.
+        No word forms added.
       </p>
 
       <BaseButton
@@ -177,7 +192,7 @@ function removeEntry(id: string) {
           icon-name="Add"
           :size="14"
         />
-        Add Another Part of Speech
+        Add Word Form
       </BaseButton>
     </div>
   </div>

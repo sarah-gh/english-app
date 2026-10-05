@@ -140,22 +140,15 @@ async function handleDelete() {
       <template v-if="showAnswer">
         <p class="mt-3 text-sm text-text">{{ stripHtmlToText(card.backAnswer) }}</p>
 
-        <PartsOfSpeechDisplay
-          v-if="card.partsOfSpeech && card.partsOfSpeech.length > 0"
-          :entries="card.partsOfSpeech"
-          :view-mode="viewMode"
-          :front-title="card.frontTitle"
-          class="mt-3"
-        />
-
+        <p class="mt-2 text-xs text-text/50">Examples:</p>
         <ul
           v-if="card.examples.length > 0"
-          class="mt-2 space-y-0.5"
+          class="mt-1 space-y-0.5"
         >
           <li
             v-for="(example, index) in card.examples"
             :key="index"
-            class="text-xs text-text/50"
+            class="text-xs text-text/60"
           >
             “{{ example }}”
           </li>
@@ -173,6 +166,14 @@ async function handleDelete() {
         >
           <span class="font-medium text-text/70">Antonyms:</span> {{ card.antonyms.join(', ') }}
         </p>
+
+        <PartsOfSpeechDisplay
+          v-if="card.partsOfSpeech && card.partsOfSpeech.length > 0"
+          :entries="card.partsOfSpeech"
+          :view-mode="viewMode"
+          :front-title="card.frontTitle"
+          class="mt-2"
+        />
       </template>
       <button
         v-else

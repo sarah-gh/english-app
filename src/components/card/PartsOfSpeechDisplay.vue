@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import BaseFlipCard from '@/components/ui/BaseFlipCard.vue';
+import { useSpeech } from '@/composables/useSpeech';
 import type { PartOfSpeechEntry } from '@/types/card';
 import type { CardViewMode } from '@/types/view-mode';
 import { capitalizeFirstLetter } from '@/utils/text';
@@ -17,6 +18,8 @@ const props = withDefaults(
     interactive: true,
   },
 );
+
+const { speak, isSupported: isTtsSupported } = useSpeech();
 
 const revealedIds = ref<Set<string>>(new Set());
 
@@ -40,7 +43,7 @@ function posLabel(pos: string): string {
     v-if="entries.length > 0"
     class="space-y-2 pb-2"
   >
-    <p class="text-card-gold text-xs font-medium uppercase">Parts of Speech</p>
+    <p class="text-card-gold text-xs font-medium uppercase">Word Forms &amp; Derivatives</p>
 
     <BaseFlipCard
       v-for="entry in entries"
@@ -61,24 +64,44 @@ function posLabel(pos: string): string {
       </template>
       <template #back>
         <div class="border-card-gold/20 bg-card-definition h-full w-full rounded-lg border p-3">
-          <div class="flex items-center gap-2">
-            <span
-              class="bg-card-gold/20 text-card-gold rounded px-1.5 py-0.5 text-[10px] font-bold uppercase"
+          <div class="flex items-start gap-2">
+            <!-- Wraps onto a second line on narrow screens so a long word form or IPA never pushes
+                 the speaker button out of the block. -->
+            <div class="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
+              <span
+                class="bg-card-gold/20 text-card-gold shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase"
+              >
+                {{ entry.pos }}
+              </span>
+              <span
+                v-if="entry.wordForm"
+                class="text-text text-sm font-semibold wrap-break-word"
+              >
+                {{ entry.wordForm }}
+              </span>
+              <span
+                v-if="entry.ipa"
+                class="text-card-muted text-xs break-all"
+              >
+                {{ entry.ipa }}
+              </span>
+            </div>
+            <!-- .stop keeps the tap from also flipping this entry's card closed. -->
+            <button
+              v-if="entry.wordForm && isTtsSupported"
+              type="button"
+              :disabled="!interactive"
+              :aria-label="`Pronounce ${entry.wordForm}`"
+              title="Speak (TTS)"
+              class="text-card-gold hover:bg-card-gold/15 -m-1 shrink-0 rounded-full p-1.5 transition-colors disabled:pointer-events-none"
+              @pointerdown.stop
+              @click.stop="speak(entry.wordForm)"
             >
-              {{ entry.pos }}
-            </span>
-            <span
-              v-if="entry.wordForm"
-              class="text-text text-sm font-semibold"
-            >
-              {{ entry.wordForm }}
-            </span>
-            <span
-              v-if="entry.ipa"
-              class="text-card-muted text-xs"
-            >
-              {{ entry.ipa }}
-            </span>
+              <AppIcon
+                icon-name="VolumeHigh"
+                :size="16"
+              />
+            </button>
           </div>
           <p class="text-text mt-1 text-sm">{{ entry.definition }}</p>
           <ul

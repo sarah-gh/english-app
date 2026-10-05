@@ -17,7 +17,7 @@ export function buildCardAutofillPrompt(
     : '';
   const userLevel = settings.proficiencyLevel ?? '';
   const userLevelHint = userLevel
-    ? ` The learner's self-assessed English level is ${userLevel} (CEFR); keep vocabulary and explanations calibrated to that level.`
+    ? ` The learner's self-assessed English level is ${userLevel} (CEFR); keep vocabulary and explanations calibrated to that level. This describes the learner, not the term, never use it as the term's "cefrLevel".`
     : '';
 
   const template = resolveActivePromptTemplate(settings.customPrompts, 'CARD_AUTOFILL');

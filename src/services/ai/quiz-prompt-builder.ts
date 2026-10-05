@@ -41,7 +41,7 @@ function summarizeCards(cards: Card[]): string {
             return `${entry.pos} (${wordForm}${entry.definition})`;
           })
           .join('; ');
-        lines.push(`   Parts of speech: ${posSummary}`);
+        lines.push(`   Word forms: ${posSummary}`);
       }
       return lines.join('\n');
     })

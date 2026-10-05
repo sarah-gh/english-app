@@ -382,15 +382,6 @@ onBeforeUnmount(() => {
           </template>
         </BaseFlipCard>
 
-        <PartsOfSpeechDisplay
-          v-if="showAnswer && card.partsOfSpeech && card.partsOfSpeech.length > 0"
-          :entries="card.partsOfSpeech"
-          :view-mode="viewMode"
-          :front-title="card.frontTitle"
-          :interactive="interactive"
-          class="mt-4"
-        />
-
         <div
           v-if="showAnswer && card.examples.length > 0"
           class="border-card-gold/20 bg-card-definition mt-4 rounded-xl border p-4"
@@ -419,6 +410,15 @@ onBeforeUnmount(() => {
         >
           <span class="text-primary font-semibold">Antonyms:</span> {{ card.antonyms.join(', ') }}
         </p>
+
+        <PartsOfSpeechDisplay
+          v-if="showAnswer && card.partsOfSpeech && card.partsOfSpeech.length > 0"
+          :entries="card.partsOfSpeech"
+          :view-mode="viewMode"
+          :front-title="card.frontTitle"
+          :interactive="interactive"
+          class="mt-4"
+        />
 
         <div
           v-if="showAnswer && extraInfoHtml"

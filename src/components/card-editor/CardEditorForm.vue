@@ -391,11 +391,6 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
       </p>
     </div>
 
-    <PartsOfSpeechField
-      v-model:entries="draft.partsOfSpeech"
-      :root-word="draft.frontTitle"
-    />
-
     <DeckSelectField
       v-model:deck-id="draft.deckId"
       :error="deckIdMeta.touched ? deckIdError : undefined"
@@ -444,6 +439,11 @@ async function applySuggestedTags(suggestedTags: string[]): Promise<void> {
         label="Antonyms (optional)"
       />
     </div>
+
+    <PartsOfSpeechField
+      v-model:entries="draft.partsOfSpeech"
+      :root-word="draft.frontTitle"
+    />
 
     <QuizQuestionListField v-model:quiz-questions="draft.quizQuestions" />
     <ImageUploadField v-model:image-blob="draft.imageBlob" />
