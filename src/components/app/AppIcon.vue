@@ -25,18 +25,22 @@ import Eye from 'vue-iconsax/dist/components/icons/Eye.vue.js';
 import EyeSlash from 'vue-iconsax/dist/components/icons/EyeSlash.vue.js';
 import Flash from 'vue-iconsax/dist/components/icons/Flash.vue.js';
 import Folder2 from 'vue-iconsax/dist/components/icons/Folder2.vue.js';
+import HambergerMenu from 'vue-iconsax/dist/components/icons/HambergerMenu.vue.js';
 import Home2 from 'vue-iconsax/dist/components/icons/Home2.vue.js';
 import Import from 'vue-iconsax/dist/components/icons/Import.vue.js';
 import InfoCircle from 'vue-iconsax/dist/components/icons/InfoCircle.vue.js';
 import Logout from 'vue-iconsax/dist/components/icons/Logout.vue.js';
+import Messages2 from 'vue-iconsax/dist/components/icons/Messages2.vue.js';
 import Minus from 'vue-iconsax/dist/components/icons/Minus.vue.js';
 import Play from 'vue-iconsax/dist/components/icons/Play.vue.js';
 import ProfileCircle from 'vue-iconsax/dist/components/icons/ProfileCircle.vue.js';
 import Refresh from 'vue-iconsax/dist/components/icons/Refresh.vue.js';
 import RefreshCircle from 'vue-iconsax/dist/components/icons/RefreshCircle.vue.js';
 import SearchNormal1 from 'vue-iconsax/dist/components/icons/SearchNormal1.vue.js';
+import Send2 from 'vue-iconsax/dist/components/icons/Send2.vue.js';
 import Setting2 from 'vue-iconsax/dist/components/icons/Setting2.vue.js';
 import Star1 from 'vue-iconsax/dist/components/icons/Star1.vue.js';
+import Teacher from 'vue-iconsax/dist/components/icons/Teacher.vue.js';
 import TickCircle from 'vue-iconsax/dist/components/icons/TickCircle.vue.js';
 import Trash from 'vue-iconsax/dist/components/icons/Trash.vue.js';
 import VolumeHigh from 'vue-iconsax/dist/components/icons/VolumeHigh.vue.js';
@@ -71,18 +75,22 @@ const ICONS = {
   EyeSlash,
   Flash,
   Folder2,
+  HambergerMenu,
   Home2,
   Import,
   InfoCircle,
   Logout,
+  Messages2,
   Minus,
   Play,
   ProfileCircle,
   Refresh,
   RefreshCircle,
   SearchNormal1,
+  Send2,
   Setting2,
   Star1,
+  Teacher,
   TickCircle,
   Trash,
   VolumeHigh,

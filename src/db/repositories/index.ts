@@ -5,3 +5,5 @@ export { topicRepository } from './topic-repository';
 export { aiQuizResultRepository } from './ai-quiz-result-repository';
 export { dailyStatRepository } from './daily-stat-repository';
 export { settingsRepository } from './settings-repository';
+export { chatMessageRepository } from './chat-message-repository';
+export { chatSessionRepository } from './chat-session-repository';

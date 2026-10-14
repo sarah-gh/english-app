@@ -33,5 +33,7 @@ export async function purgeOldSoftDeletes(now = Date.now()): Promise<void> {
     purgeTable(db.decks, cutoff),
     purgeTable(db.topics, cutoff),
     purgeTable(db.tags, cutoff),
+    purgeTable(db.chatSessions, cutoff),
+    purgeTable(db.chatMessages, cutoff),
   ]);
 }

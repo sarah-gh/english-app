@@ -1,7 +1,15 @@
 import { cardToSyncCard, syncCardToCard } from '@/services/sync/card-codec';
 import {
+  changedSince,
+  mergeChatSessions,
+  normalizeLegacyChatMessages,
+  reconcileChatData,
+} from '@/services/sync/chat-sync';
+import {
   aiQuizResultRepository,
   cardRepository,
+  chatMessageRepository,
+  chatSessionRepository,
   dailyStatRepository,
   deckRepository,
   settingsRepository,
@@ -408,7 +416,8 @@ async function uploadPayload(token: string, payload: SyncPayload): Promise<void>
  * Runs one full two-way sync: fetches local + remote state, resolves every deck/topic/tag/
  * quiz-history record by `id` with last-write-wins on `updatedAt` (see `mergeById`), every card the
  * same way except `studyCount`, which takes whichever side counted more (see `mergeCards`), and
- * every daily-stat row by `date` with the same max-count approach (see `mergeDailyStats`), writes
+ * AI Tutor Chat sessions and messages (see `mergeChatSessions`/`reconcileChatData`), every
+ * daily-stat row by `date` with the same max-count approach (see `mergeDailyStats`), writes
  * the losing side's records to wherever they lost, collapses any same-named deck/topic/tag or
  * same-front-text card duplicates the id-based merge couldn't catch (see `deduplicateLocalData`),
  * and uploads the result as the new `flashcards_sync.json`. Local IndexedDB is fully updated,
@@ -444,6 +453,8 @@ export async function syncNow(
       localQuizHistory,
       localDailyStats,
       localSettings,
+      localChatSessions,
+      localChatMessages,
     ] = await Promise.all([
       deckRepository.getAllIncludingDeleted(),
       topicRepository.getAllIncludingDeleted(),
@@ -452,6 +463,8 @@ export async function syncNow(
       aiQuizResultRepository.getAll(),
       dailyStatRepository.getAll(),
       settingsRepository.get(),
+      chatSessionRepository.getAllIncludingDeleted(),
+      chatMessageRepository.getAllIncludingDeleted(),
     ]);
     const localSyncCards = await Promise.all(localCards.map(cardToSyncCard));
 
@@ -470,6 +483,16 @@ export async function syncNow(
     const quizResult = mergeById<AiQuizResult>(localQuizHistory, remote.quizHistory ?? []);
     const dailyStatResult = mergeDailyStats<DailyStat>(localDailyStats, remote.dailyStats ?? []);
     const settingsResult = mergeSingleton<AppSettings>(localSettings, remote.settings);
+    // Sessions and messages merge independently (messages are never edited, only tombstoned with
+    // their session, so plain last-write-wins suffices for them), then `reconcileChatData` settles
+    // the two against each other: cascading thread deletions onto messages and recomputing each
+    // thread's preview from the true newest message across both devices.
+    const chat = reconcileChatData(
+      mergeChatSessions(localChatSessions, remote.chatSessions ?? []).merged,
+      mergeById(localChatMessages, normalizeLegacyChatMessages(remote.chatMessages ?? [])).merged,
+    );
+    const chatSessionsToApply = changedSince(localChatSessions, chat.sessions);
+    const chatMessagesToApply = changedSince(localChatMessages, chat.messages);
 
     await Promise.all([
       deckRepository.bulkPut(deckResult.toApplyLocally),
@@ -481,6 +504,8 @@ export async function syncNow(
       })(),
       aiQuizResultRepository.bulkPut(quizResult.toApplyLocally),
       dailyStatRepository.bulkPut(dailyStatResult.toApplyLocally),
+      chatSessionRepository.bulkPut(chatSessionsToApply),
+      chatMessageRepository.bulkPut(chatMessagesToApply),
       settingsResult.toApplyLocally
         ? settingsRepository.replace(settingsResult.merged)
         : Promise.resolve(),
@@ -522,6 +547,9 @@ export async function syncNow(
       quizHistory: dedupedQuizHistory,
       dailyStats: dedupedDailyStats,
       settings: settingsResult.merged,
+      // Not touched by `deduplicateLocalData`, so the merge result is already the final set.
+      chatSessions: chat.sessions,
+      chatMessages: chat.messages,
     };
     await withTokenRetry((token) => uploadPayload(token, payload), options);
 
@@ -534,6 +562,8 @@ export async function syncNow(
       cardResult.toApplyLocally.length +
       quizResult.toApplyLocally.length +
       dailyStatResult.toApplyLocally.length +
+      chatSessionsToApply.length +
+      chatMessagesToApply.length +
       (settingsResult.toApplyLocally ? 1 : 0);
     const pushed =
       dedupedDecks.length +
@@ -542,6 +572,8 @@ export async function syncNow(
       dedupedCards.length +
       dedupedQuizHistory.length +
       dedupedDailyStats.length +
+      chat.sessions.length +
+      chat.messages.length +
       1 - // the settings singleton
       pulled;
 

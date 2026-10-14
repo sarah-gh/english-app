@@ -43,3 +43,37 @@ export async function callOpenAiCompatibleStructured(
     throw error;
   }
 }
+
+export interface ChatCompletionMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
+/** Multi-turn, free-text counterpart to `callOpenAiCompatibleStructured`, used by the AI Tutor
+ *  Chat, which needs the whole conversation (system prompt included) sent as separate messages and
+ *  a prose reply back rather than a JSON object. */
+export async function callOpenAiCompatibleChat(
+  provider: ConcreteAiProvider,
+  apiKey: string,
+  baseUrl: string,
+  model: string,
+  messages: ChatCompletionMessage[],
+  temperature?: number,
+): Promise<string | undefined> {
+  try {
+    const { data } = await apiClient.post<ChatCompletionsResponse>(
+      '/chat/completions',
+      { model, messages, ...(temperature !== undefined && { temperature }) },
+      {
+        baseURL: baseUrl.replace(/\/+$/, ''),
+        meta: { provider, apiKey: `Bearer ${apiKey}`, apiKeyHeader: 'Authorization' },
+      },
+    );
+    return data.choices?.[0]?.message?.content;
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw new AiProviderError(provider, error.message, error.retryable);
+    }
+    throw error;
+  }
+}

@@ -106,6 +106,12 @@ function deckCardCount(deckId: string): number {
               AI Quiz Generator
             </span>
           </BaseButton>
+          <BaseButton variant="tile" to="/ai-tutor">
+            <span class="flex flex-row items-center gap-1.5">
+              <AppIcon icon-name="Messages2" :size="18" />
+              AI Tutor Chat
+            </span>
+          </BaseButton>
         </div>
       </section>
     </template>

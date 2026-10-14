@@ -5,6 +5,7 @@ import {
   type GeneratedCardDetails,
 } from './card-autofill-schema';
 import { AiProviderError } from './errors';
+import { callGeminiChat, type GeminiChatTurn } from './google-client';
 
 const MODEL = 'gemini-flash-latest';
 
@@ -104,5 +105,28 @@ export async function autoFillCardViaAihubmix(
   return parseCardAutofillResponseText(
     text,
     (message) => new AiProviderError('aihubmix', message, false),
+  );
+}
+
+/** Multi-turn AI Tutor Chat call through AIHubMix's Gemini-compatible proxy. Unlike
+ *  `callAihubmixStructured`, there's no mirror retry here: a chat reply that fails is simply
+ *  retried by the user, and `withProviderFallback` still covers a configured backup provider. */
+export function callAihubmixChat(
+  apiKey: string,
+  baseUrl: string,
+  systemInstruction: string,
+  turns: GeminiChatTurn[],
+  temperature?: number,
+): Promise<string | undefined> {
+  return callGeminiChat(
+    {
+      provider: 'aihubmix',
+      apiKey,
+      baseURL: baseUrl.replace(/\/+$/, ''),
+      path: `/gemini/v1beta/models/${MODEL}:generateContent`,
+    },
+    systemInstruction,
+    turns,
+    temperature,
   );
 }

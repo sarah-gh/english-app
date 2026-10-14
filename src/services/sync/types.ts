@@ -1,5 +1,6 @@
 import type { AiQuizResult } from '@/types/ai-quiz-result';
 import type { Card } from '@/types/card';
+import type { ChatMessage, ChatSession } from '@/types/chat-message';
 import type { DailyStat } from '@/types/daily-stat';
 import type { Deck } from '@/types/deck';
 import type { AppSettings } from '@/types/settings';
@@ -35,12 +36,21 @@ export interface SyncPayload {
    *  last-write-wins by `updatedAt`), not `mergeById`, since there's exactly one record rather than
    *  a collection. */
   settings?: AppSettings;
+  /** AI Tutor Chat threads, tombstones included so a deleted thread stays deleted everywhere.
+   *  Merged with `mergeChatSessions`, then settled against `chatMessages` by `reconcileChatData`.
+   *  Optional for the same reason as `quizHistory`, absent in payloads from before version 5. */
+  chatSessions?: ChatSession[];
+  /** AI Tutor Chat messages, tombstones included. Optional for the same reason as `quizHistory`.
+   *  Messages from a pre-multi-thread payload have no `sessionId` (see
+   *  `normalizeLegacyChatMessages`). */
+  chatMessages?: ChatMessage[];
 }
 
-/** Bumped for the `quizHistory` (v2), `dailyStats` (v3), and `settings` (v4) additions, still
+/** Bumped for the `quizHistory` (v2), `dailyStats` (v3), `settings` (v4), and AI Tutor Chat (v5)
+ *  additions, still
  *  only a diagnostic marker (see `SyncPayload`'s own `updatedAt` doc comment), nothing branches on
  *  the number itself. */
-export const SYNC_PAYLOAD_VERSION = 4;
+export const SYNC_PAYLOAD_VERSION = 5;
 
 export function emptySyncPayload(): SyncPayload {
   return {
@@ -53,6 +63,8 @@ export function emptySyncPayload(): SyncPayload {
     quizHistory: [],
     dailyStats: [],
     settings: undefined,
+    chatSessions: [],
+    chatMessages: [],
   };
 }
 

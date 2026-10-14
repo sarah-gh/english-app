@@ -5,12 +5,13 @@ import { useRoute } from 'vue-router';
 interface NavTab {
   to: string;
   label: string;
-  icon: 'Home2' | 'ProfileCircle' | 'Setting2';
+  icon: 'Home2' | 'Messages2' | 'ProfileCircle' | 'Setting2';
   routeName: string;
 }
 
 const TABS: NavTab[] = [
   { to: '/', label: 'Home', icon: 'Home2', routeName: 'dashboard' },
+  { to: '/ai-tutor', label: 'AI Tutor', icon: 'Messages2', routeName: 'ai-chat' },
   { to: '/profile', label: 'Profile', icon: 'ProfileCircle', routeName: 'profile' },
   { to: '/settings', label: 'Settings', icon: 'Setting2', routeName: 'settings' },
 ];

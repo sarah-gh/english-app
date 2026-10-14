@@ -1,6 +1,8 @@
 import Dexie, { type Table } from 'dexie';
 import type { AiQuizResult } from '@/types/ai-quiz-result';
 import { DEFAULT_REVIEW_STATS, type Card } from '@/types/card';
+import { LEGACY_CHAT_SESSION_ID, type ChatMessage, type ChatSession } from '@/types/chat-message';
+import { buildLegacyChatSession } from '@/utils/chat-session';
 import type { DailyStat } from '@/types/daily-stat';
 import type { Deck } from '@/types/deck';
 import type { AppSettings } from '@/types/settings';
@@ -16,6 +18,8 @@ export class AppDatabase extends Dexie {
   aiQuizResults!: Table<AiQuizResult, string>;
   dailyStats!: Table<DailyStat, string>;
   settings!: Table<AppSettings, string>;
+  chatSessions!: Table<ChatSession, string>;
+  chatMessages!: Table<ChatMessage, string>;
 
   constructor() {
     super('english-app-db');
@@ -265,6 +269,47 @@ export class AppDatabase extends Dexie {
             card.updatedAt = now;
           }
         });
+      });
+
+    // v9: adds the AI Tutor Chat history table. New table only, nothing to backfill.
+    this.version(9).stores({
+      cards: 'id, deckId, topicId, reviewStatus, *tagIds, createdAt',
+      decks: 'id, name, createdAt',
+      tags: 'id, name',
+      topics: 'id, deckId, name, createdAt',
+      aiQuizResults: 'id, createdAt',
+      dailyStats: 'date',
+      settings: 'id',
+      chatMessages: 'id, timestamp',
+    });
+
+    // v10: AI Tutor Chat becomes multi-thread. Adds `chatSessions`, and indexes messages by
+    // `sessionId`. Any single-thread history from v9 is moved into one fixed-id legacy session.
+    this.version(10)
+      .stores({
+        cards: 'id, deckId, topicId, reviewStatus, *tagIds, createdAt',
+        decks: 'id, name, createdAt',
+        tags: 'id, name',
+        topics: 'id, deckId, name, createdAt',
+        aiQuizResults: 'id, createdAt',
+        dailyStats: 'date',
+        settings: 'id',
+        chatSessions: 'id, updatedAt',
+        chatMessages: 'id, sessionId, timestamp',
+      })
+      .upgrade(async (tx) => {
+        const messagesTable = tx.table<ChatMessage, string>('chatMessages');
+        const legacy = (await messagesTable.toArray()).filter((message) => !message.sessionId);
+        if (legacy.length === 0) return;
+
+        await messagesTable
+          .filter((message) => !message.sessionId)
+          .modify((message) => {
+            message.sessionId = LEGACY_CHAT_SESSION_ID;
+          });
+        await tx
+          .table<ChatSession, string>('chatSessions')
+          .put(buildLegacyChatSession(legacy));
       });
   }
 }

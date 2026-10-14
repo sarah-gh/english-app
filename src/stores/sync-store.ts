@@ -5,6 +5,7 @@ import { type GoogleProfile } from '@/services/sync/drive-api';
 import { SyncAuthError, SyncNotConfiguredError, SyncOfflineError } from '@/services/sync/types';
 import { useAnalyticsStore } from '@/stores/analytics-store';
 import { useCardStore } from '@/stores/card-store';
+import { useChatStore } from '@/stores/chat-store';
 import { useDeckStore } from '@/stores/deck-store';
 import { useTagStore } from '@/stores/tag-store';
 import { useTopicStore } from '@/stores/topic-store';
@@ -62,6 +63,7 @@ export const useSyncStore = defineStore('sync', () => {
       useTopicStore().fetchAll(),
       useTagStore().fetchAll(),
       useAnalyticsStore().fetchAll(),
+      useChatStore().fetchAll(),
     ]);
   }
 

@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import AiChatView from '@/views/AiChatView.vue'
 import AiQuizSetupView from '@/views/AiQuizSetupView.vue'
 import AiQuizView from '@/views/AiQuizView.vue'
 import AllCardsView from '@/views/AllCardsView.vue'
@@ -38,6 +39,7 @@ const router = createRouter({
     { path: '/privacy', name: 'privacy', component: PrivacyView },
     { path: '/ai-quiz', name: 'ai-quiz-setup', component: AiQuizSetupView },
     { path: '/ai-quiz/session', name: 'ai-quiz-session', component: AiQuizView },
+    { path: '/ai-tutor', name: 'ai-chat', component: AiChatView },
   ],
 })
 

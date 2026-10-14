@@ -38,3 +38,70 @@ export function stripHtmlToText(html: string): string {
   const text = DOMPurify.sanitize(withBreaks, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
   return text.replace(/\s+/g, ' ').trim();
 }
+
+const CHAT_ALLOWED_TAGS = ['p', 'br', 'strong', 'em', 'ul', 'ol', 'li'];
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function renderChatInline(text: string): string {
+  return escapeHtml(text)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/(^|[^*])\*(?!\s)(.+?)\*(?!\*)/g, '$1<em>$2</em>');
+}
+
+/**
+ * Renders an AI Tutor Chat reply's light Markdown (the subset its system prompt allows: **bold**,
+ * *italics*, "- " / "1. " lists, blank-line paragraphs) to HTML safe for `v-html`. The input is
+ * HTML-escaped before any tag is added, and the result still goes through DOMPurify, so a reply
+ * containing literal markup is shown as text, never rendered.
+ */
+export function renderChatMarkdown(markdown: string): string {
+  const blocks: string[] = [];
+  let paragraph: string[] = [];
+  let list = null as { tag: 'ul' | 'ol'; items: string[] } | null;
+
+  const flushParagraph = () => {
+    if (paragraph.length) blocks.push(`<p>${paragraph.map(renderChatInline).join('<br>')}</p>`);
+    paragraph = [];
+  };
+  const flushList = () => {
+    if (list) {
+      const { tag, items } = list;
+      blocks.push(`<${tag}>${items.map((item) => `<li>${item}</li>`).join('')}</${tag}>`);
+    }
+    list = null;
+  };
+
+  for (const rawLine of markdown.replace(/\r\n/g, '\n').split('\n')) {
+    const line = rawLine.trim();
+    const bullet = /^[-*•]\s+(.*)$/.exec(line);
+    const numbered = /^\d+[.)]\s+(.*)$/.exec(line);
+    const listMatch = bullet ?? numbered;
+
+    if (listMatch) {
+      const tag = bullet ? 'ul' : 'ol';
+      flushParagraph();
+      if (list?.tag !== tag) flushList();
+      list ??= { tag, items: [] };
+      list.items.push(renderChatInline(listMatch[1]));
+    } else if (!line) {
+      flushParagraph();
+      flushList();
+    } else {
+      flushList();
+      // Headings aren't in the allowed subset, but models still emit them now and then; keep the
+      // text, drop the hashes.
+      paragraph.push(line.replace(/^#{1,6}\s+/, ''));
+    }
+  }
+  flushParagraph();
+  flushList();
+
+  return DOMPurify.sanitize(blocks.join(''), { ALLOWED_TAGS: CHAT_ALLOWED_TAGS, ALLOWED_ATTR: [] });
+}
